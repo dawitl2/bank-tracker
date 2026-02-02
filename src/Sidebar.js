@@ -1,20 +1,19 @@
 function Sidebar() {
   return (
     <aside className="sidebar">
-      <div className="logo">
-        <img src="logo.png"/>
-       </div>
+      <div className="logo-container">
+        <img
+          src="/logo.png"
+          alt="Bank Logo"
+          className="main-logo"
+        />
+      </div>
 
       <nav className="menu">
-        <a href="#" className="nav-item">Balance</a>
-        <a href="#" className="nav-item active">Transactions</a>
-        <a href="#" className="nav-item">Statistics</a>
+        <button className="nav-item">Balance</button>
+        <button className="nav-item active">Transactions</button>
+        <button className="nav-item">Statistics</button>
       </nav>
-
-      <div className="footer-nav">
-        <a href="#">Settings</a>
-        <a href="#">About</a>
-      </div>
     </aside>
   );
 }
