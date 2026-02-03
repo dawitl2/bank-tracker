@@ -320,7 +320,7 @@ h1 {
 .card{
   width:100%;
   border-radius:20px;
-  margin-bottom:30px;
+  margin-bottom:50px;
   margin-top: 20px;
 }
 
@@ -335,6 +335,12 @@ h1 {
 .balance-grid h1{
   font-size:32px;
 }
+
+.balance-grid p{
+  font-size:12px;
+  color: #666;
+}
+
 
 .divider{
   width:1px;
