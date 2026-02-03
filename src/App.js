@@ -1,100 +1,74 @@
 import { useState, useEffect } from "react";
-import Sidebar from "./Sidebar";
 import Content from "./Content";
+import Balance from "./Balance";
 import "./App.css";
 
+const BASE_BALANCE = 1500443;
+
 function App() {
-  const [showModal, setShowModal] = useState(false);
-  const [url, setUrl] = useState("");
+  const [view, setView] = useState("transactions");
   const [transactions, setTransactions] = useState([]);
 
-  // 🔥 FETCH ALL TRANSACTIONS ON PAGE LOAD
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
-        const res = await fetch("https://bank-backend-anhp.onrender.com/transactions");
+        const res = await fetch(
+          "https://bank-backend-anhp.onrender.com/transactions"
+        );
         const data = await res.json();
         setTransactions(data);
       } catch (err) {
-        console.error("Failed to fetch transactions:", err);
+        console.error(err);
       }
     };
 
     fetchTransactions();
   }, []);
 
-  // 🔥 SCRAPER FUNCTION
-  const handleScrape = async () => {
-    if (!url) return alert("Paste a receipt link!");
+  // 🔥 CALCULATIONS
+  const totalWithdraw = transactions.reduce((sum, tx) => {
+    const num = parseFloat(tx.amount.replace(/,/g, "")) || 0;
+    return sum + num;
+  }, 0);
 
-    try {
-      const res = await fetch("https://bank-backend-anhp.onrender.com/scrape-receipt", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-      });
+  const currentBalance = BASE_BALANCE - totalWithdraw;
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.error);
-        return;
-      }
-
-      // Convert scraped data into our table format
-      const newTransaction = {
-        amount: data["Transferred amount"] || "",
-        date: data["Transaction Date"] || "",
-        reference: data["Transaction Reference"] || "",
-        narrative: data["Narrative"] || "",
-      };
-
-      // Add new transaction to the top
-      setTransactions((prev) => [newTransaction, ...prev]);
-
-      setShowModal(false);
-      setUrl("");
-    } catch (err) {
-      console.error(err);
-      alert("Scraping failed.");
-    }
-  };
+  const lastWithdraw = transactions[0];
 
   return (
-    <div className="container">
-      <Sidebar />
-      <Content transactions={transactions} />
+    <div className="app">
 
-      {/* ADD BUTTON */}
-      <button className="add-btn" onClick={() => setShowModal(true)}>
-        + Add
-      </button>
+      {/* LOGO */}
+      <img src="/logo.png" className="logo" alt="bank logo" />
 
-      {/* MODAL */}
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <h2>Add Receipt</h2>
+      {/* TOGGLE */}
+      <div className="toggle">
+        <button
+          className={view === "transactions" ? "active" : ""}
+          onClick={() => setView("transactions")}
+        >
+          Transactions
+        </button>
 
-            <input
-              type="text"
-              placeholder="Paste receipt link here..."
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-            />
+        <button
+          className={view === "balance" ? "active" : ""}
+          onClick={() => setView("balance")}
+        >
+          Balance
+        </button>
+      </div>
 
-            <div className="modal-buttons">
-              <button className="scrape-btn" onClick={handleScrape}>
-                Scrape
-              </button>
-
-              <button className="close-btn" onClick={() => setShowModal(false)}>
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* VIEW SWITCH */}
+      {view === "transactions" ? (
+        <Content transactions={transactions} />
+      ) : (
+        <Balance
+          balance={currentBalance}
+          lastWithdraw={lastWithdraw}
+          totalWithdraw={totalWithdraw}
+        />
       )}
+
     </div>
   );
 }

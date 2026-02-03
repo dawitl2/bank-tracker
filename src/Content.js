@@ -2,7 +2,6 @@ function Content({ transactions }) {
   return (
     <main className="content">
         <div className="mobile-logo-container">
-    <img src="logo.png" alt="Bank Logo" className="mobile-logo" />
   </div>
       <h1>Transactions</h1>
 

@@ -276,3 +276,70 @@ h1 {
   
 }
 
+
+.app{
+  max-width:430px;
+  margin:auto;
+  padding:20px;
+  background-color: white;
+}
+
+.logo{
+  display:block;
+  margin:20px auto;
+  width:280px;
+  margin-bottom: 50px;
+}
+
+/* TOGGLE */
+
+.toggle{
+  display:flex;
+  background:#ddd;
+  border-radius:40px;
+  overflow:hidden;
+  margin-bottom:25px;
+}
+
+.toggle button{
+  flex:1;
+  padding:14px;
+  border:none;
+  background:transparent;
+  font-size:16px;
+  font-weight:600;
+}
+
+.toggle .active{
+  background:#f4a300;
+  color:black;
+}
+
+/* CARD */
+
+.card{
+  width:100%;
+  border-radius:20px;
+  margin-bottom:30px;
+  margin-top: 20px;
+}
+
+/* BALANCE GRID */
+
+.balance-grid{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.balance-grid h1{
+  font-size:32px;
+}
+
+.divider{
+  width:1px;
+  height:80px;
+  background:#ccc;
+
+}
+
