@@ -12,7 +12,7 @@ function App() {
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
-        const res = await fetch("http://localhost:5000/transactions");
+        const res = await fetch("https://bank-backend-anhp.onrender.com/transactions");
         const data = await res.json();
         setTransactions(data);
       } catch (err) {
@@ -28,7 +28,7 @@ function App() {
     if (!url) return alert("Paste a receipt link!");
 
     try {
-      const res = await fetch("http://localhost:5000/scrape-receipt", {
+      const res = await fetch("https://bank-backend-anhp.onrender.com/scrape-receipt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
