@@ -3,7 +3,7 @@ import Content from "./Content";
 import Balance from "./Balance";
 import "./App.css";
 
-const BASE_BALANCE = 1500443;
+const BASE_BALANCE = 1212518;
 
 function App() {
   const [view, setView] = useState("transactions");
