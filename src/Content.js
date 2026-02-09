@@ -1,8 +1,7 @@
 function Content({ transactions }) {
   return (
     <main className="content">
-        <div className="mobile-logo-container">
-  </div>
+
       <h1>Transactions</h1>
 
       <table className="transaction-table">
@@ -19,7 +18,7 @@ function Content({ transactions }) {
 
         <tbody>
           {transactions.map((tx, index) => (
-            <tr key={tx.id}> {/* ✅ FIXED */}
+            <tr key={tx.id}>
               <td>{index + 1}</td>
               <td className="amount">{tx.amount}</td>
               <td>{tx.date}</td>
@@ -49,6 +48,7 @@ function Content({ transactions }) {
           ))}
         </tbody>
       </table>
+
     </main>
   );
 }
