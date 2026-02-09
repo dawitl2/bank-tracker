@@ -10,11 +10,12 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@sparticuz/chromium": "^143.0.4",
     "@supabase/supabase-js": "^2.93.3",
     "axios": "^1.13.4",
     "cheerio": "^1.2.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",
-    "puppeteer": "^24.36.1"
+    "puppeteer-core": "^24.37.2"
   }
 }

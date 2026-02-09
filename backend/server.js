@@ -1,9 +1,11 @@
 const express = require("express");
 const cors = require("cors");
-const puppeteer = require("puppeteer");
+const puppeteer = require("puppeteer-core");
+const chromium = require("@sparticuz/chromium");
 const supabase = require("./supabaseClient");
 
 const app = express();
+
 app.use(cors({
   origin: "*"
 }));
@@ -11,7 +13,6 @@ app.use(cors({
 app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
-
 
 
 /*
@@ -27,16 +28,21 @@ app.post("/scrape-receipt", async (req, res) => {
     return res.status(400).json({ error: "No URL provided" });
   }
 
+  let browser;
+
   try {
-    const browser = await puppeteer.launch({
-      headless: "new"
+
+    browser = await puppeteer.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: true,
     });
 
     const page = await browser.newPage();
 
     await page.goto(url, {
-      waitUntil: "networkidle2",
-      timeout: 0
+      waitUntil: "domcontentloaded",
+      timeout: 60000,
     });
 
     const result = await page.evaluate(() => {
@@ -56,40 +62,50 @@ app.post("/scrape-receipt", async (req, res) => {
       };
     });
 
-    await browser.close();
-
+    // 🔥 VERY IMPORTANT SAFETY CHECK
+    if (!result.amount) {
+      return res.status(500).json({
+        error: "Scraping worked but data not found. Bank layout may have changed."
+      });
+    }
 
     /*
     ========================================
-    SAVE TO DATABASE (NOW WITH URL)
+    SAVE TO DATABASE
     ========================================
     */
 
     const { data, error } = await supabase
       .from("transactions")
-      .insert([
-        {
-          amount: result.amount,
-          date: result.date,
-          reference: result.reference,
-          narrative: result.narrative,
-          receipt_url: url // ⭐⭐⭐ THIS IS THE FIX
-        }
-      ])
-      .select(); // returns inserted row
-
+      .insert([{
+        amount: result.amount,
+        date: result.date,
+        reference: result.reference,
+        narrative: result.narrative,
+        receipt_url: url
+      }])
+      .select();
 
     if (error) {
-      console.error(error);
+      console.error("SUPABASE ERROR:", error);
       return res.status(500).json({ error: "Database insert failed" });
     }
 
-    // send the CREATED row back
     res.json(data[0]);
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Scraping failed" });
+
+    console.error("SCRAPER CRASH:", err);
+
+    res.status(500).json({
+      error: "Scraping failed — server crashed running browser."
+    });
+
+  } finally {
+
+    if (browser) {
+      await browser.close();
+    }
   }
 });
 
@@ -117,5 +133,5 @@ app.get("/transactions", async (req, res) => {
 
 
 app.listen(PORT, () => {
-  console.log(`Backend running on http://localhost:${PORT}`);
+  console.log(`Backend running on port ${PORT}`);
 });
