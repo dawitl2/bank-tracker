@@ -360,3 +360,61 @@ h1 {
   border-top:1px solid #eee;
   margin-top:auto;
 }
+
+.empty-panel {
+    width: 100%;
+    min-height: 250px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+
+    margin-top: 20px;
+    padding: 40px;
+}
+
+.empty-panel h2 {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.empty-panel p {
+    color: #777;
+    text-align: center;
+    max-width: 400px;
+}
+
+
+
+
+.calculator-btn {
+
+  position: fixed;
+  bottom: 25px;
+  left: 25px;        /* 👈 opposite side */
+
+  background-color: #f4a300; /* nice green */
+  color: white;
+
+  border: none;
+  border-radius: 50px;
+
+  padding: 14px 18px;
+  font-size: 16px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+
+  z-index: 999;   /* VERY important */
+}
+
+.calculator-btn:hover{
+  transform: scale(1.05);
+}

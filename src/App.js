@@ -5,7 +5,7 @@ import Calculator from "./Calculator";
 import "./App.css";
 
 const BASE_BALANCE = 1212518;
-const VERSION = "1.2.1.2";
+const VERSION = "1.3.1.2";
 
 function App() {
 
@@ -15,6 +15,12 @@ function App() {
   // scraper states
   const [showModal, setShowModal] = useState(false);
   const [url, setUrl] = useState("");
+
+  // loading message state
+  const [loadingMessage, setLoadingMessage] = useState(true);
+
+  // ✅ NEW — calculator visibility
+  const [showCalculator, setShowCalculator] = useState(false);
 
 
 
@@ -29,7 +35,9 @@ function App() {
   }, []);
 
   const fetchTransactions = async () => {
+
     try {
+
       const res = await fetch(
         "https://bank-backend-anhp.onrender.com/transactions"
       );
@@ -37,8 +45,12 @@ function App() {
       const data = await res.json();
       setTransactions(data);
 
+      setLoadingMessage(false);
+
     } catch (err) {
+
       console.error("Fetch failed:", err);
+      setLoadingMessage(false);
     }
   };
 
@@ -75,7 +87,6 @@ function App() {
         return;
       }
 
-      // refresh table after insert
       await fetchTransactions();
 
       setShowModal(false);
@@ -98,7 +109,6 @@ function App() {
 
   const totalWithdraw = transactions.reduce((sum, tx) => {
 
-    // removes commas safely
     const num = parseFloat(
       tx.amount?.toString().replace(/,/g, "")
     ) || 0;
@@ -107,15 +117,36 @@ function App() {
 
   }, 0);
 
-
   const currentBalance = BASE_BALANCE - totalWithdraw;
-
   const lastWithdraw = transactions[0];
 
 
 
   return (
     <div className="app">
+
+      {/* LOADING MESSAGE */}
+      {loadingMessage && (
+        <div className="loading-overlay">
+          <div className="loading-box">
+
+            <button
+              className="loading-close"
+              onClick={() => setLoadingMessage(false)}
+            >
+              ✕
+            </button>
+
+            <p>
+              ከባንኩ መረጃ ለመውሰድ ጥቂት ሰከንዶች ሊወስድ ይችላል።
+              እባክዎ ትንሽ ይጠብቁ።
+            </p>
+
+          </div>
+        </div>
+      )}
+
+
 
       {/* LOGO */}
       <img src="/logo.png" className="logo" alt="bank logo" />
@@ -149,6 +180,8 @@ function App() {
           <>
             <Content transactions={transactions} />
 
+            {/* ✅ LEFT Calculator Button */}
+          
             {/* ADD BUTTON */}
             <button
               className="add-btn"
@@ -156,18 +189,35 @@ function App() {
             >
               +
             </button>
+
+              <button
+              className="calculator-btn"
+              onClick={() => setShowCalculator(!showCalculator)}
+            >
+              🧮 Calculator
+            </button>
+
           </>
         ) : (
-          <Balance
-            balance={currentBalance}
-            lastWithdraw={lastWithdraw}
-            totalWithdraw={totalWithdraw}
-          />
+          <>
+            <Balance
+              balance={currentBalance}
+              lastWithdraw={lastWithdraw}
+              totalWithdraw={totalWithdraw}
+            />
+
+            {/* ALSO show toggle on balance page */}
+            <button
+              className="calculator-btn"
+              onClick={() => setShowCalculator(!showCalculator)}
+            >
+              🧮 Calculator
+            </button>
+          </>
         )}
 
-
-        {/* CALCULATOR — sits above footer automatically */}
-        <Calculator />
+        {/* ✅ CALCULATOR (Visibility Controlled ONLY) */}
+        {showCalculator && <Calculator />}
 
       </div>
 
