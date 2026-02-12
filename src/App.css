@@ -396,7 +396,7 @@ h1 {
 
   position: fixed;
   bottom: 25px;
-  left: 25px;        /* 👈 opposite side */
+  left: 25px;      
 
   background-color: #f4a300; /* nice green */
   color: white;
