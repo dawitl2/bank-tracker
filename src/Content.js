@@ -41,7 +41,7 @@ function Content({ transactions }) {
                     More
                   </a>
                 ) : (
-                  "-"
+                  ".-"
                 )}
               </td>
             </tr>
