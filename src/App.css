@@ -418,3 +418,7 @@ h1 {
 .calculator-btn:hover{
   transform: scale(1.05);
 }
+
+.flagged-row {
+  background-color: #ffe3b3;
+}
