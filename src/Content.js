@@ -18,7 +18,10 @@ function Content({ transactions }) {
 
         <tbody>
           {transactions.map((tx, index) => (
-            <tr key={tx.id}>
+            <tr
+              key={tx.id}
+              className={tx.flagged ? "flagged-row" : ""}
+            >
               <td>{index + 1}</td>
               <td className="amount">{tx.amount}</td>
               <td>{tx.date}</td>
@@ -41,7 +44,7 @@ function Content({ transactions }) {
                     More
                   </a>
                 ) : (
-                  ".-"
+                  "-"
                 )}
               </td>
             </tr>
