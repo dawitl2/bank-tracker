@@ -214,8 +214,9 @@ h1 {
 
   /* Reduce padding for mobile */
   .content {
-    padding: 30px 16px;
+    padding: 30px 5px;
   }
+
 
   /* Logo at top center */
   .logo {
