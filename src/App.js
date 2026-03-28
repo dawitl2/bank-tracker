@@ -6,6 +6,7 @@ import "./App.css";
 
 const BASE_BALANCE = 1212518;
 const VERSION = "1.3.1.2";
+const PASSWORD = "dawit123"; // ✅ the password
 
 function App() {
 
@@ -18,14 +19,23 @@ function App() {
   const [loadingMessage, setLoadingMessage] = useState(true);
   const [showCalculator, setShowCalculator] = useState(false);
 
-  // existing filter
+  // existing filters
   const [constructionOnly, setConstructionOnly] = useState(false);
-
-  // ✅ NEW — balance filter
   const [apartmentOnly, setApartmentOnly] = useState(false);
 
+  // ✅ NEW — password/authentication
+  const [authenticated, setAuthenticated] = useState(false);
+  const [inputPassword, setInputPassword] = useState("");
+  const [passwordError, setPasswordError] = useState(false);
 
   useEffect(() => {
+    // check localStorage for authentication
+    const auth = localStorage.getItem("authenticated");
+    if (auth === "true") {
+      setAuthenticated(true);
+    } else {
+      setAuthenticated(false);
+    }
     fetchTransactions();
   }, []);
 
@@ -34,27 +44,22 @@ function App() {
       const res = await fetch(
         "https://bank-backend-anhp.onrender.com/transactions"
       );
-
       const data = await res.json();
       setTransactions(data);
       setLoadingMessage(false);
-
     } catch (err) {
       console.error("Fetch failed:", err);
       setLoadingMessage(false);
     }
   };
 
-
   const handleScrape = async () => {
-
     if (!url) {
       alert("Paste receipt link!");
       return;
     }
 
     try {
-
       const res = await fetch(
         "https://bank-backend-anhp.onrender.com/scrape-receipt",
         {
@@ -82,6 +87,16 @@ function App() {
     }
   };
 
+  // ✅ PASSWORD SUBMIT
+  const handlePasswordSubmit = () => {
+    if (inputPassword === PASSWORD) {
+      localStorage.setItem("authenticated", "true");
+      setAuthenticated(true);
+      setPasswordError(false);
+    } else {
+      setPasswordError(true);
+    }
+  };
 
   /*
   ===============================
@@ -98,7 +113,6 @@ function App() {
 
   const currentBalance = BASE_BALANCE - totalWithdraw;
   const lastWithdraw = transactions[0];
-
 
   /*
   ===============================
@@ -123,6 +137,28 @@ function App() {
         }, 0)
     : totalWithdraw;
 
+  // ✅ PASSWORD PROMPT
+  if (!authenticated) {
+    return (
+      <div className="password-overlay">
+        <div className="password-box">
+          <h2>Enter Password</h2>
+          <input
+            type="password"
+            value={inputPassword}
+            onChange={(e) => setInputPassword(e.target.value)}
+            placeholder="Password"
+          />
+          <button onClick={handlePasswordSubmit}>Submit</button>
+          {passwordError && (
+            <p style={{ color: "red", marginTop: "10px" }}>
+              Incorrect password
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="app">
@@ -136,7 +172,6 @@ function App() {
             >
               ✕
             </button>
-
             <p>
               ከባንኩ መረጃ ለመውሰድ ጥቂት ሰከንዶች ሊወስድ ይችላል።
               እባክዎ ትንሽ ይጠብቁ።
@@ -145,9 +180,7 @@ function App() {
         </div>
       )}
 
-
       <img src="/logo.png" className="logo" alt="bank logo" />
-
 
       <div className="toggle">
         <button
@@ -156,7 +189,6 @@ function App() {
         >
           Transactions
         </button>
-
         <button
           className={view === "balance" ? "active" : ""}
           onClick={() => setView("balance")}
@@ -164,7 +196,6 @@ function App() {
           Balance
         </button>
       </div>
-
 
       <div className="content">
 
@@ -214,11 +245,9 @@ function App() {
 
       </div>
 
-
       <footer className="footer">
         Version {VERSION}
       </footer>
-
 
       {showModal && (
         <div className="modal-overlay">
