@@ -424,21 +424,7 @@ h1 {
   background-color: #ffe3b3;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ /* Red for dave */
 
 .null-row {
   background-color: #ffd6d6; 
@@ -449,4 +435,26 @@ h1 {
   font-weight: 600;
   color: #4f46e5;
   cursor: pointer;
+}
+
+ /* construction only toggle */
+
+.transactions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.construction-toggle {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  background: #f3f3f3;
+  cursor: pointer;
+}
+
+.construction-toggle.active {
+  background: #facc15; /* yellow */
+  border-color: #eab308;
 }

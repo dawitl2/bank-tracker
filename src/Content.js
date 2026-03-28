@@ -1,8 +1,17 @@
-function Content({ transactions }) {
+function Content({ transactions, constructionOnly, setConstructionOnly }) {
   return (
     <main className="content">
 
-      <h1>Transactions</h1>
+      <div className="transactions-header">
+        <h1>Transactions</h1>
+
+        <button
+          className={`construction-toggle ${constructionOnly ? "active" : ""}`}
+          onClick={() => setConstructionOnly(!constructionOnly)}
+        >
+          Apartment Only
+        </button>
+      </div>
 
       <table className="transaction-table">
         <thead>

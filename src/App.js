@@ -12,55 +12,39 @@ function App() {
   const [view, setView] = useState("transactions");
   const [transactions, setTransactions] = useState([]);
 
-  // scraper states
   const [showModal, setShowModal] = useState(false);
   const [url, setUrl] = useState("");
 
-  // loading message state
   const [loadingMessage, setLoadingMessage] = useState(true);
-
-  // ✅ NEW — calculator visibility
   const [showCalculator, setShowCalculator] = useState(false);
 
+  // existing filter
+  const [constructionOnly, setConstructionOnly] = useState(false);
 
+  // ✅ NEW — balance filter
+  const [apartmentOnly, setApartmentOnly] = useState(false);
 
-  /*
-  ===============================
-  FETCH DATA
-  ===============================
-  */
 
   useEffect(() => {
     fetchTransactions();
   }, []);
 
   const fetchTransactions = async () => {
-
     try {
-
       const res = await fetch(
         "https://bank-backend-anhp.onrender.com/transactions"
       );
 
       const data = await res.json();
       setTransactions(data);
-
       setLoadingMessage(false);
 
     } catch (err) {
-
       console.error("Fetch failed:", err);
       setLoadingMessage(false);
     }
   };
 
-
-
-  /*
-  ===============================
-  SCRAPER
-  ===============================
-  */
 
   const handleScrape = async () => {
 
@@ -93,12 +77,10 @@ function App() {
       setUrl("");
 
     } catch (err) {
-
       console.error("Scrape error:", err);
       alert("Scraping failed.");
     }
   };
-
 
 
   /*
@@ -108,28 +90,46 @@ function App() {
   */
 
   const totalWithdraw = transactions.reduce((sum, tx) => {
-
     const num = parseFloat(
       tx.amount?.toString().replace(/,/g, "")
     ) || 0;
-
     return sum + num;
-
   }, 0);
 
   const currentBalance = BASE_BALANCE - totalWithdraw;
   const lastWithdraw = transactions[0];
 
 
+  /*
+  ===============================
+  FILTERS
+  ===============================
+  */
+
+  // transactions page filter
+  const filteredTransactions = constructionOnly
+    ? transactions.filter(tx => tx.flagged === true)
+    : transactions;
+
+  // ✅ NEW — withdraw filter only
+  const filteredWithdraw = apartmentOnly
+    ? transactions
+        .filter(tx => tx.flagged === true)
+        .reduce((sum, tx) => {
+          const num = parseFloat(
+            tx.amount?.toString().replace(/,/g, "")
+          ) || 0;
+          return sum + num;
+        }, 0)
+    : totalWithdraw;
+
 
   return (
     <div className="app">
 
-      {/* LOADING MESSAGE */}
       {loadingMessage && (
         <div className="loading-overlay">
           <div className="loading-box">
-
             <button
               className="loading-close"
               onClick={() => setLoadingMessage(false)}
@@ -141,20 +141,15 @@ function App() {
               ከባንኩ መረጃ ለመውሰድ ጥቂት ሰከንዶች ሊወስድ ይችላል።
               እባክዎ ትንሽ ይጠብቁ።
             </p>
-
           </div>
         </div>
       )}
 
 
-
-      {/* LOGO */}
       <img src="/logo.png" className="logo" alt="bank logo" />
 
 
-      {/* TOGGLE */}
       <div className="toggle">
-
         <button
           className={view === "transactions" ? "active" : ""}
           onClick={() => setView("transactions")}
@@ -168,21 +163,19 @@ function App() {
         >
           Balance
         </button>
-
       </div>
 
 
-
-      {/* MAIN VIEW */}
       <div className="content">
 
         {view === "transactions" ? (
           <>
-            <Content transactions={transactions} />
+            <Content
+              transactions={filteredTransactions}
+              constructionOnly={constructionOnly}
+              setConstructionOnly={setConstructionOnly}
+            />
 
-            {/* ✅ LEFT Calculator Button */}
-          
-            {/* ADD BUTTON */}
             <button
               className="add-btn"
               onClick={() => setShowModal(true)}
@@ -190,7 +183,7 @@ function App() {
               +
             </button>
 
-              <button
+            <button
               className="calculator-btn"
               onClick={() => setShowCalculator(!showCalculator)}
             >
@@ -203,10 +196,11 @@ function App() {
             <Balance
               balance={currentBalance}
               lastWithdraw={lastWithdraw}
-              totalWithdraw={totalWithdraw}
+              totalWithdraw={filteredWithdraw}   // ✅ ONLY CHANGE HERE
+              apartmentOnly={apartmentOnly}
+              setApartmentOnly={setApartmentOnly}
             />
 
-            {/* ALSO show toggle on balance page */}
             <button
               className="calculator-btn"
               onClick={() => setShowCalculator(!showCalculator)}
@@ -216,21 +210,16 @@ function App() {
           </>
         )}
 
-        {/* ✅ CALCULATOR (Visibility Controlled ONLY) */}
         {showCalculator && <Calculator />}
 
       </div>
 
 
-
-      {/* FOOTER */}
       <footer className="footer">
         Version {VERSION}
       </footer>
 
 
-
-      {/* MODAL */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal">

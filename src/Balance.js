@@ -1,9 +1,19 @@
-function Balance({ balance, lastWithdraw, totalWithdraw }) {
+function Balance({ balance, lastWithdraw, totalWithdraw, apartmentOnly, setApartmentOnly }) {
   return (
     <div className="balance-page">
 
       {/* CARD IMAGE */}
       <img src="/card.png" className="card" alt="bank card" />
+
+      {/* ✅ NEW TOGGLE */}
+      <div style={{ textAlign: "center", marginBottom: "10px" }}>
+        <button
+          className={`construction-toggle ${apartmentOnly ? "active" : ""}`}
+          onClick={() => setApartmentOnly(!apartmentOnly)}
+        >
+          Apartment Only
+        </button>
+      </div>
 
       <div className="balance-grid">
 
