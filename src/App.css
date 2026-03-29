@@ -476,7 +476,7 @@ h1 {
 /* =========================
    PC / DESKTOP VERSION
 ========================= */
-@media (min-width: 1024px) {
+@media (min-width: 1000px) {
 
   /* CENTER APP */
   .app {
