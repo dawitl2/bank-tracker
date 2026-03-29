@@ -230,6 +230,7 @@ function App() {
               totalWithdraw={filteredWithdraw}   // ✅ ONLY CHANGE HERE
               apartmentOnly={apartmentOnly}
               setApartmentOnly={setApartmentOnly}
+               transactions={transactions}
             />
 
             <button
