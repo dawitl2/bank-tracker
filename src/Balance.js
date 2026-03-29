@@ -9,7 +9,14 @@ import {
   ResponsiveContainer
 } from "recharts";
 
-function Balance({ balance, lastWithdraw, totalWithdraw, transactions = [] }) {
+function Balance({
+  balance,
+  lastWithdraw,
+  totalWithdraw,
+  transactions = [],
+  apartmentOnly,
+  setApartmentOnly
+}) {
 
   // =========================
   // FORMAT DATE (Month + Day)
@@ -51,7 +58,7 @@ function Balance({ balance, lastWithdraw, totalWithdraw, transactions = [] }) {
 
       if (index % 2 === 0) {
         result.push({
-          date: formatDate(tx.date), // ✅ formatted here
+          date: formatDate(tx.date),
           Mehrt: mehrt,
           Dave: dave,
           Yis: yis
@@ -64,7 +71,7 @@ function Balance({ balance, lastWithdraw, totalWithdraw, transactions = [] }) {
   }, [transactions]);
 
   // =========================
-  // TOTALS
+  // TOTALS (for summary)
   // =========================
   const totals = useMemo(() => {
 
@@ -96,9 +103,22 @@ function Balance({ balance, lastWithdraw, totalWithdraw, transactions = [] }) {
   return (
     <div className="balance-page">
 
+      {/* CARD */}
       <img src="/card.png" className="card" alt="bank card" />
 
-      {/* BALANCE + WITHDRAW */}
+      {/* ✅ APARTMENT ONLY BUTTON (RESTORED) */}
+      <div style={{ textAlign: "center", marginBottom: "10px" }}>
+        <button
+          className={`construction-toggle ${apartmentOnly ? "active" : ""}`}
+          onClick={() => setApartmentOnly(!apartmentOnly)}
+        >
+          Apartment Only
+        </button>
+      </div>
+
+      {/* =========================
+          BALANCE + WITHDRAW
+      ========================= */}
       <div className="balance-grid">
 
         <div>
@@ -128,7 +148,9 @@ function Balance({ balance, lastWithdraw, totalWithdraw, transactions = [] }) {
 
       </div>
 
-      {/* SUMMARY (ORDER FIXED) */}
+      {/* =========================
+          SUMMARY (SIDE BY SIDE)
+      ========================= */}
       <div
         style={{
           display: "flex",
@@ -139,7 +161,7 @@ function Balance({ balance, lastWithdraw, totalWithdraw, transactions = [] }) {
       >
 
         <div>
-          <p style={{ color: "gold", fontWeight: "600" }}>● Mehrt</p>
+          <p style={{ color: "#f4a300", fontWeight: "600" }}>● Mehret</p>
           <p>{totals.mehrt.toLocaleString()}</p>
           <small>{percent(totals.mehrt)}%</small>
         </div>
@@ -158,7 +180,9 @@ function Balance({ balance, lastWithdraw, totalWithdraw, transactions = [] }) {
 
       </div>
 
-      {/* GRAPH */}
+      {/* =========================
+          GRAPH
+      ========================= */}
       <div style={{ width: "100%", height: 300, marginTop: "20px" }}>
         <ResponsiveContainer>
           <LineChart data={processed}>
@@ -176,7 +200,7 @@ function Balance({ balance, lastWithdraw, totalWithdraw, transactions = [] }) {
 
       {/* GRAPH LABEL */}
       <p style={{ textAlign: "center", marginTop: "10px", fontSize: "0.9rem" }}>
-        Cumulative spending over time (Month & Day view)
+        Cumulative spending over time
       </p>
 
     </div>
