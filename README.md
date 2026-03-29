@@ -53,9 +53,9 @@ This system allows users to:
 
 ### 🎨 Smart Categorization
 Transactions are visually categorized:
-- 🟡 Yellow → Apartment (Mehrt)
-- 🔴 Red → Dave
-- ⚪ White/Default → Yis
+- 🟡 Yellow
+- 🔴 Red 
+- ⚪ White/Default
 
 ---
 
@@ -68,10 +68,7 @@ Transactions are visually categorized:
 ---
 
 ### 📊 Spending Analytics
-- Side-by-side comparison of spending:
-  - Mehrt
-  - Yis
-  - Dave
+- Side-by-side comparison of spending
 - Percentage contribution per person
 - Cumulative spending graph over time
 
@@ -161,6 +158,6 @@ The goal was to create a system that is:
 
 ## 👨‍💻 Author
 
-Developed as a custom project with assistance from AI tools.
+Developed as a custom project with assistance from abyssinia bank (ALL DATA IN THE GITHUB REPO USED ARE SAMPLE).
 
 ---
