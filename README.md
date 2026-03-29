@@ -1,70 +1,166 @@
-# Getting Started with Create React App
+# 💳 Bank Tracker (Receipt-Based Expense Tracker)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A custom-built web application designed to track and organize bank transactions based on receipt data.
 
-## Available Scripts
+This project was developed as a **requested solution** for managing construction expenses within a shared family bank account.
 
-In the project directory, you can run:
+---
 
-### `npm start`
+## 📸 Screenshots
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+![Transactions View](./screenshot1.png)
+![Balance & Analytics](./screenshot2.png)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+---
 
-### `npm test`
+## 🚀 Overview
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+This system allows users to:
 
-### `npm run build`
+- Track all transactions from a single bank account
+- Separate spending by different individuals
+- Monitor total withdrawals and remaining balance
+- View receipt details directly from links
+- Analyze spending patterns visually
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+---
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## ⚙️ How It Works
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+1. The system starts with a **base balance**
+2. Each transaction is added via a **receipt link**
+3. The backend **extracts transaction data** from the receipt
+4. Data is stored and displayed in a structured table
+5. The system automatically:
+   - Calculates total withdrawals
+   - Updates current balance
+   - Categorizes transactions by user
 
-### `npm run eject`
+---
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## 🎯 Key Features
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### 🧾 Transaction Tracking
+- Displays all transactions in a table format
+- Includes:
+  - Amount
+  - Date
+  - Reference number
+  - Narrative
+- Direct link to view original receipt
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+---
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### 🎨 Smart Categorization
+Transactions are visually categorized:
+- 🟡 Yellow → Apartment (Mehrt)
+- 🔴 Red → Dave
+- ⚪ White/Default → Yis
 
-## Learn More
+---
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### 💰 Balance System
+- Shows:
+  - Current balance
+  - Total withdrawn amount
+  - Last transaction details
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+---
 
-### Code Splitting
+### 📊 Spending Analytics
+- Side-by-side comparison of spending:
+  - Mehrt
+  - Yis
+  - Dave
+- Percentage contribution per person
+- Cumulative spending graph over time
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+---
 
-### Analyzing the Bundle Size
+### 🔍 Receipt Scraping (Advanced)
+The system automatically extracts transaction data using:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+- 🔗 Receipt links
+- 📷 Image-based receipt uploads
+- 🔳 QR code scanning
 
-### Making a Progressive Web App
+This allows flexible and fast data entry without manual input.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+---
 
-### Advanced Configuration
+### 🧮 Built-in Calculator
+- Quick calculations inside the app
+- Toggle visibility anytime
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+---
+
+### 🔐 Simple Authentication
+- Password-protected access
+- Device-based authentication (no repeated login on same device)
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+- React.js
+- CSS (custom styling, mobile-first design)
+
+### Backend
+- Node.js (Express)
+- Puppeteer (for web scraping)
+
+### Database
+- Supabase
 
 ### Deployment
+- Vercel (Frontend)
+- Render (Backend)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+---
 
-### `npm run build` fails to minify
+## 📱 Design Approach
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- Mobile-first UI
+- Responsive layout (mobile + desktop support)
+- Clean and minimal interface
+- Fast and lightweight
+
+---
+
+## 📌 Project Context
+
+This project was built as a **custom client request** to solve a real-world problem:
+
+Managing construction expenses from a shared bank account used by multiple individuals.
+
+The goal was to create a system that is:
+- Simple to use
+- Visually clear
+- Accurate in tracking
+- Minimal manual work
+
+---
+
+## 🔮 Future Improvements
+
+- Export data (CSV / Excel)
+- Advanced filtering
+- Monthly analytics
+- Improved AI-based receipt parsing
+- Multi-user authentication system
+
+---
+
+## ⚠️ Notes
+
+- Data accuracy depends on receipt format consistency
+- Scraping may require updates if bank layouts change
+
+---
+
+## 👨‍💻 Author
+
+Developed as a custom project with assistance from AI tools.
+
+---
