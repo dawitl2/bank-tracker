@@ -3,7 +3,6 @@ const cors = require("cors");
 const puppeteer = require("puppeteer-core");
 const chromium = require("@sparticuz/chromium");
 const supabase = require("./supabaseClient");
-const fetch = require("node-fetch"); // ✅ NEW
 
 const app = express();
 
@@ -11,19 +10,18 @@ app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
-const BASE_URL = "https://bank-backend-anhp.onrender.com"; // ✅ your backend
+const BASE_URL = "https://bank-backend-anhp.onrender.com";
 
 
 /*
 ========================================
-KEEP ALIVE SYSTEM (SMART ETHIOPIAN TIME)
+KEEP ALIVE SYSTEM (ETHIOPIAN TIME)
 ========================================
 */
 
 const isActiveTime = () => {
   const now = new Date();
 
-  // Ethiopia timezone
   const ethTime = new Intl.DateTimeFormat("en-US", {
     timeZone: "Africa/Addis_Ababa",
     hour: "numeric",
@@ -32,7 +30,7 @@ const isActiveTime = () => {
 
   const hour = parseInt(ethTime);
 
-  // Active between 6 AM and 11:59 PM
+  // Active: 6 AM → 11:59 PM
   return hour >= 6 && hour < 24;
 };
 
@@ -45,7 +43,7 @@ const pingServer = async () => {
   }
 };
 
-// run every 5 minutes
+// Run every 5 minutes
 setInterval(() => {
   if (isActiveTime()) {
     pingServer();
@@ -157,24 +155,30 @@ app.post("/scrape-receipt", async (req, res) => {
       .select();
 
     if (error) {
-      console.error(error);
-      return res.status(500).json({ error: "Database insert failed" });
+      console.error("SUPABASE ERROR:", error);
+      return res.status(500).json({
+        error: "Database insert failed"
+      });
     }
 
     res.json(data[0]);
 
   } catch (err) {
 
-    console.error(err);
+    console.error("SCRAPER CRASH:", err);
 
     res.status(500).json({
       error: "Scraper crashed."
     });
 
   } finally {
-    if (browser) await browser.close();
+
+    if (browser) {
+      await browser.close();
+    }
   }
 });
+
 
 
 /*
@@ -197,6 +201,7 @@ app.get("/transactions", async (req, res) => {
 
   res.json(data);
 });
+
 
 
 /*

@@ -5,7 +5,7 @@ import Calculator from "./Calculator";
 import "./App.css";
 
 const BASE_BALANCE = 1212518;
-const VERSION = "1.1.4.4"; // html.().UI.back
+const VERSION = "1.1.4.5"; // html.().UI.back
 const PASSWORD = "dawit123"; // ✅ the password
 
 function App() {
