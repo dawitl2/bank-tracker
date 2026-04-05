@@ -4,7 +4,7 @@ import Balance from "./Balance";
 import Calculator from "./Calculator";
 import "./App.css";
 
-const BASE_BALANCE = 1212518;
+const BASE_BALANCE = 1209518;
 const VERSION = "1.1.4.6"; // html.().UI.back
 const PASSWORD = "dawit123"; // ✅ the password
 
