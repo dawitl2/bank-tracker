@@ -555,3 +555,29 @@ h1 {
 
 
 }
+
+/* iOS override fix */
+
+/* Remove blue link color */
+a {
+  color: inherit !important;
+  text-decoration: none;
+}
+
+/* Fix buttons turning blue */
+button {
+  color: inherit !important;
+  background: inherit;
+  border: none;
+}
+
+/* Prevent iOS auto styling */
+input, textarea, button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Disable tap highlight (blue flash) */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
