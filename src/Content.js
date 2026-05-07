@@ -29,13 +29,15 @@ function Content({ transactions, constructionOnly, setConstructionOnly }) {
           {transactions.map((tx, index) => (
             <tr
               key={tx.id}
-              className={
-                tx.flagged === true
-                  ? "flagged-row"
-                  : tx.flagged === null
-                  ? "null-row"
-                  : ""
-              }
+             className={
+  tx.is_withdraw === false
+    ? "deposit-row"
+    : tx.flagged === true
+    ? "flagged-row"
+    : tx.flagged === null
+    ? "null-row"
+    : ""
+}
             >
               <td>{index + 1}</td>
               <td className="amount">{tx.amount}</td>

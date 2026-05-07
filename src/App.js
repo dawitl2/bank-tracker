@@ -104,14 +104,39 @@ function App() {
   ===============================
   */
 
-  const totalWithdraw = transactions.reduce((sum, tx) => {
+const totalWithdraw = transactions
+  .filter(tx => tx.is_withdraw !== false)
+  .reduce((sum, tx) => {
+
     const num = parseFloat(
       tx.amount?.toString().replace(/,/g, "")
     ) || 0;
+
     return sum + num;
+
   }, 0);
 
-  const currentBalance = BASE_BALANCE - totalWithdraw;
+
+// ✅ deposits / incoming
+const totalDeposits = transactions
+  .filter(tx => tx.is_withdraw === false)
+  .reduce((sum, tx) => {
+
+    const num = parseFloat(
+      tx.amount?.toString().replace(/,/g, "")
+    ) || 0;
+
+    return sum + num;
+
+  }, 0);
+
+
+// ✅ FINAL BALANCE
+const currentBalance =
+  BASE_BALANCE
+  - totalWithdraw
+  + totalDeposits;
+
   const lastWithdraw = transactions[0];
 
   /*
