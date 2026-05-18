@@ -5,8 +5,8 @@ import Calculator from "./Calculator";
 import "./App.css";
 
 const BASE_BALANCE = 1209518;
-const VERSION = "1.1.4.6"; // html.().UI.back
-const PASSWORD = "dawit123"; // ✅ the password
+const VERSION = "1.2.2.0";
+const PASSWORD = "dawit123";
 
 function App() {
 
@@ -19,52 +19,68 @@ function App() {
   const [loadingMessage, setLoadingMessage] = useState(true);
   const [showCalculator, setShowCalculator] = useState(false);
 
-  // existing filters
+  // ONLY KEEP THIS FOR BALANCE TAB
   const [constructionOnly, setConstructionOnly] = useState(false);
-  const [apartmentOnly, setApartmentOnly] = useState(false);
 
-  // ✅ NEW — password/authentication
+  // DROPDOWN FILTER
+  const [personFilter, setPersonFilter] = useState("ALL");
+
+  // AUTH
   const [authenticated, setAuthenticated] = useState(false);
   const [inputPassword, setInputPassword] = useState("");
   const [passwordError, setPasswordError] = useState(false);
 
   useEffect(() => {
-    // check localStorage for authentication
+
     const auth = localStorage.getItem("authenticated");
+
     if (auth === "true") {
       setAuthenticated(true);
-    } else {
-      setAuthenticated(false);
     }
+
     fetchTransactions();
+
   }, []);
 
   const fetchTransactions = async () => {
+
     try {
+
       const res = await fetch(
         "https://bank-backend-anhp.onrender.com/transactions"
       );
+
       const data = await res.json();
+
       setTransactions(data);
-      setLoadingMessage(false);
+
     } catch (err) {
-      console.error("Fetch failed:", err);
+
+      console.error("FETCH ERROR:", err);
+
+    } finally {
+
       setLoadingMessage(false);
+
     }
   };
 
   const handleScrape = async () => {
+
     if (!url) {
       alert("Paste receipt link!");
       return;
     }
 
     try {
+
       const res = await fetch(
         "https://bank-backend-anhp.onrender.com/scrape-receipt",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json"
+          },
           body: JSON.stringify({ url }),
         }
       );
@@ -82,105 +98,154 @@ function App() {
       setUrl("");
 
     } catch (err) {
-      console.error("Scrape error:", err);
+
+      console.error("SCRAPE ERROR:", err);
       alert("Scraping failed.");
+
     }
   };
 
-  // ✅ PASSWORD SUBMIT
   const handlePasswordSubmit = () => {
+
     if (inputPassword === PASSWORD) {
+
       localStorage.setItem("authenticated", "true");
+
       setAuthenticated(true);
       setPasswordError(false);
+
     } else {
+
       setPasswordError(true);
+
     }
   };
 
   /*
-  ===============================
-  BALANCE CALCULATIONS
-  ===============================
+  =========================
+  TRANSACTION FILTERING
+  =========================
   */
 
-const totalWithdraw = transactions
-  .filter(tx => tx.is_withdraw !== false)
-  .reduce((sum, tx) => {
+  const filteredTransactions = transactions.filter((tx) => {
 
-    const num = parseFloat(
-      tx.amount?.toString().replace(/,/g, "")
-    ) || 0;
+    if (personFilter === "ALL") {
+      return true;
+    }
 
-    return sum + num;
+    if (personFilter === "Withdraw") {
+      return tx.is_withdraw !== false;
+    }
 
-  }, 0);
+    if (personFilter === "Deposit") {
+      return tx.is_withdraw === false;
+    }
 
+    if (personFilter === "MIHRET") {
+      return tx.person === "mihret";
+    }
 
-// ✅ deposits / incoming
-const totalDeposits = transactions
-  .filter(tx => tx.is_withdraw === false)
-  .reduce((sum, tx) => {
+    if (personFilter === "ASNAKE") {
+      return tx.person === "asnake";
+    }
 
-    const num = parseFloat(
-      tx.amount?.toString().replace(/,/g, "")
-    ) || 0;
+    if (personFilter === "YISS") {
+      return tx.person === "yiss";
+    }
 
-    return sum + num;
+    if (personFilter === "DAWIT") {
+      return tx.person === "dawit";
+    }
 
-  }, 0);
+    if (personFilter === "CONSTRUCTION") {
 
+      return (
+        tx.person === "mihret" ||
+        tx.person === "asnake" ||
+        tx.person === null
+      );
+    }
 
-// ✅ FINAL BALANCE
-const currentBalance =
-  BASE_BALANCE
-  - totalWithdraw
-  + totalDeposits;
+    return true;
 
-  const lastWithdraw = transactions[0];
+  });
 
   /*
-  ===============================
-  FILTERS
-  ===============================
+  =========================
+  BALANCE CALCULATION
+  =========================
   */
 
-  // transactions page filter
-  const filteredTransactions = constructionOnly
-    ? transactions.filter(tx => tx.flagged === true)
-    : transactions;
+  let totalWithdraw = 0;
 
-  // ✅ NEW — withdraw filter only
-  const filteredWithdraw = apartmentOnly
-    ? transactions
-        .filter(tx => tx.flagged === true)
-        .reduce((sum, tx) => {
-          const num = parseFloat(
-            tx.amount?.toString().replace(/,/g, "")
-          ) || 0;
-          return sum + num;
-        }, 0)
-    : totalWithdraw;
+  transactions.forEach((tx) => {
 
-  // ✅ PASSWORD PROMPT
+    // BALANCE TAB CONSTRUCTION FILTER
+    if (
+      constructionOnly &&
+      tx.person !== "mihret" &&
+      tx.person !== "asnake" &&
+      tx.person !== null
+    ) {
+      return;
+    }
+
+    const amount = parseFloat(
+      tx.amount?.toString().replace(/,/g, "")
+    ) || 0;
+
+    // deposits
+    if (tx.is_withdraw === false) {
+      totalWithdraw -= amount;
+    }
+
+    // withdraws
+    else {
+      totalWithdraw += amount;
+    }
+
+  });
+
+  const currentBalance = BASE_BALANCE - totalWithdraw;
+
+  const lastWithdraw = transactions.find(
+    tx => tx.is_withdraw !== false
+  );
+
+  /*
+  =========================
+  PASSWORD SCREEN
+  =========================
+  */
+
   if (!authenticated) {
+
     return (
       <div className="password-overlay">
+
         <div className="password-box">
+
           <h2>Enter Password</h2>
+
           <input
             type="password"
+            placeholder="Password"
             value={inputPassword}
             onChange={(e) => setInputPassword(e.target.value)}
-            placeholder="Password"
           />
-          <button onClick={handlePasswordSubmit}>Submit</button>
+
+          <button onClick={handlePasswordSubmit}>
+            Submit
+          </button>
+
           {passwordError && (
             <p style={{ color: "red", marginTop: "10px" }}>
               Incorrect password
             </p>
           )}
+
         </div>
+
       </div>
     );
   }
@@ -190,46 +255,58 @@ const currentBalance =
 
       {loadingMessage && (
         <div className="loading-overlay">
+
           <div className="loading-box">
+
             <button
               className="loading-close"
               onClick={() => setLoadingMessage(false)}
             >
               ✕
             </button>
+
             <p>
               ከባንኩ መረጃ ለመውሰድ ጥቂት ሰከንዶች ሊወስድ ይችላል።
-              እባክዎ ትንሽ ይጠብቁ።
             </p>
+
           </div>
+
         </div>
       )}
 
-      <img src="/logo.png" className="logo" alt="bank logo" />
+      <img
+        src="/logo.png"
+        className="logo"
+        alt="bank logo"
+      />
 
       <div className="toggle">
+
         <button
           className={view === "transactions" ? "active" : ""}
           onClick={() => setView("transactions")}
         >
           Transactions
         </button>
+
         <button
           className={view === "balance" ? "active" : ""}
           onClick={() => setView("balance")}
         >
           Balance
         </button>
+
       </div>
 
       <div className="content">
 
         {view === "transactions" ? (
           <>
+
             <Content
               transactions={filteredTransactions}
-              constructionOnly={constructionOnly}
-              setConstructionOnly={setConstructionOnly}
+              personFilter={personFilter}
+              setPersonFilter={setPersonFilter}
             />
 
             <button
@@ -249,13 +326,14 @@ const currentBalance =
           </>
         ) : (
           <>
+
             <Balance
               balance={currentBalance}
               lastWithdraw={lastWithdraw}
-              totalWithdraw={filteredWithdraw}   // ✅ ONLY CHANGE HERE
-              apartmentOnly={apartmentOnly}
-              setApartmentOnly={setApartmentOnly}
-               transactions={transactions}
+              totalWithdraw={totalWithdraw}
+              transactions={transactions}
+              constructionOnly={constructionOnly}
+              setConstructionOnly={setConstructionOnly}
             />
 
             <button
@@ -264,6 +342,7 @@ const currentBalance =
             >
               🧮 Calculator
             </button>
+
           </>
         )}
 
@@ -277,6 +356,7 @@ const currentBalance =
 
       {showModal && (
         <div className="modal-overlay">
+
           <div className="modal">
 
             <h2>Add Receipt</h2>
@@ -307,6 +387,7 @@ const currentBalance =
             </div>
 
           </div>
+
         </div>
       )}
 
