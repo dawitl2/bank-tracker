@@ -5,11 +5,20 @@ import Calculator from "./Calculator";
 import "./App.css";
 
 const BASE_BALANCE = 1209518;
-const VERSION = "1.3.3.6"; // html.css.sys.db
+const VERSION = "1.3.3.11"; // html.css.sys.db
 const PASSWORD = "dawit123";
 const API_URL =
   process.env.REACT_APP_API_URL || "https://bank-backend-anhp.onrender.com";
+const SUPABASE_URL = "https://ywplzexakisliebyjtyf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_nmA6IJsDGUVki5i0smS1Tg_MLXy5_wX";
 const GENERATED_TRANSACTION_FIELDS = ["id", "created_at"];
+const PERSON_OPTIONS = [
+  { label: "Dawit", value: "dawit" },
+  { label: "Mihret", value: "mihret" },
+  { label: "Asnake", value: "asnake" },
+  { label: "Yiss", value: "yiss" },
+  { label: "Null", value: "null" }
+];
 
 function App() {
 
@@ -21,6 +30,8 @@ function App() {
   const [scrapeLoading, setScrapeLoading] = useState(false);
   const [receiptDraft, setReceiptDraft] = useState(null);
   const [draftSaving, setDraftSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const [loadingMessage, setLoadingMessage] = useState(true);
   const [showCalculator, setShowCalculator] = useState(false);
@@ -76,6 +87,56 @@ function App() {
       return {
         error: `Request failed with status ${res.status}`
       };
+    }
+  };
+
+  const updateTransactionDirectly = async (id, transaction) => {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/transactions?id=eq.${id}&select=*`,
+      {
+        method: "PATCH",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=representation"
+        },
+        body: JSON.stringify(transaction)
+      }
+    );
+
+    const data = await readApiResponse(res);
+
+    if (!res.ok) {
+      throw new Error(data.details || data.message || data.error || "Update failed");
+    }
+
+    if (!Array.isArray(data) || data.length === 0) {
+      throw new Error("Supabase update policy is missing or this row is not visible for update.");
+    }
+  };
+
+  const deleteTransactionDirectly = async (id) => {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/transactions?id=eq.${id}&select=id`,
+      {
+        method: "DELETE",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          Prefer: "return=representation"
+        }
+      }
+    );
+
+    const data = await readApiResponse(res);
+
+    if (!res.ok) {
+      throw new Error(data.details || data.message || data.error || "Delete failed");
+    }
+
+    if (!Array.isArray(data) || data.length === 0) {
+      throw new Error("Supabase delete policy is missing or this row is not visible for delete.");
     }
   };
 
@@ -160,7 +221,34 @@ function App() {
 
     try {
       if (receiptDraft.id) {
-        alert("The backend is still auto-saving during scrape. Deploy the updated backend first so approval creates only one edited row.");
+        const res = await fetch(`${API_URL}/transactions/${receiptDraft.id}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(transaction)
+        });
+
+        const data = await readApiResponse(res);
+
+        if (!res.ok) {
+          if (res.status === 404) {
+            await updateTransactionDirectly(receiptDraft.id, transaction);
+            await fetchTransactions();
+            setReceiptDraft(null);
+            setShowModal(false);
+            setUrl("");
+            return;
+          }
+
+          alert(data.details || data.error || "Update failed");
+          return;
+        }
+
+        await fetchTransactions();
+        setReceiptDraft(null);
+        setShowModal(false);
+        setUrl("");
         return;
       }
 
@@ -204,6 +292,51 @@ function App() {
     setShowModal(false);
     setReceiptDraft(null);
     setUrl("");
+  };
+
+  const handleEditTransaction = (tx) => {
+    setUrl(tx.receipt_url || "");
+    setReceiptDraft({ ...tx });
+    setShowModal(true);
+  };
+
+  const handleDeleteTransaction = (tx) => {
+    setDeleteTarget(tx);
+  };
+
+  const confirmDeleteTransaction = async () => {
+    if (!deleteTarget) return;
+
+    setDeleteLoading(true);
+
+    try {
+      const res = await fetch(`${API_URL}/transactions/${deleteTarget.id}`, {
+        method: "DELETE"
+      });
+
+      if (!res.ok) {
+        const data = await readApiResponse(res);
+        if (res.status === 404) {
+          await deleteTransactionDirectly(deleteTarget.id);
+          await fetchTransactions();
+          setDeleteTarget(null);
+          return;
+        }
+
+        alert(data.details || data.error || "Delete failed");
+        return;
+      }
+
+      await fetchTransactions();
+      setDeleteTarget(null);
+
+    } catch (err) {
+      console.error("DELETE ERROR:", err);
+      alert(err.message || "Delete failed.");
+
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const handlePasswordSubmit = () => {
@@ -415,6 +548,8 @@ function App() {
               transactions={filteredTransactions}
               personFilter={personFilter}
               setPersonFilter={setPersonFilter}
+              onEditTransaction={handleEditTransaction}
+              onDeleteTransaction={handleDeleteTransaction}
             />
 
             <button
@@ -467,15 +602,17 @@ function App() {
 
           <div className="modal">
 
-            <h2>Add Receipt</h2>
+            <h2>{receiptDraft?.id ? "Edit Transaction" : "Add Receipt"}</h2>
 
-              <input
-                type="text"
-                placeholder="Paste receipt link..."
-                value={url}
-                disabled={scrapeLoading || draftSaving}
-                onChange={(e) => setUrl(e.target.value)}
-              />
+              {!receiptDraft?.id && (
+                <input
+                  type="text"
+                  placeholder="Paste receipt link..."
+                  value={url}
+                  disabled={scrapeLoading || draftSaving}
+                  onChange={(e) => setUrl(e.target.value)}
+                />
+              )}
 
               {receiptDraft && (
                 <div className="receipt-draft-box">
@@ -490,7 +627,23 @@ function App() {
                         <label key={field} className="draft-field">
                           <span>{field}</span>
 
-                          {typeof value === "boolean" ? (
+                          {field === "person" ? (
+                            <select
+                              value={value ?? "null"}
+                              onChange={(e) =>
+                                handleDraftChange(field, e.target.value)
+                              }
+                            >
+                              {PERSON_OPTIONS.map((option) => (
+                                <option
+                                  key={option.value}
+                                  value={option.value}
+                                >
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          ) : typeof value === "boolean" ? (
                             <select
                               value={String(value)}
                               onChange={(e) =>
@@ -525,13 +678,15 @@ function App() {
 
             <div className="modal-buttons">
 
-              <button
-                className="scrape-btn"
-                onClick={handleScrape}
-                disabled={scrapeLoading || draftSaving}
-              >
-                {receiptDraft ? "Scrape Again" : "Scrape"}
-              </button>
+              {!receiptDraft?.id && (
+                <button
+                  className="scrape-btn"
+                  onClick={handleScrape}
+                  disabled={scrapeLoading || draftSaving}
+                >
+                  {receiptDraft ? "Scrape Again" : "Scrape"}
+                </button>
+              )}
 
               {receiptDraft && (
                 <button
@@ -539,7 +694,11 @@ function App() {
                   onClick={handleSaveDraft}
                   disabled={draftSaving}
                 >
-                  {draftSaving ? "Saving..." : "Approve & Save"}
+                  {draftSaving
+                    ? "Saving..."
+                    : receiptDraft.id
+                      ? "Save Changes"
+                      : "Approve & Save"}
                 </button>
               )}
 
@@ -555,6 +714,36 @@ function App() {
 
           </div>
 
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="confirm-overlay">
+          <div className="confirm-box">
+            <h2>Delete Transaction?</h2>
+
+            <p>
+              This will remove {deleteTarget.amount || "this transaction"} from the database.
+            </p>
+
+            <div className="confirm-actions">
+              <button
+                className="close-btn"
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleteLoading}
+              >
+                Close
+              </button>
+
+              <button
+                className="delete-confirm-btn"
+                onClick={confirmDeleteTransaction}
+                disabled={deleteLoading}
+              >
+                {deleteLoading ? "Deleting..." : "Yes, Delete"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

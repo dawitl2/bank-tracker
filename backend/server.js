@@ -231,6 +231,84 @@ app.post("/transactions", async (req, res) => {
 });
 
 
+/*
+========================================
+UPDATE TRANSACTION
+========================================
+*/
+
+app.patch("/transactions/:id", async (req, res) => {
+
+  const { id } = req.params;
+  const transaction = cleanTransactionPayload(req.body);
+
+  if (!id) {
+    return res.status(400).json({ error: "Transaction id is required" });
+  }
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .update(transaction)
+    .eq("id", id)
+    .select();
+
+  if (error) {
+    console.error("SUPABASE UPDATE ERROR:", error);
+    return res.status(500).json({
+      error: "Database update failed",
+      details: error.message
+    });
+  }
+
+  if (!data.length) {
+    return res.status(404).json({
+      error: "Transaction not found or update is not allowed"
+    });
+  }
+
+  res.json(data[0]);
+});
+
+
+
+/*
+========================================
+DELETE TRANSACTION
+========================================
+*/
+
+app.delete("/transactions/:id", async (req, res) => {
+
+  const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).json({ error: "Transaction id is required" });
+  }
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .delete()
+    .eq("id", id)
+    .select("id");
+
+  if (error) {
+    console.error("SUPABASE DELETE ERROR:", error);
+    return res.status(500).json({
+      error: "Database delete failed",
+      details: error.message
+    });
+  }
+
+  if (!data.length) {
+    return res.status(404).json({
+      error: "Transaction not found or delete is not allowed"
+    });
+  }
+
+  res.status(204).send();
+});
+
+
 
 /*
 ========================================

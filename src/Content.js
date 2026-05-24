@@ -3,9 +3,13 @@ import { useState } from "react";
 function Content({
   transactions,
   personFilter,
-  setPersonFilter
+  setPersonFilter,
+  onEditTransaction,
+  onDeleteTransaction
 }) {
   const [open, setOpen] = useState(false);
+  const [actionMenu, setActionMenu] = useState(null);
+  const [longPressTimer, setLongPressTimer] = useState(null);
 
   const options = [
     "ALL",
@@ -21,6 +25,44 @@ function Content({
   const handleSelect = (value) => {
     setPersonFilter(value);
     setOpen(false);
+  };
+
+  const openActionMenu = (event, tx) => {
+    event.preventDefault();
+
+    const clientX = event.clientX ?? event.changedTouches?.[0]?.clientX ?? 0;
+    const clientY = event.clientY ?? event.changedTouches?.[0]?.clientY ?? 0;
+
+    setActionMenu({
+      tx,
+      x: Math.min(clientX, window.innerWidth - 190),
+      y: Math.min(clientY, window.innerHeight - 180)
+    });
+  };
+
+  const startLongPress = (event, tx) => {
+    const timer = setTimeout(() => {
+      openActionMenu(event, tx);
+    }, 650);
+
+    setLongPressTimer(timer);
+  };
+
+  const stopLongPress = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  };
+
+  const handleEdit = () => {
+    onEditTransaction(actionMenu.tx);
+    setActionMenu(null);
+  };
+
+  const handleDelete = () => {
+    onDeleteTransaction(actionMenu.tx);
+    setActionMenu(null);
   };
 
   /*
@@ -89,6 +131,36 @@ function Content({
 
   return (
     <main className="content">
+      {actionMenu && (
+        <div
+          className="row-action-backdrop"
+          onClick={() => setActionMenu(null)}
+        >
+          <div
+            className="row-action-menu"
+            style={{
+              left: actionMenu.x,
+              top: actionMenu.y
+            }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button onClick={handleEdit}>
+              Edit
+            </button>
+
+            <button
+              className="danger"
+              onClick={handleDelete}
+            >
+              Delete
+            </button>
+
+            <button onClick={() => setActionMenu(null)}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* HEADER */}
       <div className="transactions-header">
@@ -146,7 +218,12 @@ function Content({
           {filteredTransactions.map((tx, index) => (
             <tr
               key={tx.id}
-              className={getRowClass(tx)}
+              className={`${getRowClass(tx)} transaction-row`}
+              onContextMenu={(event) => openActionMenu(event, tx)}
+              onTouchStart={(event) => startLongPress(event, tx)}
+              onTouchEnd={stopLongPress}
+              onTouchMove={stopLongPress}
+              onTouchCancel={stopLongPress}
             >
 
               <td>{index + 1}</td>
