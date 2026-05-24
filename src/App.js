@@ -5,8 +5,11 @@ import Calculator from "./Calculator";
 import "./App.css";
 
 const BASE_BALANCE = 1209518;
-const VERSION = "1.3.3.1"; // html.css.sys.db
+const VERSION = "1.3.3.6"; // html.css.sys.db
 const PASSWORD = "dawit123";
+const API_URL =
+  process.env.REACT_APP_API_URL || "https://bank-backend-anhp.onrender.com";
+const GENERATED_TRANSACTION_FIELDS = ["id", "created_at"];
 
 function App() {
 
@@ -15,6 +18,9 @@ function App() {
 
   const [showModal, setShowModal] = useState(false);
   const [url, setUrl] = useState("");
+  const [scrapeLoading, setScrapeLoading] = useState(false);
+  const [receiptDraft, setReceiptDraft] = useState(null);
+  const [draftSaving, setDraftSaving] = useState(false);
 
   const [loadingMessage, setLoadingMessage] = useState(true);
   const [showCalculator, setShowCalculator] = useState(false);
@@ -46,9 +52,7 @@ function App() {
 
     try {
 
-      const res = await fetch(
-        "https://bank-backend-anhp.onrender.com/transactions"
-      );
+      const res = await fetch(`${API_URL}/transactions`);
 
       const data = await res.json();
 
@@ -65,6 +69,16 @@ function App() {
     }
   };
 
+  const readApiResponse = async (res) => {
+    try {
+      return await res.json();
+    } catch (err) {
+      return {
+        error: `Request failed with status ${res.status}`
+      };
+    }
+  };
+
   const handleScrape = async () => {
 
     if (!url) {
@@ -72,10 +86,12 @@ function App() {
       return;
     }
 
+    setScrapeLoading(true);
+
     try {
 
       const res = await fetch(
-        "https://bank-backend-anhp.onrender.com/scrape-receipt",
+        `${API_URL}/scrape-receipt`,
         {
           method: "POST",
           headers: {
@@ -85,24 +101,109 @@ function App() {
         }
       );
 
-      const data = await res.json();
+      const data = await readApiResponse(res);
 
       if (!res.ok) {
         alert(data.error || "Scraping failed");
         return;
       }
 
-      await fetchTransactions();
+      const fieldTemplate = transactions[0]
+        ? Object.fromEntries(
+            Object.keys(transactions[0])
+              .filter((key) => !GENERATED_TRANSACTION_FIELDS.includes(key))
+              .map((key) => [key, ""])
+          )
+        : {};
 
-      setShowModal(false);
-      setUrl("");
+      setReceiptDraft({
+        ...fieldTemplate,
+        ...data
+      });
 
     } catch (err) {
 
       console.error("SCRAPE ERROR:", err);
       alert("Scraping failed.");
 
+    } finally {
+
+      setScrapeLoading(false);
+
     }
+  };
+
+  const handleDraftChange = (field, value) => {
+    setReceiptDraft((current) => ({
+      ...current,
+      [field]: value
+    }));
+  };
+
+  const normalizeDraftValue = (value) => {
+    if (value === "true") return true;
+    if (value === "false") return false;
+    if (value === "null") return null;
+    return value;
+  };
+
+  const handleSaveDraft = async () => {
+    if (!receiptDraft) return;
+
+    const transaction = Object.fromEntries(
+      Object.entries(receiptDraft)
+        .filter(([key]) => !GENERATED_TRANSACTION_FIELDS.includes(key))
+        .map(([key, value]) => [key, normalizeDraftValue(value)])
+    );
+
+    setDraftSaving(true);
+
+    try {
+      if (receiptDraft.id) {
+        alert("The backend is still auto-saving during scrape. Deploy the updated backend first so approval creates only one edited row.");
+        return;
+      }
+
+      const res = await fetch(`${API_URL}/transactions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(transaction)
+      });
+
+      const data = await readApiResponse(res);
+
+      if (!res.ok) {
+        if (res.status === 404) {
+          alert("Save endpoint is missing on the backend, and this draft was not auto-saved with an id.");
+          return;
+        }
+
+        alert(data.details || data.error || "Save failed");
+        return;
+      }
+
+      await fetchTransactions();
+      setReceiptDraft(null);
+      setShowModal(false);
+      setUrl("");
+
+    } catch (err) {
+      console.error("SAVE ERROR:", err);
+      alert(err.message || "Save failed.");
+
+    } finally {
+      setDraftSaving(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    if (scrapeLoading || draftSaving) return;
+
+    setShowModal(false);
+    setReceiptDraft(null);
+    setUrl("");
   };
 
   const handlePasswordSubmit = () => {
@@ -274,6 +375,13 @@ function App() {
         </div>
       )}
 
+      {scrapeLoading && (
+        <div className="scrape-loading-overlay">
+          <div className="spinner"></div>
+          <p>Scraping receipt...</p>
+        </div>
+      )}
+
       <img
         src="/logo.png"
         className="logo"
@@ -361,25 +469,84 @@ function App() {
 
             <h2>Add Receipt</h2>
 
-            <input
-              type="text"
-              placeholder="Paste receipt link..."
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-            />
+              <input
+                type="text"
+                placeholder="Paste receipt link..."
+                value={url}
+                disabled={scrapeLoading || draftSaving}
+                onChange={(e) => setUrl(e.target.value)}
+              />
+
+              {receiptDraft && (
+                <div className="receipt-draft-box">
+                  <h3>Review Receipt</h3>
+
+                  <div className="receipt-draft-grid">
+                    {Object.entries(receiptDraft)
+                      .filter(([field]) =>
+                        !GENERATED_TRANSACTION_FIELDS.includes(field)
+                      )
+                      .map(([field, value]) => (
+                        <label key={field} className="draft-field">
+                          <span>{field}</span>
+
+                          {typeof value === "boolean" ? (
+                            <select
+                              value={String(value)}
+                              onChange={(e) =>
+                                handleDraftChange(field, e.target.value)
+                              }
+                            >
+                              <option value="true">true</option>
+                              <option value="false">false</option>
+                            </select>
+                          ) : value === null ? (
+                            <input
+                              type="text"
+                              value="null"
+                              onChange={(e) =>
+                                handleDraftChange(field, e.target.value)
+                              }
+                            />
+                          ) : (
+                            <input
+                              type="text"
+                              value={value ?? ""}
+                              onChange={(e) =>
+                                handleDraftChange(field, e.target.value)
+                              }
+                            />
+                          )}
+                        </label>
+                      ))}
+                  </div>
+                </div>
+              )}
 
             <div className="modal-buttons">
 
               <button
                 className="scrape-btn"
                 onClick={handleScrape}
+                disabled={scrapeLoading || draftSaving}
               >
-                Scrape
+                {receiptDraft ? "Scrape Again" : "Scrape"}
               </button>
+
+              {receiptDraft && (
+                <button
+                  className="save-draft-btn"
+                  onClick={handleSaveDraft}
+                  disabled={draftSaving}
+                >
+                  {draftSaving ? "Saving..." : "Approve & Save"}
+                </button>
+              )}
 
               <button
                 className="close-btn"
-                onClick={() => setShowModal(false)}
+                onClick={handleCloseModal}
+                disabled={scrapeLoading || draftSaving}
               >
                 Close
               </button>

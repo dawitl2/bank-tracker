@@ -11,6 +11,35 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
 const BASE_URL = "https://bank-backend-anhp.onrender.com";
+const GENERATED_TRANSACTION_FIELDS = ["id", "created_at"];
+
+const cleanTransactionPayload = (payload) => {
+  const transaction = { ...payload };
+
+  GENERATED_TRANSACTION_FIELDS.forEach((field) => {
+    delete transaction[field];
+  });
+
+  Object.keys(transaction).forEach((key) => {
+    if (transaction[key] === "") {
+      transaction[key] = null;
+    }
+  });
+
+  if (transaction.is_withdraw === "true") {
+    transaction.is_withdraw = true;
+  }
+
+  if (transaction.is_withdraw === "false") {
+    transaction.is_withdraw = false;
+  }
+
+  if (transaction.person === "") {
+    transaction.person = null;
+  }
+
+  return transaction;
+};
 
 
 /*
@@ -56,7 +85,7 @@ setInterval(() => {
 
 /*
 ========================================
-SCRAPE RECEIPT + SAVE TO SUPABASE
+SCRAPE RECEIPT DRAFT
 ========================================
 */
 
@@ -143,25 +172,15 @@ app.post("/scrape-receipt", async (req, res) => {
       });
     }
 
-    const { data, error } = await supabase
-      .from("transactions")
-      .insert([{
-        amount: result.amount,
-        date: result.date,
-        reference: result.reference,
-        narrative: result.narrative,
-        receipt_url: url
-      }])
-      .select();
-
-    if (error) {
-      console.error("SUPABASE ERROR:", error);
-      return res.status(500).json({
-        error: "Database insert failed"
-      });
-    }
-
-    res.json(data[0]);
+    res.json({
+      amount: result.amount,
+      date: result.date,
+      reference: result.reference,
+      narrative: result.narrative,
+      receipt_url: url,
+      is_withdraw: true,
+      person: null
+    });
 
   } catch (err) {
 
@@ -177,6 +196,38 @@ app.post("/scrape-receipt", async (req, res) => {
       await browser.close();
     }
   }
+});
+
+
+
+/*
+========================================
+SAVE APPROVED TRANSACTION
+========================================
+*/
+
+app.post("/transactions", async (req, res) => {
+
+  const transaction = cleanTransactionPayload(req.body);
+
+  if (!transaction.amount) {
+    return res.status(400).json({ error: "Amount is required" });
+  }
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .insert([transaction])
+    .select();
+
+  if (error) {
+    console.error("SUPABASE ERROR:", error);
+    return res.status(500).json({
+      error: "Database insert failed",
+      details: error.message
+    });
+  }
+
+  res.status(201).json(data[0]);
 });
 
 
