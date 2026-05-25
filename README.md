@@ -10,6 +10,7 @@ This project was developed as a **requested solution** for managing construction
 
 ![Transactions View](./screenshot1.png)
 ![Balance & Analytics](./screenshot2.png)
+![Balance & Analytic Desktop](./screenshot3.png)
 
 ---
 
