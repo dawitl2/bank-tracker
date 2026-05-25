@@ -5,7 +5,7 @@ import Calculator from "./Calculator";
 import "./App.css";
 
 const BASE_BALANCE = 1209518;
-const VERSION = "1.3.3.12"; // html.css.sys.db
+const VERSION = "1.3.3.13"; // html.css.sys.db
 const PASSWORD = "dawit123";
 const API_URL =
   process.env.REACT_APP_API_URL || "https://bank-backend-anhp.onrender.com";
@@ -52,6 +52,10 @@ function App() {
   const qrFrameRef = useRef(null);
   const qrDetectedRef = useRef(false);
   const [qrStatus, setQrStatus] = useState("");
+  const [cameraDevices, setCameraDevices] = useState([]);
+  const [selectedCameraId, setSelectedCameraId] = useState("");
+  const [zoomRange, setZoomRange] = useState(null);
+  const [cameraZoom, setCameraZoom] = useState(1);
 
   useEffect(() => {
 
@@ -148,7 +152,8 @@ function App() {
 
   const handleScrape = async (nextUrl = url) => {
 
-    const receiptUrl = nextUrl.trim();
+    const receiptUrl =
+      typeof nextUrl === "string" ? nextUrl.trim() : url.trim();
 
     if (!receiptUrl) {
       alert("Paste or scan receipt link!");
@@ -217,9 +222,54 @@ function App() {
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
+
+    setZoomRange(null);
   };
 
-  const startQrScanner = async () => {
+  const getPreferredCameraId = (devices) => {
+    const videoDevices = devices.filter((device) => device.kind === "videoinput");
+    const rearCameras = videoDevices.filter((device) => {
+      const label = device.label.toLowerCase();
+      return (
+        label.includes("back") ||
+        label.includes("rear") ||
+        label.includes("environment")
+      );
+    });
+
+    const normalRearCamera = rearCameras.find((device) => {
+      const label = device.label.toLowerCase();
+      return (
+        !label.includes("ultra") &&
+        !label.includes("wide") &&
+        !label.includes("macro") &&
+        !label.includes("depth") &&
+        !label.includes("0.5")
+      );
+    });
+
+    return normalRearCamera?.deviceId || rearCameras[0]?.deviceId || videoDevices[0]?.deviceId || "";
+  };
+
+  const applyCameraZoom = async (value) => {
+    const track = qrStreamRef.current?.getVideoTracks()[0];
+
+    if (!track || !zoomRange) return;
+
+    const nextZoom = Number(value);
+
+    try {
+      await track.applyConstraints({
+        advanced: [{ zoom: nextZoom }]
+      });
+      setCameraZoom(nextZoom);
+    } catch (err) {
+      console.error("ZOOM ERROR:", err);
+      setQrStatus("This camera does not allow zoom changes.");
+    }
+  };
+
+  const startQrScanner = async (deviceId = selectedCameraId, allowCameraSwitch = true) => {
     stopQrScanner();
     qrDetectedRef.current = false;
 
@@ -240,13 +290,76 @@ function App() {
         formats: ["qr_code"]
       });
 
+      const videoConstraints = deviceId
+        ? {
+            deviceId: { exact: deviceId },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        : {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          };
+
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: "environment"
-        }
+        video: videoConstraints
       });
 
       qrStreamRef.current = stream;
+
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter((device) => device.kind === "videoinput");
+
+      setCameraDevices(videoDevices);
+
+      const preferredCameraId = getPreferredCameraId(videoDevices);
+      const activeTrack = stream.getVideoTracks()[0];
+      const activeSettings = activeTrack.getSettings();
+      const activeLabel = activeTrack.label.toLowerCase();
+      const activeLooksWide =
+        activeLabel.includes("ultra") ||
+        activeLabel.includes("wide") ||
+        activeLabel.includes("macro") ||
+        activeLabel.includes("0.5");
+
+      if (
+        allowCameraSwitch &&
+        preferredCameraId &&
+        preferredCameraId !== activeSettings.deviceId &&
+        (activeLooksWide || !deviceId)
+      ) {
+        stopQrScanner();
+        setSelectedCameraId(preferredCameraId);
+        await startQrScanner(preferredCameraId, false);
+        return;
+      }
+
+      setSelectedCameraId(activeSettings.deviceId || preferredCameraId);
+
+      const capabilities = activeTrack.getCapabilities?.();
+
+      if (capabilities?.zoom) {
+        const targetZoom = Math.min(
+          capabilities.zoom.max,
+          Math.max(capabilities.zoom.min, 2)
+        );
+
+        setZoomRange({
+          min: capabilities.zoom.min,
+          max: capabilities.zoom.max,
+          step: capabilities.zoom.step || 0.1
+        });
+        setCameraZoom(targetZoom);
+
+        try {
+          await activeTrack.applyConstraints({
+            advanced: [{ zoom: targetZoom }]
+          });
+        } catch (err) {
+          console.error("INITIAL ZOOM ERROR:", err);
+        }
+      }
 
       if (!videoRef.current) return;
 
@@ -255,11 +368,27 @@ function App() {
 
       setQrStatus("Point the camera at the receipt QR code.");
 
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d", {
+        willReadFrequently: true
+      });
+
       const scan = async () => {
         if (!videoRef.current || qrDetectedRef.current) return;
 
         try {
-          const codes = await detector.detect(videoRef.current);
+          const video = videoRef.current;
+
+          if (!video.videoWidth || !video.videoHeight || !context) {
+            qrFrameRef.current = requestAnimationFrame(scan);
+            return;
+          }
+
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+          const codes = await detector.detect(canvas);
           const rawValue = codes[0]?.rawValue;
 
           if (rawValue) {
@@ -762,12 +891,48 @@ function App() {
 
               {!receiptDraft && receiptMode === "qr" && (
                 <div className="qr-scanner-panel">
+                  {cameraDevices.length > 1 && (
+                    <label className="qr-control-field">
+                      <span>Camera</span>
+                      <select
+                        value={selectedCameraId}
+                        onChange={(e) => {
+                          setSelectedCameraId(e.target.value);
+                          startQrScanner(e.target.value, false);
+                        }}
+                      >
+                        {cameraDevices.map((device, index) => (
+                          <option
+                            key={device.deviceId || index}
+                            value={device.deviceId}
+                          >
+                            {device.label || `Camera ${index + 1}`}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+
                   <video
                     ref={videoRef}
                     className="qr-video"
                     playsInline
                     muted
                   ></video>
+
+                  {zoomRange && (
+                    <label className="qr-control-field">
+                      <span>Zoom {cameraZoom.toFixed(1)}x</span>
+                      <input
+                        type="range"
+                        min={zoomRange.min}
+                        max={zoomRange.max}
+                        step={zoomRange.step}
+                        value={cameraZoom}
+                        onChange={(e) => applyCameraZoom(e.target.value)}
+                      />
+                    </label>
+                  )}
 
                   <p>{qrStatus || "Preparing camera..."}</p>
                 </div>
@@ -840,7 +1005,7 @@ function App() {
               {!receiptDraft?.id && receiptMode === "link" && (
                 <button
                   className="scrape-btn"
-                  onClick={handleScrape}
+                  onClick={() => handleScrape()}
                   disabled={scrapeLoading || draftSaving}
                 >
                   {receiptDraft ? "Scrape Again" : "Scrape"}

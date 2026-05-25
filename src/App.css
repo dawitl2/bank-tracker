@@ -358,6 +358,37 @@ h1 {
   font-weight: 600;
 }
 
+.qr-control-field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.qr-control-field span {
+  color: #555;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.qr-control-field select,
+.qr-control-field input[type="range"] {
+  width: 100%;
+}
+
+.qr-control-field select {
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  font-size: 14px;
+}
+
+.qr-control-field input[type="range"] {
+  accent-color: #f4a300;
+}
+
 
 
 /* ========================================= */
