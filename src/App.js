@@ -5,7 +5,7 @@ import Calculator from "./Calculator";
 import "./App.css";
 
 const BASE_BALANCE = 1209518;
-const VERSION = "1.3.3.15"; // html.css.sys.db
+const VERSION = "1.3.3.18"; // html.css.sys.db
 const PASSWORD = "dawit123";
 const API_URL =
   process.env.REACT_APP_API_URL || "https://bank-backend-anhp.onrender.com";
@@ -319,6 +319,10 @@ function App() {
 
     const reference =
       fullText.match(/FT[0-9A-Z]{8,}/i)?.[0]?.toUpperCase() || "";
+    const imageReceiptReference =
+      reference && !reference.endsWith("41349")
+        ? `${reference}41349`
+        : reference;
     const date =
       fullText.match(/\b\d{1,2}\/\d{1,2}\/(?:\d{2}|\d{4})[,\s]+\d{1,2}:\d{2}\b/)?.[0] ||
       "";
@@ -347,7 +351,9 @@ function App() {
       date,
       reference,
       narrative,
-      receipt_url: reference ? `${BANK_RECEIPT_URL}?trx=${reference}` : "",
+      receipt_url: imageReceiptReference
+        ? `${BANK_RECEIPT_URL}?trx=${imageReceiptReference}`
+        : "",
       is_withdraw: true,
       person: null
     };

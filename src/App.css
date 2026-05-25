@@ -556,6 +556,192 @@ h1 {
   color: #666;
 }
 
+.balance-dashboard {
+  display: grid;
+  gap: 18px;
+}
+
+.balance-hero,
+.balance-insight-grid,
+.analytics-layout {
+  display: grid;
+  gap: 16px;
+}
+
+.analytics-switcher {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 0 6px;
+  scrollbar-width: thin;
+}
+
+.analytics-switcher button {
+  flex: 0 0 auto;
+  min-height: 40px;
+  border: 1px solid rgba(24, 24, 22, 0.12);
+  border-radius: 999px;
+  background: white;
+  color: #20231f;
+  padding: 0 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.analytics-switcher button.active {
+  border-color: #f4a300;
+  background: #f4a300;
+  color: #111;
+  box-shadow: 0 8px 18px rgba(244, 163, 0, 0.22);
+}
+
+.balance-panel-stage {
+  min-height: 245px;
+}
+
+.balance-card-frame .card {
+  margin-bottom: 18px;
+}
+
+.balance-stat span,
+.analytics-card > span,
+.chart-heading span {
+  color: #74796e;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.balance-stat span {
+  font-size: 14px;
+}
+
+.analytics-card > span,
+.chart-heading span {
+  font-size: 11px;
+}
+
+.balance-stat h1,
+.analytics-card h2 {
+  margin: 6px 0 8px;
+}
+
+.analytics-card {
+  border: 1px solid rgba(24, 24, 22, 0.08);
+  border-radius: 8px;
+  background: #fbfcf8;
+  padding: 16px;
+  box-shadow: 0 10px 24px rgba(34, 39, 34, 0.06);
+}
+
+.analytics-card p {
+  color: #666;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.month-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.interest-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.month-summary-grid div,
+.interest-grid div {
+  border-radius: 8px;
+  background: white;
+  padding: 10px;
+}
+
+.month-summary-grid small,
+.interest-grid small,
+.person-row small {
+  display: block;
+  color: #7b8175;
+  font-size: 11px;
+}
+
+.month-summary-grid strong,
+.interest-grid strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
+}
+
+.people-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.person-row {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.person-row strong,
+.person-row b {
+  font-size: 13px;
+}
+
+.person-bar,
+.velocity-track {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(24, 24, 22, 0.08);
+}
+
+.person-bar span,
+.velocity-track span {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  border-radius: inherit;
+}
+
+.velocity-track {
+  height: 14px;
+  margin: 16px 0 10px;
+}
+
+.velocity-track span {
+  background: linear-gradient(90deg, #53a460, #f4a300, #c73939);
+}
+
+.chart-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.chart-heading h2 {
+  margin: 4px 0 0;
+}
+
+.chart-panel {
+  width: 100%;
+  height: 280px;
+}
+
+.split-chart {
+  display: grid;
+  gap: 18px;
+  height: 560px;
+}
+
 
 .divider{
   width:1px;
@@ -928,7 +1114,7 @@ h1 {
   }
 
   .app {
-    width: min(1220px, calc(100vw - 48px));
+    width: min(1820px, calc(100vw - 48px));
     max-width: none;
     min-height: calc(100vh - 48px);
     margin: 24px auto;
@@ -1127,7 +1313,7 @@ h1 {
   }
 
   .add-btn {
-    left: calc((100vw - min(1220px, calc(100vw - 48px))) / 2 + 58px);
+    left: calc((75vw - min(1220px, calc(100vw - 48px))) / 2 + 58px);
     right: auto;
     bottom: 158px;
     width: 58px;
@@ -1139,7 +1325,7 @@ h1 {
   }
 
   .calculator-btn {
-    left: calc((100vw - min(1220px, calc(100vw - 48px))) / 2 + 28px);
+    left: calc((75vw - min(1220px, calc(100vw - 48px))) / 2 + 28px);
     bottom: 86px;
     border-radius: 8px;
     background: #20231f;
@@ -1149,30 +1335,152 @@ h1 {
 
   .balance-page {
     display: grid;
-    gap: 24px;
+    gap: 22px;
+  }
+
+  .balance-hero {
+    grid-template-columns: minmax(280px, 440px) minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .balance-card-frame {
+    min-height: 250px;
+    padding: 18px;
+    border-radius: 8px;
+    background: #fbfcf8;
+    border: 1px solid rgba(24, 24, 22, 0.08);
+    display: flex;
+    align-items: center;
+    box-shadow: 0 18px 45px rgba(34, 39, 34, 0.08);
   }
 
   .balance-page .card {
-    max-width: 520px;
-    justify-self: center;
+    width: 100%;
+    max-width: none;
+    margin: 0;
     border-radius: 8px;
-    box-shadow: 0 18px 45px rgba(34, 39, 34, 0.16);
+    box-shadow: 0 18px 38px rgba(0, 0, 0, 0.24);
   }
 
   .balance-grid {
-    padding: 24px;
+    height: 100%;
+    padding: 124px;
     border: 1px solid rgba(24, 24, 22, 0.08);
     border-radius: 8px;
     background: #fbfcf8;
   }
 
+  .balance-stat {
+    min-width: 0;
+  }
+
+  .balance-stat.deposit h1 {
+    color: #237a3b;
+  }
+
+  .balance-stat.withdraw h1 {
+    color: #9d3b16;
+  }
+
   .balance-grid h1 {
-    font-size: 38px;
+    font-size: clamp(30px, 3.2vw, 44px);
     color: #20231f;
+    font-weight: 900;
+    line-height: 1;
+    margin: 8px 0 16px;
+    word-break: break-word;
+  }
+
+  .balance-grid p {
+    font-size: 15px;
+    line-height: 1.55;
+    font-weight: 700;
   }
 
   .divider {
     background: rgba(24, 24, 22, 0.12);
+  }
+
+  .balance-insight-grid {
+    grid-template-columns: 1.1fr 1.45fr 1fr;
+  }
+
+  .analytics-switcher {
+    justify-content: center;
+    border: 1px solid rgba(24, 24, 22, 0.08);
+    border-radius: 8px;
+    background: #fbfcf8;
+    padding: 10px;
+  }
+
+  .analytics-switcher button {
+    min-width: 112px;
+    border-radius: 6px;
+  }
+
+  .balance-panel-stage {
+    min-height: 360px;
+  }
+
+  .focus-card {
+    min-height: 360px;
+    display: grid;
+    align-content: center;
+  }
+
+  .analytics-layout {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  }
+
+  .analytics-card {
+    padding: 20px;
+  }
+
+  .analytics-card h2 {
+    color: #20231f;
+    font-size: 28px;
+    line-height: 1.1;
+  }
+
+  .focus-card h2 {
+    font-size: clamp(34px, 4vw, 52px);
+  }
+
+  .month-summary-grid,
+  .interest-grid {
+    gap: 14px;
+  }
+
+  .month-summary-grid div,
+  .interest-grid div {
+    padding: 16px;
+  }
+
+  .month-summary-grid strong,
+  .interest-grid strong {
+    font-size: 20px;
+  }
+
+  .people-list {
+    gap: 14px;
+  }
+
+  .person-row {
+    grid-template-columns: 150px minmax(0, 1fr) 120px;
+  }
+
+  .person-row strong,
+  .person-row b {
+    font-size: 16px;
+  }
+
+  .chart-panel {
+    height: 330px;
+  }
+
+  .split-chart {
+    grid-template-columns: 1.15fr 0.85fr;
+    height: 330px;
   }
 
   .modal-overlay,
