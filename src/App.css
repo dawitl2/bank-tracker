@@ -296,6 +296,68 @@ h1 {
   flex-wrap: wrap;
 }
 
+.receipt-choice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.receipt-choice-card {
+  min-height: 118px;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 8px;
+  background: #fafafa;
+  color: #111;
+  padding: 16px;
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.receipt-choice-card span {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.receipt-choice-card small {
+  color: #666;
+  font-size: 13px;
+}
+
+.receipt-choice-card:hover {
+  border-color: rgba(244, 163, 0, 0.55);
+  box-shadow: 0 14px 28px rgba(0,0,0,0.1);
+  transform: translateY(-1px);
+}
+
+.qr-scanner-panel {
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 18px;
+  background: #fafafa;
+}
+
+.qr-video {
+  width: 100%;
+  aspect-ratio: 1;
+  max-height: 420px;
+  border-radius: 8px;
+  background: #111;
+  object-fit: cover;
+}
+
+.qr-scanner-panel p {
+  margin-top: 10px;
+  color: #555;
+  font-size: 14px;
+  font-weight: 600;
+}
+
 
 
 /* ========================================= */
@@ -1081,6 +1143,28 @@ h1 {
     border-radius: 8px;
     padding: 20px;
     background: #fbfcf8;
+  }
+
+  .receipt-choice-grid {
+    gap: 16px;
+  }
+
+  .receipt-choice-card {
+    min-height: 138px;
+    background: #fbfcf8;
+  }
+
+  .receipt-choice-card span {
+    font-size: 20px;
+  }
+
+  .qr-scanner-panel {
+    padding: 16px;
+    background: #fbfcf8;
+  }
+
+  .qr-video {
+    aspect-ratio: 16 / 10;
   }
 
   .receipt-draft-grid {

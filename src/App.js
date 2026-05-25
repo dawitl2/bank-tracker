@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Content from "./Content";
 import Balance from "./Balance";
 import Calculator from "./Calculator";
 import "./App.css";
 
 const BASE_BALANCE = 1209518;
-const VERSION = "1.3.3.11"; // html.css.sys.db
+const VERSION = "1.3.3.12"; // html.css.sys.db
 const PASSWORD = "dawit123";
 const API_URL =
   process.env.REACT_APP_API_URL || "https://bank-backend-anhp.onrender.com";
@@ -26,6 +26,7 @@ function App() {
   const [transactions, setTransactions] = useState([]);
 
   const [showModal, setShowModal] = useState(false);
+  const [receiptMode, setReceiptMode] = useState(null);
   const [url, setUrl] = useState("");
   const [scrapeLoading, setScrapeLoading] = useState(false);
   const [receiptDraft, setReceiptDraft] = useState(null);
@@ -46,6 +47,11 @@ function App() {
   const [authenticated, setAuthenticated] = useState(false);
   const [inputPassword, setInputPassword] = useState("");
   const [passwordError, setPasswordError] = useState(false);
+  const videoRef = useRef(null);
+  const qrStreamRef = useRef(null);
+  const qrFrameRef = useRef(null);
+  const qrDetectedRef = useRef(false);
+  const [qrStatus, setQrStatus] = useState("");
 
   useEffect(() => {
 
@@ -140,13 +146,16 @@ function App() {
     }
   };
 
-  const handleScrape = async () => {
+  const handleScrape = async (nextUrl = url) => {
 
-    if (!url) {
-      alert("Paste receipt link!");
+    const receiptUrl = nextUrl.trim();
+
+    if (!receiptUrl) {
+      alert("Paste or scan receipt link!");
       return;
     }
 
+    setUrl(receiptUrl);
     setScrapeLoading(true);
 
     try {
@@ -158,7 +167,7 @@ function App() {
           headers: {
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({ url }),
+          body: JSON.stringify({ url: receiptUrl }),
         }
       );
 
@@ -191,6 +200,96 @@ function App() {
 
       setScrapeLoading(false);
 
+    }
+  };
+
+  const stopQrScanner = () => {
+    if (qrFrameRef.current) {
+      cancelAnimationFrame(qrFrameRef.current);
+      qrFrameRef.current = null;
+    }
+
+    if (qrStreamRef.current) {
+      qrStreamRef.current.getTracks().forEach((track) => track.stop());
+      qrStreamRef.current = null;
+    }
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  const startQrScanner = async () => {
+    stopQrScanner();
+    qrDetectedRef.current = false;
+
+    if (!("BarcodeDetector" in window)) {
+      setQrStatus("QR scanning is not supported in this browser.");
+      return;
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setQrStatus("Camera access is not available in this browser.");
+      return;
+    }
+
+    try {
+      setQrStatus("Opening camera...");
+
+      const detector = new window.BarcodeDetector({
+        formats: ["qr_code"]
+      });
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "environment"
+        }
+      });
+
+      qrStreamRef.current = stream;
+
+      if (!videoRef.current) return;
+
+      videoRef.current.srcObject = stream;
+      await videoRef.current.play();
+
+      setQrStatus("Point the camera at the receipt QR code.");
+
+      const scan = async () => {
+        if (!videoRef.current || qrDetectedRef.current) return;
+
+        try {
+          const codes = await detector.detect(videoRef.current);
+          const rawValue = codes[0]?.rawValue;
+
+          if (rawValue) {
+            qrDetectedRef.current = true;
+            stopQrScanner();
+
+            try {
+              const detectedUrl = new URL(rawValue).toString();
+              setQrStatus("QR found. Scraping receipt...");
+              setReceiptMode("link");
+              await handleScrape(detectedUrl);
+            } catch (err) {
+              setQrStatus("QR code was found, but it was not a valid link.");
+            }
+
+            return;
+          }
+        } catch (err) {
+          console.error("QR SCAN ERROR:", err);
+        }
+
+        qrFrameRef.current = requestAnimationFrame(scan);
+      };
+
+      qrFrameRef.current = requestAnimationFrame(scan);
+
+    } catch (err) {
+      console.error("CAMERA ERROR:", err);
+      setQrStatus("Camera permission was blocked or unavailable.");
+      stopQrScanner();
     }
   };
 
@@ -289,16 +388,41 @@ function App() {
   const handleCloseModal = () => {
     if (scrapeLoading || draftSaving) return;
 
+    stopQrScanner();
     setShowModal(false);
+    setReceiptMode(null);
     setReceiptDraft(null);
     setUrl("");
+    setQrStatus("");
+  };
+
+  const openReceiptModal = () => {
+    setReceiptMode(null);
+    setReceiptDraft(null);
+    setUrl("");
+    setQrStatus("");
+    setShowModal(true);
   };
 
   const handleEditTransaction = (tx) => {
+    stopQrScanner();
+    setReceiptMode("link");
     setUrl(tx.receipt_url || "");
     setReceiptDraft({ ...tx });
     setShowModal(true);
   };
+
+  useEffect(() => {
+    if (showModal && receiptMode === "qr" && !receiptDraft) {
+      startQrScanner();
+    } else {
+      stopQrScanner();
+    }
+
+    return () => {
+      stopQrScanner();
+    };
+  }, [showModal, receiptMode, receiptDraft]);
 
   const handleDeleteTransaction = (tx) => {
     setDeleteTarget(tx);
@@ -554,7 +678,7 @@ function App() {
 
             <button
               className="add-btn"
-              onClick={() => setShowModal(true)}
+              onClick={openReceiptModal}
             >
               +
             </button>
@@ -604,7 +728,27 @@ function App() {
 
             <h2>{receiptDraft?.id ? "Edit Transaction" : "Add Receipt"}</h2>
 
-              {!receiptDraft?.id && (
+              {!receiptDraft && !receiptMode && (
+                <div className="receipt-choice-grid">
+                  <button
+                    className="receipt-choice-card"
+                    onClick={() => setReceiptMode("link")}
+                  >
+                    <span>Link</span>
+                    <small>Paste a receipt link</small>
+                  </button>
+
+                  <button
+                    className="receipt-choice-card"
+                    onClick={() => setReceiptMode("qr")}
+                  >
+                    <span>QR</span>
+                    <small>Scan from camera</small>
+                  </button>
+                </div>
+              )}
+
+              {!receiptDraft?.id && receiptMode === "link" && (
                 <input
                   type="text"
                   placeholder="Paste receipt link..."
@@ -612,6 +756,19 @@ function App() {
                   disabled={scrapeLoading || draftSaving}
                   onChange={(e) => setUrl(e.target.value)}
                 />
+              )}
+
+              {!receiptDraft && receiptMode === "qr" && (
+                <div className="qr-scanner-panel">
+                  <video
+                    ref={videoRef}
+                    className="qr-video"
+                    playsInline
+                    muted
+                  ></video>
+
+                  <p>{qrStatus || "Preparing camera..."}</p>
+                </div>
               )}
 
               {receiptDraft && (
@@ -678,13 +835,27 @@ function App() {
 
             <div className="modal-buttons">
 
-              {!receiptDraft?.id && (
+              {!receiptDraft?.id && receiptMode === "link" && (
                 <button
                   className="scrape-btn"
                   onClick={handleScrape}
                   disabled={scrapeLoading || draftSaving}
                 >
                   {receiptDraft ? "Scrape Again" : "Scrape"}
+                </button>
+              )}
+
+              {!receiptDraft && receiptMode && (
+                <button
+                  className="close-btn"
+                  onClick={() => {
+                    stopQrScanner();
+                    setReceiptMode(null);
+                    setQrStatus("");
+                  }}
+                  disabled={scrapeLoading || draftSaving}
+                >
+                  Back
                 </button>
               )}
 
