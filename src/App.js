@@ -5,10 +5,11 @@ import Calculator from "./Calculator";
 import "./App.css";
 
 const BASE_BALANCE = 1209518;
-const VERSION = "1.3.3.13"; // html.css.sys.db
+const VERSION = "1.3.3.14"; // html.css.sys.db
 const PASSWORD = "dawit123";
 const API_URL =
   process.env.REACT_APP_API_URL || "https://bank-backend-anhp.onrender.com";
+const BANK_RECEIPT_URL = "https://cs.bankofabyssinia.com/slip/";
 const SUPABASE_URL = "https://ywplzexakisliebyjtyf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_nmA6IJsDGUVki5i0smS1Tg_MLXy5_wX";
 const GENERATED_TRANSACTION_FIELDS = ["id", "created_at"];
@@ -226,16 +227,44 @@ function App() {
     setZoomRange(null);
   };
 
-  const getPreferredCameraId = (devices) => {
+  const isRearCamera = (device) => {
+    const label = device.label.toLowerCase();
+
+    return (
+      label.includes("back") ||
+      label.includes("rear") ||
+      label.includes("environment")
+    );
+  };
+
+  const isFrontCamera = (device) => {
+    const label = device.label.toLowerCase();
+
+    return (
+      label.includes("front") ||
+      label.includes("user") ||
+      label.includes("selfie") ||
+      label.includes("facetime")
+    );
+  };
+
+  const getRearCameraDevices = (devices, activeDeviceId) => {
     const videoDevices = devices.filter((device) => device.kind === "videoinput");
-    const rearCameras = videoDevices.filter((device) => {
-      const label = device.label.toLowerCase();
-      return (
-        label.includes("back") ||
-        label.includes("rear") ||
-        label.includes("environment")
-      );
-    });
+    const rearCameras = videoDevices.filter(isRearCamera);
+
+    if (rearCameras.length) {
+      return rearCameras;
+    }
+
+    const activeCamera = videoDevices.find(
+      (device) => device.deviceId === activeDeviceId && !isFrontCamera(device)
+    );
+
+    return activeCamera ? [activeCamera] : [];
+  };
+
+  const getPreferredCameraId = (devices) => {
+    const rearCameras = getRearCameraDevices(devices);
 
     const normalRearCamera = rearCameras.find((device) => {
       const label = device.label.toLowerCase();
@@ -248,7 +277,19 @@ function App() {
       );
     });
 
-    return normalRearCamera?.deviceId || rearCameras[0]?.deviceId || videoDevices[0]?.deviceId || "";
+    return normalRearCamera?.deviceId || rearCameras[0]?.deviceId || "";
+  };
+
+  const getReceiptUrlFromQrValue = (rawValue) => {
+    const value = rawValue.trim();
+
+    if (!value) return "";
+
+    try {
+      return new URL(value).toString();
+    } catch (err) {
+      return `${BANK_RECEIPT_URL}?trx=${encodeURIComponent(value)}`;
+    }
   };
 
   const applyCameraZoom = async (value) => {
@@ -309,13 +350,10 @@ function App() {
       qrStreamRef.current = stream;
 
       const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter((device) => device.kind === "videoinput");
-
-      setCameraDevices(videoDevices);
-
-      const preferredCameraId = getPreferredCameraId(videoDevices);
       const activeTrack = stream.getVideoTracks()[0];
       const activeSettings = activeTrack.getSettings();
+      const rearDevices = getRearCameraDevices(devices, activeSettings.deviceId);
+      const preferredCameraId = getPreferredCameraId(rearDevices);
       const activeLabel = activeTrack.label.toLowerCase();
       const activeLooksWide =
         activeLabel.includes("ultra") ||
@@ -335,6 +373,7 @@ function App() {
         return;
       }
 
+      setCameraDevices(rearDevices);
       setSelectedCameraId(activeSettings.deviceId || preferredCameraId);
 
       const capabilities = activeTrack.getCapabilities?.();
@@ -396,12 +435,12 @@ function App() {
             stopQrScanner();
 
             try {
-              const detectedUrl = new URL(rawValue).toString();
+              const detectedUrl = getReceiptUrlFromQrValue(rawValue);
               setQrStatus("QR found. Scraping receipt...");
               setReceiptMode("link");
               await handleScrape(detectedUrl);
             } catch (err) {
-              setQrStatus("QR code was found, but it was not a valid link.");
+              setQrStatus("QR code was found, but it could not be converted to a receipt link.");
             }
 
             return;
