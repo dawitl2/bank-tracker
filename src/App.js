@@ -5,7 +5,7 @@ import Calculator from "./Calculator";
 import "./App.css";
 
 const BASE_BALANCE = 1209518;
-const VERSION = "1.3.3.14"; // html.css.sys.db
+const VERSION = "1.3.3.15"; // html.css.sys.db
 const PASSWORD = "dawit123";
 const API_URL =
   process.env.REACT_APP_API_URL || "https://bank-backend-anhp.onrender.com";
@@ -57,6 +57,8 @@ function App() {
   const [selectedCameraId, setSelectedCameraId] = useState("");
   const [zoomRange, setZoomRange] = useState(null);
   const [cameraZoom, setCameraZoom] = useState(1);
+  const [imageStatus, setImageStatus] = useState("");
+  const [imageProgress, setImageProgress] = useState(0);
 
   useEffect(() => {
 
@@ -99,6 +101,23 @@ function App() {
         error: `Request failed with status ${res.status}`
       };
     }
+  };
+
+  const getDraftTemplate = () => {
+    return transactions[0]
+      ? Object.fromEntries(
+          Object.keys(transactions[0])
+            .filter((key) => !GENERATED_TRANSACTION_FIELDS.includes(key))
+            .map((key) => [key, ""])
+        )
+      : {};
+  };
+
+  const showReceiptDraft = (data) => {
+    setReceiptDraft({
+      ...getDraftTemplate(),
+      ...data
+    });
   };
 
   const updateTransactionDirectly = async (id, transaction) => {
@@ -184,18 +203,7 @@ function App() {
         return;
       }
 
-      const fieldTemplate = transactions[0]
-        ? Object.fromEntries(
-            Object.keys(transactions[0])
-              .filter((key) => !GENERATED_TRANSACTION_FIELDS.includes(key))
-              .map((key) => [key, ""])
-          )
-        : {};
-
-      setReceiptDraft({
-        ...fieldTemplate,
-        ...data
-      });
+      showReceiptDraft(data);
 
     } catch (err) {
 
@@ -288,7 +296,102 @@ function App() {
     try {
       return new URL(value).toString();
     } catch (err) {
-      return `${BANK_RECEIPT_URL}?trx=${encodeURIComponent(value)}`;
+      const reference = value.match(/FT[0-9A-Z]{8,}/i)?.[0];
+
+      if (reference) {
+        return `${BANK_RECEIPT_URL}?trx=${reference.toUpperCase()}`;
+      }
+
+      return "";
+    }
+  };
+
+  const parseReceiptText = (text) => {
+    const normalized = text
+      .replace(/\r/g, "\n")
+      .replace(/[|]/g, " ")
+      .replace(/[ \t]+/g, " ");
+    const lines = normalized
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+    const fullText = lines.join(" ");
+
+    const reference =
+      fullText.match(/FT[0-9A-Z]{8,}/i)?.[0]?.toUpperCase() || "";
+    const date =
+      fullText.match(/\b\d{1,2}\/\d{1,2}\/(?:\d{2}|\d{4})[,\s]+\d{1,2}:\d{2}\b/)?.[0] ||
+      "";
+    const amountLine =
+      lines.find((line) =>
+        /amount|transferred|transfer|etb|birr/i.test(line) &&
+        /[\d,]+(?:\.\d{1,2})?/.test(line)
+      ) || fullText;
+    const amount =
+      amountLine.match(/(?:ETB|Birr)?\s*[\d,]+(?:\.\d{1,2})?/i)?.[0]
+        ?.replace(/^(ETB|Birr)\s*/i, "")
+        .trim() || "";
+
+    const narrativeIndex = lines.findIndex((line) =>
+      /narrative|reason|description|payment/i.test(line)
+    );
+    const narrative =
+      narrativeIndex >= 0
+        ? (lines[narrativeIndex + 1] || lines[narrativeIndex])
+            .replace(/^(narrative|reason|description|payment reason)\s*:?\s*/i, "")
+            .trim()
+        : "";
+
+    return {
+      amount,
+      date,
+      reference,
+      narrative,
+      receipt_url: reference ? `${BANK_RECEIPT_URL}?trx=${reference}` : "",
+      is_withdraw: true,
+      person: null
+    };
+  };
+
+  const handleImageReceipt = async (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    setImageStatus("Reading image...");
+    setImageProgress(0);
+    setScrapeLoading(true);
+
+    try {
+      const { recognize } = await import("tesseract.js");
+      const result = await recognize(file, "eng", {
+        logger: (message) => {
+          if (message.status) {
+            setImageStatus(message.status);
+          }
+
+          if (typeof message.progress === "number") {
+            setImageProgress(Math.round(message.progress * 100));
+          }
+        }
+      });
+      const parsed = parseReceiptText(result.data.text || "");
+
+      if (!parsed.amount && !parsed.reference && !parsed.date) {
+        alert("Could not read receipt details from this image. Try a clearer screenshot.");
+        return;
+      }
+
+      showReceiptDraft(parsed);
+
+    } catch (err) {
+      console.error("IMAGE OCR ERROR:", err);
+      alert("Image reading failed.");
+
+    } finally {
+      setScrapeLoading(false);
+      setImageProgress(0);
+      event.target.value = "";
     }
   };
 
@@ -436,6 +539,12 @@ function App() {
 
             try {
               const detectedUrl = getReceiptUrlFromQrValue(rawValue);
+
+              if (!detectedUrl) {
+                setQrStatus("This QR contains a bank token, not a direct receipt link. Use Image OCR or paste the receipt link.");
+                return;
+              }
+
               setQrStatus("QR found. Scraping receipt...");
               setReceiptMode("link");
               await handleScrape(detectedUrl);
@@ -562,6 +671,8 @@ function App() {
     setReceiptDraft(null);
     setUrl("");
     setQrStatus("");
+    setImageStatus("");
+    setImageProgress(0);
   };
 
   const openReceiptModal = () => {
@@ -569,6 +680,8 @@ function App() {
     setReceiptDraft(null);
     setUrl("");
     setQrStatus("");
+    setImageStatus("");
+    setImageProgress(0);
     setShowModal(true);
   };
 
@@ -915,6 +1028,14 @@ function App() {
                     <span>QR</span>
                     <small>Scan from camera</small>
                   </button>
+
+                  <button
+                    className="receipt-choice-card"
+                    onClick={() => setReceiptMode("image")}
+                  >
+                    <span>Image</span>
+                    <small>Read a screenshot</small>
+                  </button>
                 </div>
               )}
 
@@ -974,6 +1095,23 @@ function App() {
                   )}
 
                   <p>{qrStatus || "Preparing camera..."}</p>
+                </div>
+              )}
+
+              {!receiptDraft && receiptMode === "image" && (
+                <div className="image-receipt-panel">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageReceipt}
+                    disabled={scrapeLoading || draftSaving}
+                  />
+
+                  <p>
+                    {imageStatus
+                      ? `${imageStatus}${imageProgress ? ` ${imageProgress}%` : ""}`
+                      : "Choose a clear receipt screenshot."}
+                  </p>
                 </div>
               )}
 
