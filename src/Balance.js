@@ -19,7 +19,7 @@ const ANALYTICS_CONFIG = {
   velocityWindowDays: 7,
   highVelocityDailySpend: 50000,
   annualInterestRate: 0.07,
-  interestSafetyDeduction: 0.35,
+  interestSafetyDeduction: 0.10,
   personGroups: [
     {
       key: "construction",

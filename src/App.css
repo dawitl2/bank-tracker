@@ -573,7 +573,14 @@ h1 {
   gap: 8px;
   overflow-x: auto;
   padding: 2px 0 6px;
-  scrollbar-width: thin;
+
+  /* hide scrollbar */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.analytics-switcher::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
 }
 
 .analytics-switcher button {
