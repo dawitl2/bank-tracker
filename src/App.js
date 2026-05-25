@@ -422,6 +422,8 @@ function App() {
     return () => {
       stopQrScanner();
     };
+    // startQrScanner reads live refs/state and should only run when the modal mode changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showModal, receiptMode, receiptDraft]);
 
   const handleDeleteTransaction = (tx) => {
