@@ -13,6 +13,8 @@ import {
   XAxis,
   YAxis
 } from "recharts";
+import { FaEye, FaEyeSlash, FaLock } from "react-icons/fa";
+
 
 const ANALYTICS_CONFIG = {
   monthWindow: 6,
@@ -47,6 +49,9 @@ const ANALYTICS_CONFIG = {
     }
   ]
 };
+
+// "pass" encoded in base64
+const ENCODED_INTEREST_PASSWORD = "cGFzcw==";
 
 const money = (value) =>
   Math.round(value || 0).toLocaleString("en-US");
@@ -117,6 +122,37 @@ const getGroup = (tx) => {
 
 function Balance({ balance, transactions = [] }) {
   const [activePanel, setActivePanel] = useState("summary");
+  const [showBalance, setShowBalance] = useState(false);
+
+  const sessionUnlocked = sessionStorage.getItem("interest_unlocked") === "true";
+  const [interestUnlocked, setInterestUnlocked] = useState(sessionUnlocked);
+  const [interestVisible, setInterestVisible] = useState(sessionUnlocked);
+  const [showInterestPrompt, setShowInterestPrompt] = useState(false);
+  const [interestPassword, setInterestPassword] = useState("");
+
+  const unlockInterest = () => {
+    const decodedPassword = atob(ENCODED_INTEREST_PASSWORD);
+    if (interestPassword === decodedPassword) {
+      setInterestUnlocked(true);
+      setInterestVisible(true);
+      sessionStorage.setItem("interest_unlocked", "true");
+      setShowInterestPrompt(false);
+      setInterestPassword("");
+    } else {
+      alert("Wrong password");
+    }
+  };
+
+  // Toggle visibility only — never asks for password again this session
+  const toggleInterestVisibility = () => {
+    if (interestUnlocked) {
+      // Session is unlocked, just flip visibility, no password needed
+      setInterestVisible((v) => !v);
+    } else {
+      // Not unlocked yet this session, ask for password
+      setShowInterestPrompt(true);
+    }
+  };
 
   const analytics = useMemo(() => {
     const enriched = transactions.map((tx) => ({
@@ -304,6 +340,7 @@ function Balance({ balance, transactions = [] }) {
     analytics.groupTotals
       .filter((group) => group.amount > 0)
       .sort((a, b) => b.amount - a.amount)[0] || analytics.groupTotals[0];
+
   const panelOptions = [
     { key: "summary", label: "Summary" },
     { key: "people", label: "People" },
@@ -315,6 +352,31 @@ function Balance({ balance, transactions = [] }) {
   return (
     <div className="balance-page balance-dashboard">
       <section className="balance-hero">
+
+        {/* Password prompt overlay */}
+        {showInterestPrompt && (
+          <div className="interest-password-overlay">
+            <div className="interest-password-box">
+              <h3>Unlock Interest</h3>
+              <input
+                type="password"
+                placeholder="Password"
+                value={interestPassword}
+                onChange={(e) => setInterestPassword(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && unlockInterest()}
+              />
+              <div className="interest-password-actions">
+                <button type="button" onClick={unlockInterest}>
+                  Unlock
+                </button>
+                <button type="button" onClick={() => setShowInterestPrompt(false)}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="balance-card-frame">
           <img src="/card.png" className="card" alt="bank card" />
         </div>
@@ -322,7 +384,16 @@ function Balance({ balance, transactions = [] }) {
         <div className="balance-grid">
           <div className="balance-stat deposit">
             <span>Balance</span>
-            <h1>{money(balance)}</h1>
+            <div className="balance-value-wrap">
+              <h1>{showBalance ? money(balance) : "••••••••"}</h1>
+              <button
+                className="balance-visibility-btn"
+                onClick={() => setShowBalance(!showBalance)}
+                type="button"
+              >
+                {showBalance ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
             <p>
               Last deposit: {analytics.lastDeposit?.amount || "-"}
               <br />
@@ -334,7 +405,16 @@ function Balance({ balance, transactions = [] }) {
 
           <div className="balance-stat withdraw">
             <span>Withdraw</span>
-            <h1>{money(analytics.totalWithdraw)}</h1>
+            <div className="balance-value-wrap">
+              <h1>{showBalance ? money(analytics.totalWithdraw) : "••••••••"}</h1>
+              <button
+                className="balance-visibility-btn"
+                onClick={() => setShowBalance(!showBalance)}
+                type="button"
+              >
+                {showBalance ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
             <p>
               Last withdraw: {analytics.lastWithdraw?.amount || "-"}
               <br />
@@ -360,74 +440,85 @@ function Balance({ balance, transactions = [] }) {
       <section className="balance-panel-stage">
         {activePanel === "summary" && (
           <article className="analytics-card focus-card">
-          <span>Month Summary</span>
-          <h2>{fullMonthLabel(analytics.currentMonth.key)}</h2>
-          <div className="month-summary-grid">
-            <div>
-              <small>Withdraw</small>
-              <strong>{money(analytics.currentMonth.Withdraw)}</strong>
+            <span>Month Summary</span>
+            <h2>{fullMonthLabel(analytics.currentMonth.key)}</h2>
+            <div className="month-summary-grid">
+              <div>
+                <small>Withdraw</small>
+                <strong>{money(analytics.currentMonth.Withdraw)}</strong>
+              </div>
+              <div>
+                <small>Deposit</small>
+                <strong>{money(analytics.currentMonth.Deposit)}</strong>
+              </div>
+              <div>
+                <small>People</small>
+                <strong>{analytics.currentMonth.peopleCount}</strong>
+              </div>
             </div>
-            <div>
-              <small>Deposit</small>
-              <strong>{money(analytics.currentMonth.Deposit)}</strong>
-            </div>
-            <div>
-              <small>People</small>
-              <strong>{analytics.currentMonth.peopleCount}</strong>
-            </div>
-          </div>
-        </article>
+          </article>
         )}
 
         {activePanel === "people" && (
           <article className="analytics-card focus-card">
-          <span>People Involved</span>
-          <h2>{strongestGroup.label}</h2>
-          <p>{money(strongestGroup.amount)} is the largest spend lane.</p>
-          <div className="people-list">
-            {analytics.groupTotals.map((group) => (
-              <div className="person-row" key={group.key}>
-                <div>
-                  <strong>{group.label}</strong>
-                  <small>{group.count} tx</small>
+            <span>People Involved</span>
+            <h2>{strongestGroup.label}</h2>
+            <p>{money(strongestGroup.amount)} is the largest spend lane.</p>
+            <div className="people-list">
+              {analytics.groupTotals.map((group) => (
+                <div className="person-row" key={group.key}>
+                  <div>
+                    <strong>{group.label}</strong>
+                    <small>{group.count} tx</small>
+                  </div>
+                  <div className="person-bar" aria-hidden="true">
+                    <span
+                      style={{
+                        width: `${group.share}%`,
+                        backgroundColor: group.color
+                      }}
+                    ></span>
+                  </div>
+                  <b>{money(group.amount)}</b>
                 </div>
-                <div className="person-bar" aria-hidden="true">
-                  <span
-                    style={{
-                      width: `${group.share}%`,
-                      backgroundColor: group.color
-                    }}
-                  ></span>
-                </div>
-                <b>{money(group.amount)}</b>
-              </div>
-            ))}
-          </div>
-        </article>
+              ))}
+            </div>
+          </article>
         )}
 
         {activePanel === "velocity" && (
           <article className="analytics-card focus-card velocity-card">
-          <span>Spending Velocity</span>
-          <h2>{money(analytics.dailyVelocity)} / day</h2>
-          <div className="velocity-meter">
-            <div className="velocity-track">
-              <span
-                style={{ width: `${analytics.velocityPercent}%` }}
-              ></span>
+            <span>Spending Velocity</span>
+            <h2>{money(analytics.dailyVelocity)} / day</h2>
+            <div className="velocity-meter">
+              <div className="velocity-track">
+                <span style={{ width: `${analytics.velocityPercent}%` }}></span>
+              </div>
             </div>
-          </div>
-          <p>
-            {analytics.velocityDelta >= 0 ? "+" : ""}
-            {analytics.velocityDelta.toFixed(1)}% vs previous 7 days
-          </p>
-        </article>
+            <p>
+              {analytics.velocityDelta >= 0 ? "+" : ""}
+              {analytics.velocityDelta.toFixed(1)}% vs previous 7 days
+            </p>
+          </article>
         )}
 
         {activePanel === "interest" && (
           <article className="analytics-card focus-card interest-card">
             <span>Credit Interest</span>
-            <h2>{money(analytics.interest.conservativeCycleInterest)}</h2>
+            <div className="interest-lock-row">
+              <h2>
+                {interestVisible
+                  ? money(analytics.interest.conservativeCycleInterest)
+                  : "••••••••"}
+              </h2>
+              <button
+                className="interest-lock-btn"
+                type="button"
+                onClick={toggleInterestVisibility}
+              >
+                {interestVisible ? <FaEyeSlash /> : <FaLock />}
+              </button>
+            </div>
             <p>
               Estimated after deducting{" "}
               {Math.round(analytics.interest.deduction * 100)}% from the raw
@@ -436,7 +527,7 @@ function Balance({ balance, transactions = [] }) {
             <div className="interest-grid">
               <div>
                 <small>Annual rate</small>
-                <strong>{(analytics.interest.rate * 100).toFixed(1)}%</strong>
+                  <strong>{(analytics.interest.rate * 100).toFixed(1)}%</strong>
               </div>
               <div>
                 <small>Interest days</small>
@@ -457,76 +548,76 @@ function Balance({ balance, transactions = [] }) {
         {activePanel === "charts" && (
           <div className="analytics-layout">
             <article className="analytics-card analytics-card-wide">
-          <div className="chart-heading">
-            <div>
-              <span>Monthly Flow</span>
-              <h2>Withdraw, Deposit, Net</h2>
-            </div>
-          </div>
-          <div className="chart-panel">
-            <ResponsiveContainer>
-              <BarChart data={analytics.monthlyTrend}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip formatter={(value) => money(value)} />
-                <Legend />
-                <Bar dataKey="Withdraw" fill="#f4a300" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="Deposit" fill="#53a460" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="Net" fill="#20231f" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </article>
+              <div className="chart-heading">
+                <div>
+                  <span>Monthly Flow</span>
+                  <h2>Withdraw, Deposit, Net</h2>
+                </div>
+              </div>
+              <div className="chart-panel">
+                <ResponsiveContainer>
+                  <BarChart data={analytics.monthlyTrend}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip formatter={(value) => money(value)} />
+                    <Legend />
+                    <Bar dataKey="Withdraw" fill="#f4a300" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="Deposit" fill="#53a460" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="Net" fill="#20231f" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </article>
 
-        <article className="analytics-card analytics-card-wide">
-          <div className="chart-heading">
-            <div>
-              <span>Spend Curve</span>
-              <h2>Cumulative Withdraw</h2>
-            </div>
-          </div>
-          <div className="chart-panel split-chart">
-            <ResponsiveContainer>
-              <AreaChart data={analytics.cumulativeTrend}>
-                <defs>
-                  <linearGradient id="spendGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f4a300" stopOpacity={0.55} />
-                    <stop offset="95%" stopColor="#f4a300" stopOpacity={0.04} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip formatter={(value) => money(value)} />
-                <Area
-                  type="monotone"
-                  dataKey="Spend"
-                  stroke="#f4a300"
-                  strokeWidth={3}
-                  fill="url(#spendGradient)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <article className="analytics-card analytics-card-wide">
+              <div className="chart-heading">
+                <div>
+                  <span>Spend Curve</span>
+                  <h2>Cumulative Withdraw</h2>
+                </div>
+              </div>
+              <div className="chart-panel split-chart">
+                <ResponsiveContainer>
+                  <AreaChart data={analytics.cumulativeTrend}>
+                    <defs>
+                      <linearGradient id="spendGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f4a300" stopOpacity={0.55} />
+                        <stop offset="95%" stopColor="#f4a300" stopOpacity={0.04} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip formatter={(value) => money(value)} />
+                    <Area
+                      type="monotone"
+                      dataKey="Spend"
+                      stroke="#f4a300"
+                      strokeWidth={3}
+                      fill="url(#spendGradient)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
 
-            <ResponsiveContainer>
-              <LineChart data={analytics.monthlyTrend}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="month" />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="peopleCount"
-                  name="People"
-                  stroke="#c73939"
-                  strokeWidth={3}
-                  dot={{ r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </article>
+                <ResponsiveContainer>
+                  <LineChart data={analytics.monthlyTrend}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="month" />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    <Line
+                      type="monotone"
+                      dataKey="peopleCount"
+                      name="People"
+                      stroke="#c73939"
+                      strokeWidth={3}
+                      dot={{ r: 4 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </article>
           </div>
         )}
       </section>
