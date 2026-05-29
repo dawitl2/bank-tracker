@@ -13,15 +13,11 @@ import {
   XAxis,
   YAxis
 } from "recharts";
-import { FaEye, FaEyeSlash, FaLock } from "react-icons/fa";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 
 const ANALYTICS_CONFIG = {
-  monthWindow: 6,
   velocityWindowDays: 7,
-  highVelocityDailySpend: 50000,
-  annualInterestRate: 0.07,
-  interestSafetyDeduction: 0.10,
   personGroups: [
     {
       key: "construction",
@@ -49,9 +45,6 @@ const ANALYTICS_CONFIG = {
     }
   ]
 };
-
-// "pass" encoded in base64
-const ENCODED_INTEREST_PASSWORD = "cGFzcw==";
 
 const money = (value) =>
   Math.round(value || 0).toLocaleString("en-US");
@@ -124,36 +117,6 @@ function Balance({ balance, transactions = [] }) {
   const [activePanel, setActivePanel] = useState("summary");
   const [showBalance, setShowBalance] = useState(false);
 
-  const sessionUnlocked = sessionStorage.getItem("interest_unlocked") === "true";
-  const [interestUnlocked, setInterestUnlocked] = useState(sessionUnlocked);
-  const [interestVisible, setInterestVisible] = useState(sessionUnlocked);
-  const [showInterestPrompt, setShowInterestPrompt] = useState(false);
-  const [interestPassword, setInterestPassword] = useState("");
-
-  const unlockInterest = () => {
-    const decodedPassword = atob(ENCODED_INTEREST_PASSWORD);
-    if (interestPassword === decodedPassword) {
-      setInterestUnlocked(true);
-      setInterestVisible(true);
-      sessionStorage.setItem("interest_unlocked", "true");
-      setShowInterestPrompt(false);
-      setInterestPassword("");
-    } else {
-      alert("Wrong password");
-    }
-  };
-
-  // Toggle visibility only — never asks for password again this session
-  const toggleInterestVisibility = () => {
-    if (interestUnlocked) {
-      // Session is unlocked, just flip visibility, no password needed
-      setInterestVisible((v) => !v);
-    } else {
-      // Not unlocked yet this session, ask for password
-      setShowInterestPrompt(true);
-    }
-  };
-
   const analytics = useMemo(() => {
     const enriched = transactions.map((tx) => ({
       ...tx,
@@ -219,59 +182,14 @@ function Balance({ balance, transactions = [] }) {
       month.people.add(getPerson(tx));
     });
 
+    // All months, newest first
     const monthlyTrend = [...monthMap.values()]
-      .sort((a, b) => a.key.localeCompare(b.key))
-      .slice(-ANALYTICS_CONFIG.monthWindow)
+      .sort((a, b) => b.key.localeCompare(a.key))
       .map((month) => ({
         ...month,
         peopleCount: month.people.size,
         people: undefined
       }));
-
-    const currentMonth =
-      monthlyTrend[monthlyTrend.length - 1] || {
-        key: "Unknown",
-        Withdraw: 0,
-        Deposit: 0,
-        Net: 0,
-        count: 0,
-        peopleCount: 0
-      };
-
-    const recentAnchor =
-      enriched
-        .map((tx) => tx.parsedDate)
-        .filter(Boolean)
-        .sort((a, b) => b - a)[0] || new Date();
-    const dayMs = 24 * 60 * 60 * 1000;
-    const recentWindowStart =
-      recentAnchor.getTime() - ANALYTICS_CONFIG.velocityWindowDays * dayMs;
-    const previousWindowStart =
-      recentAnchor.getTime() - ANALYTICS_CONFIG.velocityWindowDays * 2 * dayMs;
-
-    const recentSpend = withdrawals
-      .filter((tx) => {
-        const time = tx.parsedDate?.getTime();
-        return time && time > recentWindowStart && time <= recentAnchor.getTime();
-      })
-      .reduce((sum, tx) => sum + tx.parsedAmount, 0);
-
-    const previousSpend = withdrawals
-      .filter((tx) => {
-        const time = tx.parsedDate?.getTime();
-        return time && time > previousWindowStart && time <= recentWindowStart;
-      })
-      .reduce((sum, tx) => sum + tx.parsedAmount, 0);
-
-    const dailyVelocity =
-      recentSpend / ANALYTICS_CONFIG.velocityWindowDays || 0;
-    const velocityPercent = Math.min(
-      100,
-      (dailyVelocity / ANALYTICS_CONFIG.highVelocityDailySpend) * 100
-    );
-    const velocityDelta = previousSpend
-      ? ((recentSpend - previousSpend) / previousSpend) * 100
-      : 0;
 
     const cumulativeTrend = withdrawals
       .filter((tx) => tx.parsedDate)
@@ -295,23 +213,6 @@ function Balance({ balance, transactions = [] }) {
         return rows;
       }, []);
 
-    const today = new Date();
-    const cycleEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    const daysInCycle = cycleEnd.getDate();
-    const daysRemaining = Math.max(
-      0,
-      Math.ceil((cycleEnd.getTime() - today.getTime()) / dayMs)
-    );
-    const grossCycleInterest =
-      balance * (ANALYTICS_CONFIG.annualInterestRate / 365) * daysInCycle;
-    const conservativeCycleInterest =
-      grossCycleInterest * (1 - ANALYTICS_CONFIG.interestSafetyDeduction);
-    const remainingInterest =
-      balance *
-      (ANALYTICS_CONFIG.annualInterestRate / 365) *
-      Math.max(daysRemaining, 1) *
-      (1 - ANALYTICS_CONFIG.interestSafetyDeduction);
-
     return {
       totalWithdraw,
       totalDeposit,
@@ -319,20 +220,7 @@ function Balance({ balance, transactions = [] }) {
       lastDeposit,
       groupTotals,
       monthlyTrend,
-      currentMonth,
-      dailyVelocity,
-      velocityPercent,
-      velocityDelta,
-      cumulativeTrend,
-      interest: {
-        cycleEnd,
-        daysInCycle,
-        daysRemaining,
-        rate: ANALYTICS_CONFIG.annualInterestRate,
-        deduction: ANALYTICS_CONFIG.interestSafetyDeduction,
-        conservativeCycleInterest,
-        remainingInterest
-      }
+      cumulativeTrend
     };
   }, [balance, transactions]);
 
@@ -344,39 +232,17 @@ function Balance({ balance, transactions = [] }) {
   const panelOptions = [
     { key: "summary", label: "Summary" },
     { key: "people", label: "People" },
-    { key: "velocity", label: "Velocity" },
-    { key: "interest", label: "Interest" },
     { key: "charts", label: "Charts" }
   ];
+
+  // For charts, re-sort oldest→newest
+  const monthlyTrendAsc = [...analytics.monthlyTrend].sort((a, b) =>
+    a.key.localeCompare(b.key)
+  );
 
   return (
     <div className="balance-page balance-dashboard">
       <section className="balance-hero">
-
-        {/* Password prompt overlay */}
-        {showInterestPrompt && (
-          <div className="interest-password-overlay">
-            <div className="interest-password-box">
-              <h3>Unlock Interest</h3>
-              <input
-                type="password"
-                placeholder="Password"
-                value={interestPassword}
-                onChange={(e) => setInterestPassword(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && unlockInterest()}
-              />
-              <div className="interest-password-actions">
-                <button type="button" onClick={unlockInterest}>
-                  Unlock
-                </button>
-                <button type="button" onClick={() => setShowInterestPrompt(false)}>
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         <div className="balance-card-frame">
           <img src="/card.png" className="card" alt="bank card" />
         </div>
@@ -439,24 +305,28 @@ function Balance({ balance, transactions = [] }) {
 
       <section className="balance-panel-stage">
         {activePanel === "summary" && (
-          <article className="analytics-card focus-card">
-            <span>Month Summary</span>
-            <h2>{fullMonthLabel(analytics.currentMonth.key)}</h2>
-            <div className="month-summary-grid">
-              <div>
-                <small>Withdraw</small>
-                <strong>{money(analytics.currentMonth.Withdraw)}</strong>
-              </div>
-              <div>
-                <small>Deposit</small>
-                <strong>{money(analytics.currentMonth.Deposit)}</strong>
-              </div>
-              <div>
-                <small>People</small>
-                <strong>{analytics.currentMonth.peopleCount}</strong>
-              </div>
-            </div>
-          </article>
+          <div className="analytics-layout">
+            {analytics.monthlyTrend.map((m) => (
+              <article className="analytics-card focus-card" key={m.key}>
+                <span>Month Summary</span>
+                <h2>{fullMonthLabel(m.key)}</h2>
+                <div className="month-summary-grid">
+                  <div>
+                    <small>Withdraw</small>
+                    <strong>{money(m.Withdraw)}</strong>
+                  </div>
+                  <div>
+                    <small>Deposit</small>
+                    <strong>{money(m.Deposit)}</strong>
+                  </div>
+                  <div>
+                    <small>People</small>
+                    <strong>{m.peopleCount}</strong>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
         )}
 
         {activePanel === "people" && (
@@ -486,65 +356,6 @@ function Balance({ balance, transactions = [] }) {
           </article>
         )}
 
-        {activePanel === "velocity" && (
-          <article className="analytics-card focus-card velocity-card">
-            <span>Spending Velocity</span>
-            <h2>{money(analytics.dailyVelocity)} / day</h2>
-            <div className="velocity-meter">
-              <div className="velocity-track">
-                <span style={{ width: `${analytics.velocityPercent}%` }}></span>
-              </div>
-            </div>
-            <p>
-              {analytics.velocityDelta >= 0 ? "+" : ""}
-              {analytics.velocityDelta.toFixed(1)}% vs previous 7 days
-            </p>
-          </article>
-        )}
-
-        {activePanel === "interest" && (
-          <article className="analytics-card focus-card interest-card">
-            <span>Credit Interest</span>
-            <div className="interest-lock-row">
-              <h2>
-                {interestVisible
-                  ? money(analytics.interest.conservativeCycleInterest)
-                  : "••••••••"}
-              </h2>
-              <button
-                className="interest-lock-btn"
-                type="button"
-                onClick={toggleInterestVisibility}
-              >
-                {interestVisible ? <FaEyeSlash /> : <FaLock />}
-              </button>
-            </div>
-            <p>
-              Estimated after deducting{" "}
-              {Math.round(analytics.interest.deduction * 100)}% from the raw
-              monthly interest.
-            </p>
-            <div className="interest-grid">
-              <div>
-                <small>Annual rate</small>
-                  <strong>{(analytics.interest.rate * 100).toFixed(1)}%</strong>
-              </div>
-              <div>
-                <small>Interest days</small>
-                <strong>{analytics.interest.daysInCycle}</strong>
-              </div>
-              <div>
-                <small>Days remain</small>
-                <strong>{analytics.interest.daysRemaining}</strong>
-              </div>
-              <div>
-                <small>Remaining est.</small>
-                <strong>{money(analytics.interest.remainingInterest)}</strong>
-              </div>
-            </div>
-          </article>
-        )}
-
         {activePanel === "charts" && (
           <div className="analytics-layout">
             <article className="analytics-card analytics-card-wide">
@@ -556,7 +367,7 @@ function Balance({ balance, transactions = [] }) {
               </div>
               <div className="chart-panel">
                 <ResponsiveContainer>
-                  <BarChart data={analytics.monthlyTrend}>
+                  <BarChart data={monthlyTrendAsc}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="month" />
                     <YAxis />
@@ -601,7 +412,7 @@ function Balance({ balance, transactions = [] }) {
                 </ResponsiveContainer>
 
                 <ResponsiveContainer>
-                  <LineChart data={analytics.monthlyTrend}>
+                  <LineChart data={monthlyTrendAsc}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="month" />
                     <YAxis allowDecimals={false} />
