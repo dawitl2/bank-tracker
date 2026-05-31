@@ -18,6 +18,8 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const ANALYTICS_CONFIG = {
   velocityWindowDays: 7,
+  annualInterestRate: 0.07,
+  interestTaxRate: 0.15,
   personGroups: [
     {
       key: "construction",
@@ -111,6 +113,14 @@ const getPerson = (tx) =>
 const getGroup = (tx) => {
   const person = getPerson(tx);
   return ANALYTICS_CONFIG.personGroups.find((group) => group.match(person));
+};
+
+const getMonthBounds = (date = new Date()) => {
+  const start = new Date(date.getFullYear(), date.getMonth(), 1);
+  const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  end.setHours(23, 59, 59, 999);
+
+  return { start, end };
 };
 
 function Balance({ balance, transactions = [] }) {
@@ -213,6 +223,60 @@ function Balance({ balance, transactions = [] }) {
         return rows;
       }, []);
 
+    const netMovement = enriched.reduce((sum, tx) => {
+      return tx.is_withdraw === false
+        ? sum + tx.parsedAmount
+        : sum - tx.parsedAmount;
+    }, 0);
+    const openingBalance = balance - netMovement;
+    const sortedLedger = [...enriched]
+      .filter((tx) => tx.parsedDate)
+      .sort((a, b) => a.parsedDate - b.parsedDate);
+    const { start: monthStart, end: monthEnd } = getMonthBounds();
+    let runningBalance = openingBalance;
+    let monthMinimumBalance = openingBalance;
+    let monthOpeningBalance = openingBalance;
+
+    sortedLedger.forEach((tx) => {
+      if (tx.parsedDate < monthStart) {
+        runningBalance += tx.is_withdraw === false
+          ? tx.parsedAmount
+          : -tx.parsedAmount;
+        monthOpeningBalance = runningBalance;
+        monthMinimumBalance = runningBalance;
+        return;
+      }
+
+      if (tx.parsedDate <= monthEnd) {
+        runningBalance += tx.is_withdraw === false
+          ? tx.parsedAmount
+          : -tx.parsedAmount;
+        monthMinimumBalance = Math.min(monthMinimumBalance, runningBalance);
+      }
+    });
+
+    const today = new Date();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const monthDays = monthEnd.getDate();
+    const elapsedDays = Math.min(
+      monthDays,
+      Math.max(1, Math.ceil((today.getTime() - monthStart.getTime()) / dayMs))
+    );
+    const remainingDays = Math.max(
+      0,
+      Math.ceil((monthEnd.getTime() - today.getTime()) / dayMs)
+    );
+    const dailyInterestRate = ANALYTICS_CONFIG.annualInterestRate / 365;
+    const grossMonthEstimate =
+      monthMinimumBalance * dailyInterestRate * monthDays;
+    const netMonthEstimate =
+      grossMonthEstimate * (1 - ANALYTICS_CONFIG.interestTaxRate);
+    const remainingEstimate =
+      monthMinimumBalance *
+      dailyInterestRate *
+      Math.max(remainingDays, 0) *
+      (1 - ANALYTICS_CONFIG.interestTaxRate);
+
     return {
       totalWithdraw,
       totalDeposit,
@@ -220,7 +284,20 @@ function Balance({ balance, transactions = [] }) {
       lastDeposit,
       groupTotals,
       monthlyTrend,
-      cumulativeTrend
+      cumulativeTrend,
+      interest: {
+        monthLabel: fullMonthLabel(monthKey(monthStart)),
+        annualRate: ANALYTICS_CONFIG.annualInterestRate,
+        taxRate: ANALYTICS_CONFIG.interestTaxRate,
+        monthOpeningBalance,
+        minimumBalance: monthMinimumBalance,
+        elapsedDays,
+        remainingDays,
+        monthDays,
+        grossMonthEstimate,
+        netMonthEstimate,
+        remainingEstimate
+      }
     };
   }, [balance, transactions]);
 
@@ -232,6 +309,7 @@ function Balance({ balance, transactions = [] }) {
   const panelOptions = [
     { key: "summary", label: "Summary" },
     { key: "people", label: "People" },
+    { key: "interest", label: "Interest" },
     { key: "charts", label: "Charts" }
   ];
 
@@ -352,6 +430,45 @@ function Balance({ balance, transactions = [] }) {
                   <b>{money(group.amount)}</b>
                 </div>
               ))}
+            </div>
+          </article>
+        )}
+
+        {activePanel === "interest" && (
+          <article className="analytics-card focus-card interest-card">
+            <span>Credit Interest</span>
+            <h2>{money(analytics.interest.netMonthEstimate)}</h2>
+            <p>
+              Based on the lowest balance reached in {analytics.interest.monthLabel}.
+            </p>
+
+            <div className="interest-grid">
+              <div>
+                <small>Minimum balance</small>
+                <strong>{money(analytics.interest.minimumBalance)}</strong>
+              </div>
+              <div>
+                <small>Remaining est.</small>
+                <strong>{money(analytics.interest.remainingEstimate)}</strong>
+              </div>
+              <div>
+                <small>Remaining day</small>
+                <strong>{analytics.interest.remainingDays}</strong>
+              </div>
+              <div>
+                <small>Interest days</small>
+                <strong>
+                  {analytics.interest.elapsedDays}/{analytics.interest.monthDays}
+                </strong>
+              </div>
+              <div>
+                <small>Annual rate</small>
+                <strong>{(analytics.interest.annualRate * 100).toFixed(1)}%</strong>
+              </div>
+              <div>
+                <small>Tax held</small>
+                <strong>{(analytics.interest.taxRate * 100).toFixed(0)}%</strong>
+              </div>
             </div>
           </article>
         )}

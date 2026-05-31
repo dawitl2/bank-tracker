@@ -1687,3 +1687,371 @@ h1 {
   border-radius: 8px;
   cursor: pointer;
 }
+
+button,
+a,
+input,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+input,
+select {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+a {
+  color: inherit;
+}
+
+@media (max-width: 768px) {
+  html {
+    background: #eef1ed;
+  }
+
+  body {
+    min-width: 320px;
+    background:
+      linear-gradient(180deg, #fffaf0 0%, #eef1ed 42%, #f8f9f4 100%);
+    color: #20231f;
+    overflow-x: hidden;
+  }
+
+  .app {
+    width: min(100%, 520px);
+    max-width: none;
+    min-height: 100vh;
+    margin: 0 auto;
+    padding: max(14px, env(safe-area-inset-top)) 14px
+      max(88px, calc(72px + env(safe-area-inset-bottom)));
+    background: transparent;
+  }
+
+  .logo {
+    width: min(230px, 68vw);
+    margin: 10px auto 20px;
+  }
+
+  .toggle {
+    position: sticky;
+    top: 8px;
+    z-index: 800;
+    min-height: 54px;
+    margin: 0 0 18px;
+    padding: 5px;
+    border: 1px solid rgba(32, 35, 31, 0.08);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.86);
+    box-shadow: 0 16px 36px rgba(34, 39, 34, 0.12);
+    backdrop-filter: blur(14px);
+  }
+
+  .toggle button {
+    min-width: 0;
+    min-height: 44px;
+    border-radius: 12px;
+    color: #3f453d;
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  .toggle .active {
+    background: #f4a300;
+    color: #111;
+    box-shadow: 0 8px 18px rgba(244, 163, 0, 0.24);
+  }
+
+  .content,
+  .app > .content,
+  .app > .content > main.content {
+    width: 100%;
+    padding: 0;
+    background: transparent;
+  }
+
+  .transactions-header {
+    align-items: flex-end;
+    gap: 12px;
+    margin: 8px 0 16px;
+  }
+
+  .transactions-header h1 {
+    margin: 0;
+    font-size: clamp(24px, 8vw, 34px);
+    line-height: 1;
+    font-weight: 900;
+  }
+
+  .filter-dropdown {
+    min-width: 148px;
+  }
+
+  .dropdown-btn {
+    min-width: 148px;
+    min-height: 44px;
+    border: 1px solid rgba(244, 163, 0, 0.38);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.92);
+    color: #20231f;
+    box-shadow: 0 10px 24px rgba(34, 39, 34, 0.08);
+  }
+
+  .dropdown-menu {
+    border: 1px solid rgba(244, 163, 0, 0.38);
+    border-radius: 14px;
+    box-shadow: 0 18px 42px rgba(34, 39, 34, 0.18);
+  }
+
+  .transaction-table,
+  .transaction-table tbody,
+  .transaction-table tr,
+  .transaction-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .transaction-table {
+    overflow: visible;
+    white-space: normal;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .transaction-table thead {
+    display: none;
+  }
+
+  .transaction-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .transaction-table tbody tr {
+    border: 1px solid rgba(32, 35, 31, 0.08);
+    border-radius: 18px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 12px 28px rgba(34, 39, 34, 0.08);
+  }
+
+  .transaction-table tbody tr.deposit-row {
+    background:
+      linear-gradient(90deg, rgba(83, 164, 96, 0.12), rgba(255,255,255,0.94) 42%);
+  }
+
+  .transaction-table tbody tr.construction-row {
+    background:
+      linear-gradient(90deg, rgba(244, 163, 0, 0.13), rgba(255,255,255,0.94) 42%);
+  }
+
+  .transaction-table tbody tr.dawit-row {
+    background:
+      linear-gradient(90deg, rgba(199, 57, 57, 0.10), rgba(255,255,255,0.94) 42%);
+  }
+
+  .transaction-table td {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 9px 2px;
+    border: none;
+    color: #30352e;
+    font-size: 13px;
+    line-height: 1.35;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+
+  .transaction-table td::before {
+    flex: 0 0 auto;
+    color: #7b8175;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .transaction-table td:nth-child(1)::before { content: "ID"; }
+  .transaction-table td:nth-child(2)::before { content: "Amount"; }
+  .transaction-table td:nth-child(3)::before { content: "Date"; }
+  .transaction-table td:nth-child(4)::before { content: "Reference"; }
+  .transaction-table td:nth-child(5)::before { content: "Narrative"; }
+  .transaction-table td:nth-child(6)::before { content: ""; }
+
+  .transaction-table td:first-child {
+    display: none;
+  }
+
+  .transaction-table .amount {
+    color: #151510;
+    font-size: 17px;
+    font-weight: 900;
+  }
+
+  .action {
+    justify-content: flex-end;
+  }
+
+  .action a,
+  .more-link {
+    min-width: 88px;
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: rgba(244, 163, 0, 0.18);
+    color: #704900;
+    font-weight: 900;
+    text-decoration: none;
+  }
+
+  .balance-hero,
+  .balance-dashboard,
+  .analytics-layout {
+    gap: 14px;
+  }
+
+  .balance-card-frame {
+    padding: 0;
+  }
+
+  .balance-card-frame .card,
+  .card {
+    margin: 4px 0 18px;
+    border-radius: 18px;
+    box-shadow: 0 18px 36px rgba(34, 39, 34, 0.14);
+  }
+
+  .balance-grid {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+
+  .balance-stat {
+    border: 1px solid rgba(32, 35, 31, 0.08);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 16px;
+    box-shadow: 0 12px 28px rgba(34, 39, 34, 0.08);
+  }
+
+  .balance-stat span {
+    font-size: 15px;
+  }
+
+  .balance-grid h1 {
+    margin: 8px 0 8px;
+    font-size: clamp(28px, 9vw, 38px);
+    line-height: 1;
+  }
+
+  .balance-grid p {
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .divider {
+    display: none;
+  }
+
+  .balance-value-wrap {
+    justify-content: space-between;
+  }
+
+  .analytics-switcher {
+    margin: 2px 0;
+    padding: 4px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.86);
+    box-shadow: 0 10px 24px rgba(34, 39, 34, 0.08);
+  }
+
+  .analytics-switcher button {
+    min-height: 38px;
+    border-radius: 12px;
+    color: #20231f;
+    font-size: 13px;
+  }
+
+  .analytics-card {
+    border-radius: 18px;
+    background: rgba(255,255,255,0.92);
+    box-shadow: 0 12px 28px rgba(34, 39, 34, 0.08);
+  }
+
+  .focus-card h2,
+  .analytics-card h2 {
+    font-size: clamp(24px, 8vw, 34px);
+    line-height: 1.08;
+  }
+
+  .month-summary-grid,
+  .interest-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .month-summary-grid div,
+  .interest-grid div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: 14px;
+    background: #fbfcf8;
+  }
+
+  .chart-panel {
+    height: 300px;
+  }
+
+  .split-chart {
+    height: 620px;
+  }
+
+  .modal {
+    width: min(94vw, 460px);
+    max-height: min(88vh, 760px);
+    padding: 22px;
+    border-radius: 18px;
+  }
+
+  .modal input,
+  .draft-field input,
+  .draft-field select,
+  .qr-control-field select {
+    min-height: 46px;
+    border-radius: 12px;
+    font-size: 16px;
+  }
+
+  .receipt-choice-card,
+  .receipt-draft-box,
+  .qr-scanner-panel,
+  .image-receipt-panel {
+    border-radius: 16px;
+  }
+
+  .add-btn,
+  .calculator-btn {
+    bottom: max(18px, env(safe-area-inset-bottom));
+    border-radius: 18px;
+    box-shadow: 0 18px 36px rgba(34, 39, 34, 0.18);
+  }
+
+  .add-btn {
+    right: 16px;
+    width: 58px;
+    height: 58px;
+    padding: 0;
+    font-size: 30px;
+  }
+
+  .calculator-btn {
+    left: 16px;
+    min-height: 52px;
+    padding: 0 16px;
+    color: #111;
+  }
+}
