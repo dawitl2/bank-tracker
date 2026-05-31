@@ -2057,6 +2057,73 @@ a {
 }
 
 @media (max-width: 768px) {
+  .balance-grid {
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .balance-stat {
+    flex: 1 1 calc(50% - 8px);
+  }
+
+  .balance-stat span {
+    font-size: clamp(12px, 3.4vw, 14px);
+    line-height: 1;
+  }
+
+  .balance-value-wrap {
+    gap: 5px;
+    min-width: 0;
+  }
+
+  .balance-value-wrap h1 {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    font-size: clamp(20px, 6.2vw, 27px);
+    line-height: 1.05;
+  }
+
+  .balance-visibility-btn {
+    flex: 0 0 28px;
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .balance-grid p {
+    font-size: clamp(10px, 2.9vw, 11px);
+    line-height: 1.4;
+  }
+
+  .divider {
+    height: auto;
+    min-height: 76px;
+    align-self: stretch;
+  }
+}
+
+@media (max-width: 380px) {
+  .balance-grid {
+    gap: 6px;
+  }
+
+  .balance-value-wrap h1 {
+    font-size: clamp(18px, 5.8vw, 23px);
+  }
+
+  .balance-visibility-btn {
+    flex-basis: 26px;
+    width: 26px;
+    height: 26px;
+  }
+
+  .balance-grid p {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 768px) {
   body {
     background-color: #f5f5f5;
     color: #333;
