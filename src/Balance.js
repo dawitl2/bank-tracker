@@ -19,7 +19,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 const ANALYTICS_CONFIG = {
   velocityWindowDays: 7,
   annualInterestRate: 0.07,
-  interestTaxRate: 0.15,
+  interestTaxRate: 0.10,
   personGroups: [
     {
       key: "construction",
@@ -47,6 +47,7 @@ const ANALYTICS_CONFIG = {
     }
   ]
 };
+const VISIBILITY_PASSWORD = "dawit123";
 
 const money = (value) =>
   Math.round(value || 0).toLocaleString("en-US");
@@ -125,7 +126,16 @@ const getMonthBounds = (date = new Date()) => {
 
 function Balance({ balance, transactions = [] }) {
   const [activePanel, setActivePanel] = useState("summary");
-  const [showBalance, setShowBalance] = useState(false);
+  const getVisibilityDayKey = () => new Date().toISOString().slice(0, 10);
+  const [showBalance, setShowBalance] = useState(
+    false
+  );
+  const [showInterest, setShowInterest] = useState(
+    () => localStorage.getItem("interest_visibility_day") === getVisibilityDayKey()
+  );
+  const [visibilityPromptOpen, setVisibilityPromptOpen] = useState(false);
+  const [visibilityPassword, setVisibilityPassword] = useState("");
+  const [visibilityError, setVisibilityError] = useState(false);
 
   const analytics = useMemo(() => {
     const enriched = transactions.map((tx) => ({
@@ -317,6 +327,38 @@ function Balance({ balance, transactions = [] }) {
   const monthlyTrendAsc = [...analytics.monthlyTrend].sort((a, b) =>
     a.key.localeCompare(b.key)
   );
+  const hiddenMoney = "••••••••";
+
+  const requestVisibility = () => {
+    setShowBalance((current) => !current);
+  };
+
+  const requestInterestVisibility = () => {
+    if (showInterest) {
+      setShowInterest(false);
+      return;
+    }
+
+    if (localStorage.getItem("interest_visibility_day") === getVisibilityDayKey()) {
+      setShowInterest(true);
+      return;
+    }
+
+    setVisibilityPromptOpen(true);
+  };
+
+  const unlockVisibility = () => {
+    if (visibilityPassword === VISIBILITY_PASSWORD) {
+      localStorage.setItem("interest_visibility_day", getVisibilityDayKey());
+      setShowInterest(true);
+      setVisibilityPromptOpen(false);
+      setVisibilityPassword("");
+      setVisibilityError(false);
+      return;
+    }
+
+    setVisibilityError(true);
+  };
 
   return (
     <div className="balance-page balance-dashboard">
@@ -329,10 +371,10 @@ function Balance({ balance, transactions = [] }) {
           <div className="balance-stat deposit">
             <span>Balance</span>
             <div className="balance-value-wrap">
-              <h1>{showBalance ? money(balance) : "••••••••"}</h1>
+              <h1>{showBalance ? money(balance) : hiddenMoney}</h1>
               <button
                 className="balance-visibility-btn"
-                onClick={() => setShowBalance(!showBalance)}
+                onClick={requestVisibility}
                 type="button"
               >
                 {showBalance ? <FaEyeSlash /> : <FaEye />}
@@ -350,10 +392,10 @@ function Balance({ balance, transactions = [] }) {
           <div className="balance-stat withdraw">
             <span>Withdraw</span>
             <div className="balance-value-wrap">
-              <h1>{showBalance ? money(analytics.totalWithdraw) : "••••••••"}</h1>
+              <h1>{showBalance ? money(analytics.totalWithdraw) : hiddenMoney}</h1>
               <button
                 className="balance-visibility-btn"
-                onClick={() => setShowBalance(!showBalance)}
+                onClick={requestVisibility}
                 type="button"
               >
                 {showBalance ? <FaEyeSlash /> : <FaEye />}
@@ -437,19 +479,35 @@ function Balance({ balance, transactions = [] }) {
         {activePanel === "interest" && (
           <article className="analytics-card focus-card interest-card">
             <span>Credit Interest</span>
-            <h2>{money(analytics.interest.netMonthEstimate)}</h2>
+            <div className="interest-lock-row">
+              <h2>
+                {showInterest ? money(analytics.interest.netMonthEstimate) : hiddenMoney}
+              </h2>
+              <button
+                className="interest-lock-btn"
+                onClick={requestInterestVisibility}
+                type="button"
+              >
+                {showInterest ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
             <p>
-              Based on the lowest balance reached in {analytics.interest.monthLabel}.
+              Based on the lowest balance reached in {analytics.interest.monthLabel}
+              using the whole transaction table.
             </p>
 
             <div className="interest-grid">
               <div>
                 <small>Minimum balance</small>
-                <strong>{money(analytics.interest.minimumBalance)}</strong>
+                <strong>
+                  {showInterest ? money(analytics.interest.minimumBalance) : hiddenMoney}
+                </strong>
               </div>
               <div>
                 <small>Remaining est.</small>
-                <strong>{money(analytics.interest.remainingEstimate)}</strong>
+                <strong>
+                  {showInterest ? money(analytics.interest.remainingEstimate) : hiddenMoney}
+                </strong>
               </div>
               <div>
                 <small>Remaining day</small>
@@ -466,7 +524,7 @@ function Balance({ balance, transactions = [] }) {
                 <strong>{(analytics.interest.annualRate * 100).toFixed(1)}%</strong>
               </div>
               <div>
-                <small>Tax held</small>
+                <small>Deduction</small>
                 <strong>{(analytics.interest.taxRate * 100).toFixed(0)}%</strong>
               </div>
             </div>
@@ -549,6 +607,48 @@ function Balance({ balance, transactions = [] }) {
           </div>
         )}
       </section>
+
+      {visibilityPromptOpen && (
+        <div className="interest-password-overlay">
+          <div className="interest-password-box">
+            <h3>Unlock Visibility</h3>
+            <input
+              type="password"
+              placeholder="Password"
+              value={visibilityPassword}
+              onChange={(event) => {
+                setVisibilityPassword(event.target.value);
+                setVisibilityError(false);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  unlockVisibility();
+                }
+              }}
+            />
+            {visibilityError && (
+              <p style={{ color: "red", marginBottom: "12px" }}>
+                Incorrect password
+              </p>
+            )}
+            <div className="interest-password-actions">
+              <button
+                type="button"
+                onClick={() => {
+                  setVisibilityPromptOpen(false);
+                  setVisibilityPassword("");
+                  setVisibilityError(false);
+                }}
+              >
+                Close
+              </button>
+              <button type="button" onClick={unlockVisibility}>
+                Unlock
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

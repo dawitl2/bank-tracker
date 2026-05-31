@@ -5,7 +5,7 @@ import Calculator from "./Calculator";
 import "./App.css";
 
 const BASE_BALANCE = 1209518;
-const VERSION = "1.3.3.19"; // html.css.sys.db
+const VERSION = "1.3.3.22"; // html.css.sys.db
 const PASSWORD = "dawit123";
 const API_URL =
   process.env.REACT_APP_API_URL || "https://bank-backend-anhp.onrender.com";
@@ -60,13 +60,11 @@ function App() {
   const [imageStatus, setImageStatus] = useState("");
   const [imageProgress, setImageProgress] = useState(0);
 
-  const getAuthDayKey = () => new Date().toISOString().slice(0, 10);
-
   useEffect(() => {
 
-    const authDay = localStorage.getItem("authenticated_day");
+    const auth = localStorage.getItem("authenticated");
 
-    if (authDay === getAuthDayKey()) {
+    if (auth === "true") {
       setAuthenticated(true);
     }
 
@@ -758,8 +756,7 @@ function App() {
 
     if (inputPassword === PASSWORD) {
 
-      localStorage.setItem("authenticated_day", getAuthDayKey());
-      localStorage.removeItem("authenticated");
+      localStorage.setItem("authenticated", "true");
 
       setAuthenticated(true);
       setPasswordError(false);
