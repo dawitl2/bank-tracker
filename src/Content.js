@@ -65,6 +65,12 @@ function Content({
     setActionMenu(null);
   };
 
+  const parseAmount = (value) =>
+    parseFloat(value?.toString().replace(/[^\d.-]/g, "")) || 0;
+
+  const formatMoney = (value) =>
+    Math.round(value || 0).toLocaleString("en-US");
+
   /*
   =========================
   FILTER LOGIC (FIXED)
@@ -128,6 +134,11 @@ function Content({
 
     return "";
   };
+
+  const tableTotal = filteredTransactions.reduce(
+    (sum, tx) => sum + parseAmount(tx.amount),
+    0
+  );
 
   return (
     <main className="content">
@@ -252,6 +263,14 @@ function Content({
         </tbody>
 
       </table>
+
+      <div className="table-total-panel">
+        <div>
+          <span>Table Total</span>
+          <strong>{formatMoney(tableTotal)}</strong>
+        </div>
+        <small>{filteredTransactions.length} transactions shown</small>
+      </div>
 
     </main>
   );

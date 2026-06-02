@@ -138,42 +138,43 @@ export default function Calculator() {
   };
 
   const btnBg = (btn) => {
-    if (btn.type === "bksp") return "#ff4d4d";
+    if (btn.type === "bksp") return "#a5a5a5";
     if (btn.type === "func") return "#a5a5a5";
-    if (btn.type === "op") return activeOp === btn.op ? "#fff" : "#eeb833";
-    if (btn.type === "eq") return "#eeb833";
-    return "#fff";
+    if (btn.type === "op") return activeOp === btn.op ? "#fff" : "#ff9f0a";
+    if (btn.type === "eq") return "#ff9f0a";
+    return "#333333";
   };
 
   const btnColor = (btn) => {
-    if (btn.type === "num" || btn.type === "num zero") return "#000";
-    if (btn.type === "op" && activeOp === btn.op) return "#eeb833";
+    if (btn.type === "func" || btn.type === "bksp") return "#000";
+    if (btn.type === "op" && activeOp === btn.op) return "#ff9f0a";
     return "#fff";
   };
 
   return (
-    <div style={{ display: "flex", justifyContent: "center", padding: "40px 0", background: "#f2f2f7", borderRadius: 24 }}>
-      <div style={{ background: "#f2f2f7", borderRadius: 44, padding: "24px 16px 28px", width: 300, userSelect: "none" }}>
+    <div style={{ display: "flex", justifyContent: "center", padding: "34px 0", background: "transparent", borderRadius: 24 }}>
+      <div style={{ background: "#000", borderRadius: 36, padding: "24px 18px 26px", width: "min(340px, calc(100vw - 32px))", userSelect: "none", boxShadow: "0 24px 60px rgba(0,0,0,0.24)" }}>
         <div style={{ padding: "0 8px 16px", textAlign: "right", minHeight: 90, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
           <div style={{ fontSize: 17, color: "#8e8e93", minHeight: 24, wordBreak: "break-all", fontFamily: "-apple-system, sans-serif" }}>
             {expr}
           </div>
-          <div style={{ fontSize, color: "#000", lineHeight: 1.05, fontWeight: 300, fontFamily: "-apple-system, sans-serif", wordBreak: "break-all", transition: "font-size 0.1s" }}>
+          <div style={{ fontSize, color: "#fff", lineHeight: 1.05, fontWeight: 300, fontFamily: "-apple-system, sans-serif", wordBreak: "break-all", transition: "font-size 0.1s" }}>
             {formatDisplay(current)}
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12 }}>
           {buttons.map((btn, i) => (
             <button
               key={i}
               onClick={() => handleBtn(btn)}
               style={{
-                height: 68,
+                aspectRatio: btn.type.includes("zero") ? "2.18 / 1" : "1 / 1",
+                minHeight: 0,
                 borderRadius: btn.type.includes("zero") ? 34 : "50%",
                 border: btn.type === "op" && activeOp === btn.op ? "2px solid #eeb833" : "none",
                 cursor: "pointer",
-                fontSize: btn.label === "⌫" ? 22 : 26,
+                fontSize: btn.label === "⌫" ? 21 : 25,
                 fontWeight: 400,
                 fontFamily: "-apple-system, sans-serif",
                 display: "flex",

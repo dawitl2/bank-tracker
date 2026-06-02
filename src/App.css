@@ -1688,6 +1688,40 @@ h1 {
   cursor: pointer;
 }
 
+.table-total-panel {
+  margin: 22px 0 0;
+  padding: 16px 18px;
+  border: 1px solid rgba(24, 24, 22, 0.08);
+  border-radius: 8px;
+  background: #fbfcf8;
+  box-shadow: 0 10px 24px rgba(34, 39, 34, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.table-total-panel div {
+  display: grid;
+  gap: 4px;
+}
+
+.table-total-panel span,
+.table-total-panel small {
+  color: #74796e;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.table-total-panel strong {
+  color: #20231f;
+  font-size: clamp(24px, 4vw, 34px);
+  line-height: 1;
+  font-weight: 900;
+}
+
 button,
 a,
 input,
@@ -2078,10 +2112,12 @@ a {
 
   .balance-value-wrap h1 {
     min-width: 0;
-    max-width: 100%;
+    max-width: calc(100% - 33px);
     overflow: hidden;
     font-size: clamp(20px, 6.2vw, 27px);
     line-height: 1.05;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
   }
 
   .balance-visibility-btn {
@@ -2100,6 +2136,24 @@ a {
     height: auto;
     min-height: 76px;
     align-self: stretch;
+  }
+}
+
+@media (max-width: 768px) {
+  .table-total-panel {
+    margin: 18px 0 0;
+    padding: 14px 16px;
+    border-radius: 12px;
+  }
+
+  .table-total-panel strong {
+    font-size: clamp(23px, 7vw, 30px);
+  }
+
+  .table-total-panel small {
+    max-width: 120px;
+    text-align: right;
+    line-height: 1.25;
   }
 }
 

@@ -19,7 +19,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 const ANALYTICS_CONFIG = {
   velocityWindowDays: 7,
   annualInterestRate: 0.07,
-  interestTaxRate: 0.10,
+  interestTaxRate: 0.05,
   personGroups: [
     {
       key: "construction",
@@ -47,7 +47,7 @@ const ANALYTICS_CONFIG = {
     }
   ]
 };
-const VISIBILITY_PASSWORD = "dawit123";
+const VISIBILITY_PASSWORD = "pass";
 
 const money = (value) =>
   Math.round(value || 0).toLocaleString("en-US");
@@ -327,7 +327,7 @@ function Balance({ balance, transactions = [] }) {
   const monthlyTrendAsc = [...analytics.monthlyTrend].sort((a, b) =>
     a.key.localeCompare(b.key)
   );
-  const hiddenMoney = "••••••••";
+  const hiddenMoney = "•••••";
 
   const requestVisibility = () => {
     setShowBalance((current) => !current);
