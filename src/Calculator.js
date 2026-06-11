@@ -28,7 +28,7 @@ function formatDisplay(s) {
   return parts.join(".");
 }
 
-export default function Calculator() {
+export default function Calculator({ importValue, importToken, onStateChange }) {
   const [current, setCurrent] = useState("0");
   const [prev, setPrev] = useState(null);
   const [op, setOp] = useState(null);
@@ -36,6 +36,32 @@ export default function Calculator() {
   const [waiting, setWaiting] = useState(false);
   const [evaled, setEvaled] = useState(false);
   const [activeOp, setActiveOp] = useState(null);
+
+  useEffect(() => {
+    if (importValue === undefined || importValue === null) {
+      return;
+    }
+
+    const next = String(importValue);
+    setCurrent(next);
+    setPrev(null);
+    setOp(null);
+    setExpr("");
+    setWaiting(false);
+    setEvaled(false);
+    setActiveOp(null);
+  }, [importToken, importValue]);
+
+  useEffect(() => {
+    onStateChange?.({
+      current,
+      expr,
+      prev,
+      op,
+      waiting,
+      evaled
+    });
+  }, [current, expr, prev, op, waiting, evaled, onStateChange]);
 
   const fontSize =
     current.length > 9 ? "32px" : current.length > 6 ? "48px" : "64px";

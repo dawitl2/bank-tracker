@@ -1,11 +1,13 @@
 import { useState } from "react";
+import { FaCalculator } from "react-icons/fa";
 
 function Content({
   transactions,
   personFilter,
   setPersonFilter,
   onEditTransaction,
-  onDeleteTransaction
+  onDeleteTransaction,
+  onSendTableTotal
 }) {
   const [open, setOpen] = useState(false);
   const [actionMenu, setActionMenu] = useState(null);
@@ -265,11 +267,19 @@ function Content({
       </table>
 
       <div className="table-total-panel">
-        <div>
+        <div className="table-total-main">
           <span>Table Total</span>
           <strong>{formatMoney(tableTotal)}</strong>
         </div>
-        <small>{filteredTransactions.length} transactions shown</small>
+        <button
+          type="button"
+          className="table-total-send"
+          onClick={() => onSendTableTotal?.(tableTotal)}
+          title="Send table total to calculator"
+          aria-label="Send table total to calculator"
+        >
+          <FaCalculator />
+        </button>
       </div>
 
     </main>

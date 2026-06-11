@@ -1,0 +1,99 @@
+{
+  "house": {
+    "name": "House 1",
+    "type": "Condo apartment",
+    "areaSqm": 128,
+    "bedrooms": 3,
+    "bathrooms": 2,
+    "floors": 1,
+    "sizeMode": "Auto",
+    "finishTier": "Mid-range",
+    "status": "Finishing",
+    "notes": "Concrete shell is ready. Finish work and buying decisions are next."
+  },
+  "checklist": [
+    {
+      "id": "shell-structure",
+      "label": "Shell and structure",
+      "stage": "Shell",
+      "done": true,
+      "note": "Slab, block, beam, and column work already settled."
+    },
+    {
+      "id": "labor-payments",
+      "label": "Worker payments",
+      "stage": "Labor",
+      "done": true,
+      "note": "Payment one, two, three usually means labor, transport, and support."
+    },
+    {
+      "id": "rough-electrical",
+      "label": "Electrical and plumbing rough-in",
+      "stage": "Rough-in",
+      "done": false,
+      "note": "Wiring, pipe routes, and hidden systems."
+    },
+    {
+      "id": "gypsum-ceiling",
+      "label": "Gypsum ceiling and trims",
+      "stage": "Finishing",
+      "done": false,
+      "note": "Ceiling features and decorative board work."
+    },
+    {
+      "id": "ceramic-tiles",
+      "label": "Ceramic tiles",
+      "stage": "Finishing",
+      "done": false,
+      "note": "Floors, bathrooms, kitchen backsplash, and wet areas."
+    },
+    {
+      "id": "paint-primer",
+      "label": "Paint and primer",
+      "stage": "Finishing",
+      "done": false,
+      "note": "Wall color, sealing, and final visual finish."
+    },
+    {
+      "id": "doors-frames",
+      "label": "Doors and frames",
+      "stage": "Finishing",
+      "done": false,
+      "note": "Room doors, frames, handles, and lock sets."
+    }
+  ],
+  "materials": [
+    {
+      "id": "tiles",
+      "label": "Ceramic tiles",
+      "keywords": ["tile", "tiles", "ceramic", "porcelain", "floor"],
+      "unit": "Br / m2",
+      "range": { "low": 1850, "high": 5400 },
+      "note": "Flooring and wet-area finish."
+    },
+    {
+      "id": "paint",
+      "label": "Paint and primer",
+      "keywords": ["paint", "primer", "roller", "wall finish"],
+      "unit": "Br / bucket",
+      "range": { "low": 1250, "high": 4900 },
+      "note": "Interior coats and wall color."
+    },
+    {
+      "id": "doors",
+      "label": "Doors and frames",
+      "keywords": ["door", "doors", "frame", "lock", "hinge"],
+      "unit": "Br / set",
+      "range": { "low": 4200, "high": 15500 },
+      "note": "Entry and room doors plus hardware."
+    },
+    {
+      "id": "gypsum",
+      "label": "Gypsum board",
+      "keywords": ["gypsum", "ceiling", "board", "plaster"],
+      "unit": "Br / sheet",
+      "range": { "low": 850, "high": 3100 },
+      "note": "Ceiling design, bulkheads, and trim detail."
+    }
+  ]
+}

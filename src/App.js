@@ -37,6 +37,8 @@ function App() {
 
   const [loadingMessage, setLoadingMessage] = useState(true);
   const [showCalculator, setShowCalculator] = useState(false);
+  const [calculatorImportValue, setCalculatorImportValue] = useState(null);
+  const [calculatorImportToken, setCalculatorImportToken] = useState(0);
 
   // ONLY KEEP THIS FOR BALANCE TAB
   const [constructionOnly, setConstructionOnly] = useState(false);
@@ -215,6 +217,12 @@ function App() {
       setScrapeLoading(false);
 
     }
+  };
+
+  const sendTableTotalToCalculator = (tableTotal) => {
+    setCalculatorImportValue(String(tableTotal));
+    setCalculatorImportToken((current) => current + 1);
+    setShowCalculator(true);
   };
 
   const stopQrScanner = () => {
@@ -963,6 +971,7 @@ function App() {
               setPersonFilter={setPersonFilter}
               onEditTransaction={handleEditTransaction}
               onDeleteTransaction={handleDeleteTransaction}
+              onSendTableTotal={sendTableTotalToCalculator}
             />
 
             <button
@@ -1002,7 +1011,12 @@ function App() {
           </>
         )}
 
-        {showCalculator && <Calculator />}
+        {showCalculator && (
+          <Calculator
+            importValue={calculatorImportValue}
+            importToken={calculatorImportToken}
+          />
+        )}
 
       </div>
 

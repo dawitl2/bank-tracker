@@ -320,7 +320,8 @@ function Balance({ balance, transactions = [] }) {
     { key: "summary", label: "Summary" },
     { key: "people", label: "People" },
     { key: "interest", label: "Interest" },
-    { key: "charts", label: "Charts" }
+    { key: "charts", label: "Charts" },
+    { key: "construction", label: "Construction" }
   ];
 
   // For charts, re-sort oldest→newest
@@ -425,12 +426,16 @@ function Balance({ balance, transactions = [] }) {
 
       <section className="balance-panel-stage">
         {activePanel === "summary" && (
-          <div className="analytics-layout">
-            {analytics.monthlyTrend.map((m) => (
-              <article className="analytics-card focus-card" key={m.key}>
-                <span>Month Summary</span>
-                <h2>{fullMonthLabel(m.key)}</h2>
-                <div className="month-summary-grid">
+          <article className="analytics-card focus-card summary-card">
+            <span>Month Summary</span>
+            <h2>Recent months</h2>
+            <div className="summary-list">
+              {analytics.monthlyTrend.map((m) => (
+                <div className="summary-row" key={m.key}>
+                  <div>
+                    <strong>{fullMonthLabel(m.key)}</strong>
+                    <small>{m.peopleCount} people</small>
+                  </div>
                   <div>
                     <small>Withdraw</small>
                     <strong>{money(m.Withdraw)}</strong>
@@ -439,14 +444,11 @@ function Balance({ balance, transactions = [] }) {
                     <small>Deposit</small>
                     <strong>{money(m.Deposit)}</strong>
                   </div>
-                  <div>
-                    <small>People</small>
-                    <strong>{m.peopleCount}</strong>
-                  </div>
+                  
                 </div>
-              </article>
-            ))}
-          </div>
+              ))}
+            </div>
+          </article>
         )}
 
         {activePanel === "people" && (
@@ -606,6 +608,7 @@ function Balance({ balance, transactions = [] }) {
             </article>
           </div>
         )}
+
       </section>
 
       {visibilityPromptOpen && (
