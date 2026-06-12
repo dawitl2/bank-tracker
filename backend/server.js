@@ -12,6 +12,8 @@ app.use(express.json());
 const PORT = process.env.PORT || 5000;
 const BASE_URL = "https://bank-backend-anhp.onrender.com";
 const GENERATED_TRANSACTION_FIELDS = ["id", "created_at"];
+const BOA_SMS_STATE_ID = 1;
+const BOA_SMS_TOKEN = process.env.BOA_SMS_API_TOKEN || "boa123";
 
 const cleanTransactionPayload = (payload) => {
   const transaction = { ...payload };
@@ -40,6 +42,44 @@ const cleanTransactionPayload = (payload) => {
 
   return transaction;
 };
+
+const parseMoneyValue = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const parsed = Number(String(value).replace(/[^\d.-]/g, ""));
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const normalizeSmsAmount = (value) => {
+  const parsed = parseMoneyValue(value);
+  return parsed === null ? null : parsed.toFixed(2);
+};
+
+const requireBoaSmsToken = (req, res, next) => {
+  const authHeader = req.get("authorization") || "";
+  const token = authHeader.startsWith("Bearer ")
+    ? authHeader.slice("Bearer ".length).trim()
+    : req.get("x-boa-sms-token");
+
+  if (token !== BOA_SMS_TOKEN) {
+    return res.status(401).json({ error: "Invalid BOA SMS token" });
+  }
+
+  next();
+};
+
+const formatBoaSmsState = (row) => ({
+  current_balance: row?.current_balance ?? null,
+  latest_withdrawal_amount: row?.latest_withdrawal_amount ?? null,
+  latest_deposit_amount: row?.latest_deposit_amount ?? null,
+  balance_updated_at: row?.balance_updated_at ?? null,
+  withdrawal_updated_at: row?.withdrawal_updated_at ?? null,
+  deposit_updated_at: row?.deposit_updated_at ?? null,
+  last_sms_at: row?.last_sms_at ?? null,
+  updated_at: row?.updated_at ?? null
+});
 
 
 /*
@@ -329,6 +369,92 @@ app.get("/transactions", async (req, res) => {
   }
 
   res.json(data);
+});
+
+
+
+/*
+========================================
+BOA SMS LATEST ACCOUNT STATE
+========================================
+*/
+
+app.get("/boa-sms/account-state", async (req, res) => {
+
+  const { data, error } = await supabase
+    .from("boa_sms_account_state")
+    .select("*")
+    .eq("id", BOA_SMS_STATE_ID)
+    .maybeSingle();
+
+  if (error) {
+    console.error("BOA SMS FETCH ERROR:", error);
+    return res.status(500).json({
+      error: "BOA SMS state fetch failed",
+      details: error.message
+    });
+  }
+
+  res.json(formatBoaSmsState(data));
+});
+
+app.post("/boa-sms/account-state", requireBoaSmsToken, async (req, res) => {
+
+  const payload = req.body || {};
+  const now = new Date().toISOString();
+  const smsReceivedAt = payload.sms_received_at || now;
+  const update = {
+    id: BOA_SMS_STATE_ID,
+    last_sms_at: smsReceivedAt,
+    last_sender: payload.sender || null,
+    last_message_hash: payload.message_hash || null,
+    updated_at: now
+  };
+
+  const currentBalance = normalizeSmsAmount(payload.current_balance);
+  const latestWithdrawalAmount = normalizeSmsAmount(payload.latest_withdrawal_amount);
+  const latestDepositAmount = normalizeSmsAmount(payload.latest_deposit_amount);
+
+  if (currentBalance !== null) {
+    update.current_balance = currentBalance;
+    update.balance_updated_at = smsReceivedAt;
+  }
+
+  if (latestWithdrawalAmount !== null) {
+    update.latest_withdrawal_amount = latestWithdrawalAmount;
+    update.withdrawal_updated_at = smsReceivedAt;
+  }
+
+  if (latestDepositAmount !== null) {
+    update.latest_deposit_amount = latestDepositAmount;
+    update.deposit_updated_at = smsReceivedAt;
+  }
+
+  if (
+    currentBalance === null &&
+    latestWithdrawalAmount === null &&
+    latestDepositAmount === null
+  ) {
+    return res.status(400).json({
+      error: "No BOA account values were provided"
+    });
+  }
+
+  const { data, error } = await supabase
+    .from("boa_sms_account_state")
+    .upsert(update, { onConflict: "id" })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("BOA SMS UPSERT ERROR:", error);
+    return res.status(500).json({
+      error: "BOA SMS state update failed",
+      details: error.message
+    });
+  }
+
+  res.status(201).json(formatBoaSmsState(data));
 });
 
 

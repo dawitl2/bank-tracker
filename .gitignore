@@ -21,3 +21,9 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Android companion app build output
+android-boa-sms-companion/.gradle/
+android-boa-sms-companion/local.properties
+android-boa-sms-companion/app/build/
+.gradle-local/

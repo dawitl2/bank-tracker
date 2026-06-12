@@ -25,6 +25,8 @@ function App() {
 
   const [view, setView] = useState("transactions");
   const [transactions, setTransactions] = useState([]);
+  const [boaSmsState, setBoaSmsState] = useState(null);
+  const [boaSmsLoading, setBoaSmsLoading] = useState(false);
 
   const [showModal, setShowModal] = useState(false);
   const [receiptMode, setReceiptMode] = useState(null);
@@ -71,7 +73,10 @@ function App() {
     }
 
     fetchTransactions();
+    fetchBoaSmsState();
 
+  // Initial app hydration should run once when the app mounts.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchTransactions = async () => {
@@ -216,6 +221,27 @@ function App() {
 
       setScrapeLoading(false);
 
+    }
+  };
+
+  const fetchBoaSmsState = async () => {
+    setBoaSmsLoading(true);
+
+    try {
+      const res = await fetch(`${API_URL}/boa-sms/account-state`);
+      const data = await readApiResponse(res);
+
+      if (!res.ok) {
+        console.error("BOA SMS STATE ERROR:", data);
+        return;
+      }
+
+      setBoaSmsState(data);
+
+    } catch (err) {
+      console.error("BOA SMS FETCH ERROR:", err);
+    } finally {
+      setBoaSmsLoading(false);
     }
   };
 
@@ -994,6 +1020,9 @@ function App() {
 
             <Balance
               balance={currentBalance}
+              boaSmsState={boaSmsState}
+              boaSmsLoading={boaSmsLoading}
+              onRefreshBoaSmsState={fetchBoaSmsState}
               lastWithdraw={lastWithdraw}
               totalWithdraw={totalWithdraw}
               transactions={transactions}

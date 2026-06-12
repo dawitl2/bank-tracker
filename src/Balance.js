@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -54,6 +54,28 @@ const money = (value) =>
 
 const parseAmount = (value) =>
   parseFloat(value?.toString().replace(/[^\d.-]/g, "")) || 0;
+
+const formatSmsMoney = (value) => {
+  const parsed = parseAmount(value);
+  return parsed ? money(parsed) : "-";
+};
+
+const formatSmsDate = (value) => {
+  if (!value) return "Waiting for BOA SMS";
+
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return "Updated from BOA SMS";
+  }
+
+  return parsed.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+};
 
 const parseTxDate = (value) => {
   if (!value) return null;
@@ -124,18 +146,33 @@ const getMonthBounds = (date = new Date()) => {
   return { start, end };
 };
 
-function Balance({ balance, transactions = [] }) {
+function Balance({
+  balance,
+  boaSmsState,
+  boaSmsLoading = false,
+  onRefreshBoaSmsState,
+  transactions = []
+}) {
   const [activePanel, setActivePanel] = useState("summary");
   const getVisibilityDayKey = () => new Date().toISOString().slice(0, 10);
-  const [showBalance, setShowBalance] = useState(
-    false
-  );
+  const [showBalance, setShowBalance] = useState(false);
   const [showInterest, setShowInterest] = useState(
     () => localStorage.getItem("interest_visibility_day") === getVisibilityDayKey()
   );
   const [visibilityPromptOpen, setVisibilityPromptOpen] = useState(false);
   const [visibilityPassword, setVisibilityPassword] = useState("");
   const [visibilityError, setVisibilityError] = useState(false);
+
+  // 3D card flip state
+  const [isFlipped, setIsFlipped] = useState(false);
+
+  useEffect(() => {
+    if (isFlipped) {
+      onRefreshBoaSmsState?.();
+    }
+  // Refresh only when the card flips to the Apollo/SMS side.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFlipped]);
 
   const analytics = useMemo(() => {
     const enriched = transactions.map((tx) => ({
@@ -202,7 +239,6 @@ function Balance({ balance, transactions = [] }) {
       month.people.add(getPerson(tx));
     });
 
-    // All months, newest first
     const monthlyTrend = [...monthMap.values()]
       .sort((a, b) => b.key.localeCompare(a.key))
       .map((month) => ({
@@ -324,11 +360,42 @@ function Balance({ balance, transactions = [] }) {
     { key: "construction", label: "Construction" }
   ];
 
-  // For charts, re-sort oldest→newest
   const monthlyTrendAsc = [...analytics.monthlyTrend].sort((a, b) =>
     a.key.localeCompare(b.key)
   );
   const hiddenMoney = "•••••";
+  const displayedBalance = isFlipped
+    ? formatSmsMoney(boaSmsState?.current_balance)
+    : money(balance);
+  const displayedWithdraw = isFlipped
+    ? formatSmsMoney(boaSmsState?.latest_withdrawal_amount)
+    : money(analytics.totalWithdraw);
+  const balanceDetail = isFlipped ? (
+    <>
+      Latest deposit: {formatSmsMoney(boaSmsState?.latest_deposit_amount)}
+      <br />
+      {formatSmsDate(boaSmsState?.deposit_updated_at || boaSmsState?.updated_at)}
+    </>
+  ) : (
+    <>
+      Last deposit: {analytics.lastDeposit?.amount || "-"}
+      <br />
+      {analytics.lastDeposit?.date || "No deposit yet"}
+    </>
+  );
+  const withdrawDetail = isFlipped ? (
+    <>
+      Source: BOA SMS
+      <br />
+      {formatSmsDate(boaSmsState?.withdrawal_updated_at || boaSmsState?.updated_at)}
+    </>
+  ) : (
+    <>
+      Last withdraw: {analytics.lastWithdraw?.amount || "-"}
+      <br />
+      {analytics.lastWithdraw?.date || "No withdraw yet"}
+    </>
+  );
 
   const requestVisibility = () => {
     setShowBalance((current) => !current);
@@ -363,16 +430,38 @@ function Balance({ balance, transactions = [] }) {
 
   return (
     <div className="balance-page balance-dashboard">
+
+      {/* ── 3D FLIPPABLE CARD ── */}
       <section className="balance-hero">
-        <div className="balance-card-frame">
-          <img src="/card.png" className="card" alt="bank card" />
+        <div
+          className={`card-3d-scene${isFlipped ? " is-flipped" : ""}`}
+          onClick={() => setIsFlipped((f) => !f)}
+        >
+          <div className="card-3d-inner">
+
+            {/* FRONT — card.png */}
+            <div className="card-3d-face card-3d-front">
+              <img src="/card.png" className="card" alt="bank card front" />
+            </div>
+
+            {/* BACK — card2.png */}
+            <div className="card-3d-face card-3d-back">
+              <img src="/card2.png" className="card" alt="bank card back" />
+            </div>
+
+          </div>
         </div>
 
+        {/* Stats — same layout both sides, only label names change */}
         <div className="balance-grid">
           <div className="balance-stat deposit">
-            <span>Balance</span>
+            <span className="balance-stat-label">
+              {isFlipped ? "Apollo balance" : "Balance"}
+            </span>
             <div className="balance-value-wrap">
-              <h1>{showBalance ? money(balance) : hiddenMoney}</h1>
+              <h1 className={isFlipped && boaSmsLoading ? "money-updating" : ""}>
+                {showBalance ? displayedBalance : hiddenMoney}
+              </h1>
               <button
                 className="balance-visibility-btn"
                 onClick={requestVisibility}
@@ -381,19 +470,19 @@ function Balance({ balance, transactions = [] }) {
                 {showBalance ? <FaEyeSlash /> : <FaEye />}
               </button>
             </div>
-            <p>
-              Last deposit: {analytics.lastDeposit?.amount || "-"}
-              <br />
-              {analytics.lastDeposit?.date || "No deposit yet"}
-            </p>
+            <p>{balanceDetail}</p>
           </div>
 
           <div className="divider"></div>
 
           <div className="balance-stat withdraw">
-            <span>Withdraw</span>
+            <span className="balance-stat-label">
+              {isFlipped ? "Apollo withdraw" : "Withdraw"}
+            </span>
             <div className="balance-value-wrap">
-              <h1>{showBalance ? money(analytics.totalWithdraw) : hiddenMoney}</h1>
+              <h1 className={isFlipped && boaSmsLoading ? "money-updating" : ""}>
+                {showBalance ? displayedWithdraw : hiddenMoney}
+              </h1>
               <button
                 className="balance-visibility-btn"
                 onClick={requestVisibility}
@@ -402,11 +491,7 @@ function Balance({ balance, transactions = [] }) {
                 {showBalance ? <FaEyeSlash /> : <FaEye />}
               </button>
             </div>
-            <p>
-              Last withdraw: {analytics.lastWithdraw?.amount || "-"}
-              <br />
-              {analytics.lastWithdraw?.date || "No withdraw yet"}
-            </p>
+            <p>{withdrawDetail}</p>
           </div>
         </div>
       </section>
@@ -444,7 +529,6 @@ function Balance({ balance, transactions = [] }) {
                     <small>Deposit</small>
                     <strong>{money(m.Deposit)}</strong>
                   </div>
-                  
                 </div>
               ))}
             </div>
@@ -608,7 +692,6 @@ function Balance({ balance, transactions = [] }) {
             </article>
           </div>
         )}
-
       </section>
 
       {visibilityPromptOpen && (
