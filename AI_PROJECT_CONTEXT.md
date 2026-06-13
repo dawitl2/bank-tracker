@@ -20,7 +20,7 @@ The BOA SMS latest-state integration is intentionally simple:
 - It does not create transaction tables.
 - It does not calculate balances from receipts.
 
-There is also a small BOA SMS event table for summary totals only. It stores deduped deposit/withdrawal SMS events for the last three months and feeds the Month Summary money-in/money-out view.
+There is also a small BOA SMS event table for Apollo recent transactions only. It stores deduped deposit/withdrawal SMS events for the last month and feeds the Apollo-side Summary panel.
 
 The Apollo side of the balance card must use the BOA SMS account state, not receipt-processing calculations.
 
@@ -45,6 +45,7 @@ Known BOA SMS state route:
 ```text
 GET https://bank-backend-anhp.onrender.com/boa-sms/account-state
 POST https://bank-backend-anhp.onrender.com/boa-sms/account-state
+POST https://bank-backend-anhp.onrender.com/boa-sms/events
 GET https://bank-backend-anhp.onrender.com/boa-sms/monthly-summary
 ```
 
@@ -395,7 +396,7 @@ Responsibilities:
 - Shows latest parsed BOA SMS from the phone.
 - Refreshes latest useful BOA SMS from the inbox.
 - Sends latest parsed BOA SMS to backend.
-- Syncs useful BOA deposit/withdrawal SMS from the last three months for summary backfill.
+- Syncs useful BOA deposit/withdrawal SMS from the last month for Apollo recent-transaction backfill.
 - Provides parser test UI.
 
 It searches recent inbox messages, parses only useful BOA messages, and ignores OTP/promotional/unrelated SMS.
@@ -453,10 +454,11 @@ Routes used:
 ```text
 GET /boa-sms/account-state
 POST /boa-sms/account-state
+POST /boa-sms/events
 GET /boa-sms/monthly-summary
 ```
 
-POST uses bearer auth with the stored token.
+POST uses bearer auth with the stored token. `POST /boa-sms/events` is event-only and does not update `boa_sms_account_state`.
 
 ### `SettingsStore.java`
 
@@ -519,7 +521,7 @@ last_message_hash: corrected-from-user-samples
 
 ### `public.boa_sms_events`
 
-This table stores deduped BOA SMS deposit/withdrawal events for the three-month summary.
+This table stores deduped BOA SMS deposit/withdrawal events for the Apollo recent-transaction list.
 
 SQL setup file:
 
@@ -548,9 +550,9 @@ create table if not exists public.boa_sms_events (
 
 Purpose:
 
-- Monthly money in/out summary from BOA SMS.
+- Recent BOA SMS debit/credit rows on the Apollo Summary panel.
 - No raw SMS body is stored.
-- The backend prunes rows older than three months when new SMS updates arrive.
+- The backend prunes rows older than one month when new SMS updates arrive.
 
 ### `public.transactions`
 

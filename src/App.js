@@ -257,7 +257,7 @@ function App() {
         return;
       }
 
-      setBoaSmsSummary(Array.isArray(data.months) ? data.months : []);
+      setBoaSmsSummary(Array.isArray(data.events) ? data.events : []);
     } catch (err) {
       console.error("BOA SMS SUMMARY FETCH ERROR:", err);
     }

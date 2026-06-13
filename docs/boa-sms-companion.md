@@ -7,13 +7,14 @@ The companion app listens for incoming SMS messages, processes only BOA senders,
 ## Architecture
 
 - Android app: requests `RECEIVE_SMS` and `READ_SMS`, receives SMS broadcasts, parses BOA messages locally, and sends extracted values.
-- Backend: `POST /boa-sms/account-state` accepts updates from the phone using a shared bearer token.
+- Backend: `POST /boa-sms/account-state` accepts latest-state updates from the phone using a shared bearer token.
+- Backend: `POST /boa-sms/events` accepts Apollo transaction backfill rows without touching latest state.
 - Database: `boa_sms_account_state` stores one row only with the latest known balance, withdrawal, and deposit values.
-- Database: `boa_sms_events` stores deduped deposit/withdrawal SMS events for the last three months only.
+- Database: `boa_sms_events` stores deduped deposit/withdrawal SMS events for the last month only.
 - Frontend: the flipped Apollo side of the balance card reads `GET /boa-sms/account-state`.
-- Frontend: the Month Summary panel reads `GET /boa-sms/monthly-summary`.
+- Frontend: the Apollo Summary panel reads recent BOA SMS transactions from `GET /boa-sms/monthly-summary`.
 
-The receipt transaction table is still separate. BOA SMS events are used only for the three-month money-in/money-out summary.
+The receipt transaction table is still separate. BOA SMS events are used only on the Apollo side.
 
 ## Supabase Setup
 
@@ -26,7 +27,7 @@ Run these SQL files in the Supabase SQL editor:
 
 Open each file, paste its contents into Supabase, and run it once.
 
-`boa_sms_events` is deduped by `message_hash`, stores only deposit/withdrawal amount rows, and the backend deletes rows older than three months when new SMS updates arrive.
+`boa_sms_events` is deduped by `message_hash`, stores only deposit/withdrawal amount rows, and the backend deletes rows older than one month when new SMS updates arrive.
 
 ## Backend Setup
 
@@ -61,6 +62,7 @@ The frontend automatically calls:
 
 ```text
 GET /boa-sms/account-state
+POST /boa-sms/events
 GET /boa-sms/monthly-summary
 ```
 
@@ -102,7 +104,7 @@ gradle assembleDebug
 5. Enter the same `BOA_SMS_API_TOKEN` configured on the backend.
 6. Tap `Save and test connection`.
 7. Use `Test parser` with sample BOA text before relying on live SMS.
-8. Tap `Sync last 3 months BOA SMS` once to backfill the summary table.
+8. Tap `Sync Apollo transactions` once to backfill the Apollo recent transactions. This writes only to `boa_sms_events`.
 9. Incoming SMS messages will update the latest values and summary automatically after that.
 
 ## SMS Parsing Rules
@@ -121,15 +123,19 @@ It does not calculate balances from receipts or previous messages.
 
 ## Summary Behavior
 
-The web app Month Summary panel now comes from BOA SMS events, not receipt transactions.
+The original card Month Summary still comes from the receipt transaction table.
+
+When the card is flipped to Apollo, the Summary panel changes to recent BOA SMS transactions.
 
 The summary shows:
 
-- Monthly total withdrawals from debit SMS messages.
-- Monthly total deposits from credit SMS messages.
-- Only messages from the last three months.
+- Debit and credit SMS messages from BOA only.
+- Only messages from the last month.
+- Amount and balance-after values from each SMS.
 
-The Android app can backfill this by scanning the phone inbox with `Sync last 3 months BOA SMS`.
+The Android app can backfill this by scanning the phone inbox with `Sync Apollo transactions`.
+
+The parser requires a BOA-looking sender. A BOA-formatted message sent from a normal phone number or another sender is ignored.
 
 ## Important Notes
 

@@ -14,7 +14,7 @@ const BASE_URL = "https://bank-backend-anhp.onrender.com";
 const GENERATED_TRANSACTION_FIELDS = ["id", "created_at"];
 const BOA_SMS_STATE_ID = 1;
 const BOA_SMS_TOKEN = process.env.BOA_SMS_API_TOKEN || "boa123";
-const BOA_SMS_HISTORY_MONTHS = 3;
+const BOA_SMS_HISTORY_MONTHS = 1;
 
 const cleanTransactionPayload = (payload) => {
   const transaction = { ...payload };
@@ -56,6 +56,19 @@ const parseMoneyValue = (value) => {
 const normalizeSmsAmount = (value) => {
   const parsed = parseMoneyValue(value);
   return parsed === null ? null : parsed.toFixed(2);
+};
+
+const isBoaSender = (sender) => {
+  if (!sender) {
+    return false;
+  }
+
+  const normalized = String(sender).toLowerCase().replace(/[^a-z0-9]/g, "");
+  return normalized === "boa" ||
+    normalized.includes("bankofabyssinia") ||
+    normalized.includes("abyssinia") ||
+    normalized.includes("boabank") ||
+    normalized.includes("boasms");
 };
 
 const requireBoaSmsToken = (req, res, next) => {
@@ -128,6 +141,24 @@ const pruneOldBoaSmsEvents = async () => {
   if (error) {
     console.error("BOA SMS PRUNE ERROR:", error);
   }
+};
+
+const saveBoaSmsEvent = async (event) => {
+  if (!event) {
+    return { skipped: true };
+  }
+
+  const { data, error } = await supabase
+    .from("boa_sms_events")
+    .upsert(event, { onConflict: "message_hash" })
+    .select()
+    .single();
+
+  if (!error) {
+    pruneOldBoaSmsEvents();
+  }
+
+  return { data, error };
 };
 
 
@@ -435,6 +466,13 @@ app.post("/boa-sms/account-state", requireBoaSmsToken, async (req, res) => {
   const smsReceivedAt = payload.sms_received_at || now;
   const sender = payload.sender || null;
   const messageHash = payload.message_hash || null;
+
+  if (!isBoaSender(sender)) {
+    return res.status(400).json({
+      error: "BOA SMS updates must come from a BOA sender"
+    });
+  }
+
   const update = {
     id: BOA_SMS_STATE_ID,
     last_sms_at: smsReceivedAt,
@@ -497,25 +535,66 @@ app.post("/boa-sms/account-state", requireBoaSmsToken, async (req, res) => {
   });
 
   if (event) {
-    const { error: eventError } = await supabase
-      .from("boa_sms_events")
-      .upsert(event, { onConflict: "message_hash" });
+    const { error: eventError } = await saveBoaSmsEvent(event);
 
     if (eventError) {
       console.error("BOA SMS EVENT UPSERT ERROR:", eventError);
-    } else {
-      pruneOldBoaSmsEvents();
     }
   }
 
   res.status(201).json(formatBoaSmsState(data));
 });
 
+app.post("/boa-sms/events", requireBoaSmsToken, async (req, res) => {
+
+  const payload = req.body || {};
+  const smsReceivedAt = payload.sms_received_at || new Date().toISOString();
+  const sender = payload.sender || null;
+  const messageHash = payload.message_hash || null;
+
+  if (!isBoaSender(sender)) {
+    return res.status(400).json({
+      error: "BOA SMS events must come from a BOA sender"
+    });
+  }
+
+  const currentBalance = normalizeSmsAmount(payload.current_balance);
+  const latestWithdrawalAmount = normalizeSmsAmount(payload.latest_withdrawal_amount);
+  const latestDepositAmount = normalizeSmsAmount(payload.latest_deposit_amount);
+  const event = buildBoaSmsEvent({
+    payload,
+    sender,
+    smsReceivedAt,
+    messageHash,
+    currentBalance,
+    latestWithdrawalAmount,
+    latestDepositAmount
+  });
+
+  if (!event) {
+    return res.status(400).json({
+      error: "No BOA deposit or withdrawal value was provided"
+    });
+  }
+
+  const { data, error } = await saveBoaSmsEvent(event);
+
+  if (error) {
+    console.error("BOA SMS EVENT UPSERT ERROR:", error);
+    return res.status(500).json({
+      error: "BOA SMS event update failed",
+      details: error.message
+    });
+  }
+
+  res.status(201).json(data);
+});
+
 app.get("/boa-sms/monthly-summary", async (req, res) => {
 
   const { data, error } = await supabase
     .from("boa_sms_events")
-    .select("sms_received_at, transaction_type, amount")
+    .select("sms_received_at, transaction_type, amount, balance_after, sender")
     .gte("sms_received_at", getBoaSmsCutoffIso())
     .order("sms_received_at", { ascending: false });
 
@@ -569,6 +648,13 @@ app.get("/boa-sms/monthly-summary", async (req, res) => {
     }));
 
   res.json({
+    events: (data || []).map((event) => ({
+      sms_received_at: event.sms_received_at,
+      transaction_type: event.transaction_type,
+      amount: event.amount,
+      balance_after: event.balance_after,
+      sender: event.sender
+    })),
     months: summary,
     source: "BOA SMS",
     retention_months: BOA_SMS_HISTORY_MONTHS

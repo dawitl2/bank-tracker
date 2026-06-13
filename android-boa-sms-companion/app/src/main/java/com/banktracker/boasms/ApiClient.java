@@ -21,6 +21,27 @@ final class ApiClient {
         long receivedAtMillis,
         String messageHash
     ) throws Exception {
+        postSmsPayload(context, "/boa-sms/account-state", update, sender, receivedAtMillis, messageHash);
+    }
+
+    static void sendEventOnly(
+        Context context,
+        BoaSmsUpdate update,
+        String sender,
+        long receivedAtMillis,
+        String messageHash
+    ) throws Exception {
+        postSmsPayload(context, "/boa-sms/events", update, sender, receivedAtMillis, messageHash);
+    }
+
+    private static void postSmsPayload(
+        Context context,
+        String path,
+        BoaSmsUpdate update,
+        String sender,
+        long receivedAtMillis,
+        String messageHash
+    ) throws Exception {
         String apiUrl = SettingsStore.getApiUrl(context);
         String token = SettingsStore.getApiToken(context);
 
@@ -46,7 +67,7 @@ final class ApiClient {
         }
 
         byte[] bytes = body.toString().getBytes(StandardCharsets.UTF_8);
-        HttpURLConnection connection = (HttpURLConnection) new URL(apiUrl + "/boa-sms/account-state").openConnection();
+        HttpURLConnection connection = (HttpURLConnection) new URL(apiUrl + path).openConnection();
         connection.setRequestMethod("POST");
         connection.setConnectTimeout(8000);
         connection.setReadTimeout(8000);
@@ -59,9 +80,12 @@ final class ApiClient {
         }
 
         int status = connection.getResponseCode();
+        String response = readResponse(status >= 200 && status < 300
+            ? connection.getInputStream()
+            : connection.getErrorStream());
 
         if (status < 200 || status >= 300) {
-            throw new IllegalStateException("Backend returned HTTP " + status);
+            throw new IllegalStateException("Backend returned HTTP " + status + ": " + response);
         }
     }
 

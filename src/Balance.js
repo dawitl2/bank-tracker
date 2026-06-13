@@ -367,20 +367,18 @@ function Balance({
   const monthlyTrendAsc = [...analytics.monthlyTrend].sort((a, b) =>
     a.key.localeCompare(b.key)
   );
-  const smsSummaryRows = boaSmsSummary.map((month) => ({
-    ...month,
-    monthLabel: fullMonthLabel(month.key),
-    meta: `${Number(month.count || 0)} BOA SMS`,
-    Withdraw: parseAmount(month.Withdraw),
-    Deposit: parseAmount(month.Deposit),
-    count: Number(month.count || 0)
+  const smsRecentRows = boaSmsSummary.map((event, index) => ({
+    key: `${event.sms_received_at || "sms"}-${index}`,
+    label: event.transaction_type === "deposit" ? "Deposit" : "Withdraw",
+    date: formatSmsDate(event.sms_received_at),
+    amount: parseAmount(event.amount),
+    balanceAfter: parseAmount(event.balance_after)
   }));
   const receiptSummaryRows = analytics.monthlyTrend.map((month) => ({
     ...month,
     monthLabel: fullMonthLabel(month.key),
     meta: `${month.peopleCount} people`
   }));
-  const activeSummaryRows = isFlipped ? smsSummaryRows : receiptSummaryRows;
   const hiddenCardMoney = "*****";
   const hiddenSkeleton = <span className="money-skeleton" aria-label="Hidden value"></span>;
   const isSmsNumberLoading = isFlipped && (boaSmsLoading || !boaSmsState);
@@ -559,41 +557,60 @@ function Balance({
       <section className="balance-panel-stage">
         {activePanel === "summary" && (
           <article className="analytics-card focus-card summary-card">
-            <span>Month Summary</span>
-            <h2>Recent months</h2>
+            <span>{isFlipped ? "BOA SMS" : "Month Summary"}</span>
+            <h2>{isFlipped ? "Recent transactions" : "Recent months"}</h2>
             <div className="summary-list">
-              {isFlipped && activeSummaryRows.length === 0 && (
+              {isFlipped && smsRecentRows.length === 0 && (
                 <div className="summary-row">
                   <div>
-                    <strong>No BOA SMS summary yet</strong>
-                    <small>Waiting for text messages</small>
+                    <strong>No BOA SMS transactions yet</strong>
+                    <small>Waiting for last-month sync</small>
                   </div>
                   <div>
-                    <small>Withdraw</small>
+                    <small>Amount</small>
                     <strong>{hiddenSkeleton}</strong>
                   </div>
                   <div>
-                    <small>Deposit</small>
+                    <small>Balance</small>
                     <strong>{hiddenSkeleton}</strong>
                   </div>
                 </div>
               )}
-              {activeSummaryRows.map((m) => (
-                <div className="summary-row" key={m.key}>
-                  <div>
-                    <strong>{m.monthLabel}</strong>
-                    <small>{m.meta}</small>
+              {isFlipped ? (
+                smsRecentRows.map((event) => (
+                  <div className="summary-row" key={event.key}>
+                    <div>
+                      <strong>{event.label}</strong>
+                      <small>{event.date}</small>
+                    </div>
+                    <div>
+                      <small>Amount</small>
+                      <strong>{money(event.amount)}</strong>
+                    </div>
+                    <div>
+                      <small>Balance</small>
+                      <strong>{event.balanceAfter ? money(event.balanceAfter) : "0.0"}</strong>
+                    </div>
                   </div>
-                  <div>
-                    <small>Withdraw</small>
-                    <strong>{money(m.Withdraw)}</strong>
+                ))
+              ) : (
+                receiptSummaryRows.map((m) => (
+                  <div className="summary-row" key={m.key}>
+                    <div>
+                      <strong>{m.monthLabel}</strong>
+                      <small>{m.meta}</small>
+                    </div>
+                    <div>
+                      <small>Withdraw</small>
+                      <strong>{money(m.Withdraw)}</strong>
+                    </div>
+                    <div>
+                      <small>Deposit</small>
+                      <strong>{money(m.Deposit)}</strong>
+                    </div>
                   </div>
-                  <div>
-                    <small>Deposit</small>
-                    <strong>{money(m.Deposit)}</strong>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </article>
         )}

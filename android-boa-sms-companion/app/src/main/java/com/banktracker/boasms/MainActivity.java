@@ -5,6 +5,8 @@ import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.provider.Telephony;
 import android.view.ViewGroup;
@@ -22,6 +24,18 @@ import java.util.concurrent.Executors;
 
 public final class MainActivity extends Activity {
     private static final int SMS_PERMISSION_REQUEST = 1001;
+    private static final long SMS_SYNC_WINDOW_MILLIS = 31L * 24L * 60L * 60L * 1000L;
+    private static final String BOA_SENDER_SELECTION =
+        Telephony.Sms.ADDRESS + " LIKE ? OR "
+            + Telephony.Sms.ADDRESS + " LIKE ? OR "
+            + Telephony.Sms.ADDRESS + " LIKE ? OR "
+            + Telephony.Sms.ADDRESS + " LIKE ?";
+    private static final String[] BOA_SENDER_ARGS = {
+        "%BOA%",
+        "%Abyssinia%",
+        "%BankOfAbyssinia%",
+        "%BOASMS%"
+    };
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private TextView permissionStatus;
@@ -78,6 +92,7 @@ public final class MainActivity extends Activity {
 
     private void buildUi() {
         ScrollView scrollView = new ScrollView(this);
+        scrollView.setBackgroundColor(Color.rgb(244, 245, 239));
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(dp(20), dp(22), dp(20), dp(22));
@@ -115,7 +130,7 @@ public final class MainActivity extends Activity {
         connectionStatus = statusText("Connection not tested yet.");
         root.addView(connectionStatus);
 
-        root.addView(text("Last BOA SMS found on this phone", 17, true));
+        root.addView(text("Latest account state", 17, true));
         lastExtracted = statusText(SettingsStore.getLastExtracted(this));
         root.addView(lastExtracted);
 
@@ -123,13 +138,15 @@ public final class MainActivity extends Activity {
         refreshInboxButton.setOnClickListener(view -> readLatestBoaSms());
         root.addView(refreshInboxButton);
 
-        Button sendLatestButton = button("Send latest BOA SMS now");
+        Button sendLatestButton = button("Update latest balance");
         sendLatestButton.setOnClickListener(view -> sendLatestInboxUpdate());
         root.addView(sendLatestButton);
 
-        Button syncThreeMonthsButton = button("Sync last 3 months BOA SMS");
-        syncThreeMonthsButton.setOnClickListener(view -> syncLastThreeMonths());
-        root.addView(syncThreeMonthsButton);
+        root.addView(text("Apollo recent transactions", 17, true));
+
+        Button syncLastMonthButton = button("Sync Apollo transactions");
+        syncLastMonthButton.setOnClickListener(view -> syncLastMonth());
+        root.addView(syncLastMonthButton);
 
         root.addView(text("Send status", 17, true));
         lastStatus = statusText(SettingsStore.getLastStatus(this));
@@ -211,8 +228,8 @@ public final class MainActivity extends Activity {
             try (Cursor cursor = getContentResolver().query(
                 Telephony.Sms.Inbox.CONTENT_URI,
                 projection,
-                null,
-                null,
+                BOA_SENDER_SELECTION,
+                BOA_SENDER_ARGS,
                 Telephony.Sms.DATE + " DESC"
             )) {
                 if (cursor != null) {
@@ -306,19 +323,19 @@ public final class MainActivity extends Activity {
         });
     }
 
-    private void syncLastThreeMonths() {
+    private void syncLastMonth() {
         if (checkSelfPermission(Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
-            lastStatus.setText("Read SMS permission is needed to sync the last 3 months.");
+            lastStatus.setText("Read SMS permission is needed to sync the last month.");
             lastStatus.setTextColor(Color.rgb(180, 80, 0));
             return;
         }
 
-        lastStatus.setText("Scanning last 3 months of BOA SMS...");
+        lastStatus.setText("Scanning BOA SMS from the last month for Apollo...");
         lastStatus.setTextColor(Color.rgb(80, 80, 80));
 
         executor.execute(() -> {
             List<PendingSmsUpdate> updates = new ArrayList<>();
-            long cutoff = System.currentTimeMillis() - (92L * 24L * 60L * 60L * 1000L);
+            long cutoff = System.currentTimeMillis() - SMS_SYNC_WINDOW_MILLIS;
 
             String[] projection = {
                 Telephony.Sms.ADDRESS,
@@ -329,8 +346,8 @@ public final class MainActivity extends Activity {
             try (Cursor cursor = getContentResolver().query(
                 Telephony.Sms.Inbox.CONTENT_URI,
                 projection,
-                Telephony.Sms.DATE + " >= ?",
-                new String[] { String.valueOf(cutoff) },
+                Telephony.Sms.DATE + " >= ? AND (" + BOA_SENDER_SELECTION + ")",
+                withCutoffArg(cutoff),
                 Telephony.Sms.DATE + " ASC"
             )) {
                 if (cursor != null) {
@@ -351,7 +368,7 @@ public final class MainActivity extends Activity {
                 }
 
                 if (updates.isEmpty()) {
-                    SettingsStore.setLastStatus(getApplicationContext(), "No useful BOA deposit/withdrawal SMS found in the last 3 months.");
+                    SettingsStore.setLastStatus(getApplicationContext(), "No useful BOA deposit/withdrawal SMS found in the last month.");
                     runOnUiThread(() -> {
                         lastStatus.setText(SettingsStore.getLastStatus(this));
                         lastStatus.setTextColor(Color.rgb(180, 80, 0));
@@ -362,7 +379,7 @@ public final class MainActivity extends Activity {
                 int sent = 0;
 
                 for (PendingSmsUpdate pending : updates) {
-                    ApiClient.sendUpdate(
+                    ApiClient.sendEventOnly(
                         getApplicationContext(),
                         pending.update,
                         pending.sender,
@@ -379,7 +396,7 @@ public final class MainActivity extends Activity {
                 );
                 SettingsStore.setLastStatus(
                     getApplicationContext(),
-                    "Synced " + sent + " BOA SMS updates from the last 3 months."
+                    "Synced " + sent + " Apollo transaction rows. Latest balance row was not changed."
                 );
                 runOnUiThread(() -> {
                     refreshStatus();
@@ -388,13 +405,20 @@ public final class MainActivity extends Activity {
                     testConnection();
                 });
             } catch (Exception error) {
-                SettingsStore.setLastStatus(getApplicationContext(), "3-month sync failed: " + error.getMessage());
+                SettingsStore.setLastStatus(getApplicationContext(), "Last-month sync failed: " + error.getMessage());
                 runOnUiThread(() -> {
                     lastStatus.setText(SettingsStore.getLastStatus(this));
                     lastStatus.setTextColor(Color.rgb(180, 0, 0));
                 });
             }
         });
+    }
+
+    private static String[] withCutoffArg(long cutoff) {
+        String[] args = new String[BOA_SENDER_ARGS.length + 1];
+        args[0] = String.valueOf(cutoff);
+        System.arraycopy(BOA_SENDER_ARGS, 0, args, 1, BOA_SENDER_ARGS.length);
+        return args;
     }
 
     private void testParser() {
@@ -419,9 +443,10 @@ public final class MainActivity extends Activity {
         textView.setText(value);
         textView.setTextSize(sp);
         textView.setPadding(0, dp(8), 0, dp(8));
+        textView.setTextColor(Color.rgb(32, 35, 31));
 
         if (bold) {
-            textView.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+            textView.setTypeface(Typeface.DEFAULT_BOLD);
         }
 
         return textView;
@@ -429,8 +454,15 @@ public final class MainActivity extends Activity {
 
     private TextView statusText(String value) {
         TextView textView = text(value, 14, false);
-        textView.setPadding(dp(12), dp(10), dp(12), dp(10));
-        textView.setBackgroundColor(Color.rgb(246, 246, 242));
+        textView.setPadding(dp(14), dp(12), dp(14), dp(12));
+        textView.setBackgroundColor(Color.TRANSPARENT);
+        textView.setBackground(rounded(Color.WHITE, dp(12), Color.rgb(224, 226, 216)));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        params.setMargins(0, dp(4), 0, dp(12));
+        textView.setLayoutParams(params);
         return textView;
     }
 
@@ -439,6 +471,7 @@ public final class MainActivity extends Activity {
         input.setHint(hint);
         input.setSingleLine(false);
         input.setPadding(dp(12), dp(10), dp(12), dp(10));
+        input.setBackground(rounded(Color.WHITE, dp(10), Color.rgb(210, 214, 202)));
         input.setLayoutParams(new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
@@ -450,11 +483,24 @@ public final class MainActivity extends Activity {
         Button button = new Button(this);
         button.setText(label);
         button.setAllCaps(false);
-        button.setLayoutParams(new LinearLayout.LayoutParams(
+        button.setTextColor(Color.rgb(32, 35, 31));
+        button.setTypeface(Typeface.DEFAULT_BOLD);
+        button.setBackground(rounded(Color.rgb(244, 163, 0), dp(10), Color.rgb(224, 146, 0)));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
-        ));
+        );
+        params.setMargins(0, dp(6), 0, dp(8));
+        button.setLayoutParams(params);
         return button;
+    }
+
+    private GradientDrawable rounded(int color, int radius, int strokeColor) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setColor(color);
+        drawable.setCornerRadius(radius);
+        drawable.setStroke(dp(1), strokeColor);
+        return drawable;
     }
 
     private int dp(int value) {

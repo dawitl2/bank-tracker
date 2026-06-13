@@ -55,7 +55,7 @@ final class BoaSmsParser {
         String text = body.replace('\n', ' ').replace('\r', ' ').replaceAll("\\s+", " ").trim();
         String lower = text.toLowerCase(Locale.US);
 
-        if (!isBoaSender(sender) && !isBoaBody(lower)) {
+        if (!isBoaSender(sender)) {
             return null;
         }
 
@@ -87,12 +87,6 @@ final class BoaSmsParser {
 
         BoaSmsUpdate update = new BoaSmsUpdate(balance, withdrawal, deposit);
         return update.hasValues() ? update : null;
-    }
-
-    private static boolean isBoaBody(String lower) {
-        return lower.contains("bank of abyssinia")
-            || lower.contains("bankofabyssinia.com")
-            || lower.contains("cs.bankofabyssinia.com");
     }
 
     private static boolean isOtp(String lower) {
