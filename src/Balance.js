@@ -149,6 +149,7 @@ const getMonthBounds = (date = new Date()) => {
 function Balance({
   balance,
   boaSmsState,
+  boaSmsSummary = [],
   boaSmsLoading = false,
   onRefreshBoaSmsState,
   transactions = []
@@ -162,6 +163,9 @@ function Balance({
   const [visibilityPromptOpen, setVisibilityPromptOpen] = useState(false);
   const [visibilityPassword, setVisibilityPassword] = useState("");
   const [visibilityError, setVisibilityError] = useState(false);
+  const [apolloPromptOpen, setApolloPromptOpen] = useState(false);
+  const [apolloPassword, setApolloPassword] = useState("");
+  const [apolloError, setApolloError] = useState(false);
 
   // 3D card flip state
   const [isFlipped, setIsFlipped] = useState(false);
@@ -363,7 +367,22 @@ function Balance({
   const monthlyTrendAsc = [...analytics.monthlyTrend].sort((a, b) =>
     a.key.localeCompare(b.key)
   );
-  const hiddenMoney = "•••••";
+  const smsSummaryRows = boaSmsSummary.map((month) => ({
+    ...month,
+    monthLabel: fullMonthLabel(month.key),
+    meta: `${Number(month.count || 0)} BOA SMS`,
+    Withdraw: parseAmount(month.Withdraw),
+    Deposit: parseAmount(month.Deposit),
+    count: Number(month.count || 0)
+  }));
+  const receiptSummaryRows = analytics.monthlyTrend.map((month) => ({
+    ...month,
+    monthLabel: fullMonthLabel(month.key),
+    meta: `${month.peopleCount} people`
+  }));
+  const activeSummaryRows = isFlipped ? smsSummaryRows : receiptSummaryRows;
+  const hiddenCardMoney = "*****";
+  const hiddenSkeleton = <span className="money-skeleton" aria-label="Hidden value"></span>;
   const isSmsNumberLoading = isFlipped && (boaSmsLoading || !boaSmsState);
   const displayedBalance = isFlipped
     ? formatSmsMoney(boaSmsState?.current_balance)
@@ -402,6 +421,33 @@ function Balance({
     setShowBalance((current) => !current);
   };
 
+  const requestApolloFlip = () => {
+    if (isFlipped) {
+      setIsFlipped(false);
+      return;
+    }
+
+    if (localStorage.getItem("apollo_visibility_day") === getVisibilityDayKey()) {
+      setIsFlipped(true);
+      return;
+    }
+
+    setApolloPromptOpen(true);
+  };
+
+  const unlockApollo = () => {
+    if (apolloPassword === VISIBILITY_PASSWORD) {
+      localStorage.setItem("apollo_visibility_day", getVisibilityDayKey());
+      setIsFlipped(true);
+      setApolloPromptOpen(false);
+      setApolloPassword("");
+      setApolloError(false);
+      return;
+    }
+
+    setApolloError(true);
+  };
+
   const requestInterestVisibility = () => {
     if (showInterest) {
       setShowInterest(false);
@@ -436,7 +482,7 @@ function Balance({
       <section className="balance-hero">
         <div
           className={`card-3d-scene${isFlipped ? " is-flipped" : ""}`}
-          onClick={() => setIsFlipped((f) => !f)}
+          onClick={requestApolloFlip}
         >
           <div className="card-3d-inner">
 
@@ -461,7 +507,7 @@ function Balance({
             </span>
             <div className="balance-value-wrap">
               <h1 className={isSmsNumberLoading ? "money-updating" : ""}>
-                {isSmsNumberLoading ? "..." : showBalance ? displayedBalance : hiddenMoney}
+                {isSmsNumberLoading ? "..." : showBalance ? displayedBalance : hiddenCardMoney}
               </h1>
               <button
                 className="balance-visibility-btn"
@@ -482,7 +528,7 @@ function Balance({
             </span>
             <div className="balance-value-wrap">
               <h1 className={isSmsNumberLoading ? "money-updating" : ""}>
-                {isSmsNumberLoading ? "..." : showBalance ? displayedWithdraw : hiddenMoney}
+                {isSmsNumberLoading ? "..." : showBalance ? displayedWithdraw : hiddenCardMoney}
               </h1>
               <button
                 className="balance-visibility-btn"
@@ -516,11 +562,27 @@ function Balance({
             <span>Month Summary</span>
             <h2>Recent months</h2>
             <div className="summary-list">
-              {analytics.monthlyTrend.map((m) => (
+              {isFlipped && activeSummaryRows.length === 0 && (
+                <div className="summary-row">
+                  <div>
+                    <strong>No BOA SMS summary yet</strong>
+                    <small>Waiting for text messages</small>
+                  </div>
+                  <div>
+                    <small>Withdraw</small>
+                    <strong>{hiddenSkeleton}</strong>
+                  </div>
+                  <div>
+                    <small>Deposit</small>
+                    <strong>{hiddenSkeleton}</strong>
+                  </div>
+                </div>
+              )}
+              {activeSummaryRows.map((m) => (
                 <div className="summary-row" key={m.key}>
                   <div>
-                    <strong>{fullMonthLabel(m.key)}</strong>
-                    <small>{m.peopleCount} people</small>
+                    <strong>{m.monthLabel}</strong>
+                    <small>{m.meta}</small>
                   </div>
                   <div>
                     <small>Withdraw</small>
@@ -568,7 +630,7 @@ function Balance({
             <span>Credit Interest</span>
             <div className="interest-lock-row">
               <h2>
-                {showInterest ? money(analytics.interest.netMonthEstimate) : hiddenMoney}
+                {showInterest ? money(analytics.interest.netMonthEstimate) : hiddenSkeleton}
               </h2>
               <button
                 className="interest-lock-btn"
@@ -587,13 +649,13 @@ function Balance({
               <div>
                 <small>Minimum balance</small>
                 <strong>
-                  {showInterest ? money(analytics.interest.minimumBalance) : hiddenMoney}
+                  {showInterest ? money(analytics.interest.minimumBalance) : hiddenSkeleton}
                 </strong>
               </div>
               <div>
                 <small>Remaining est.</small>
                 <strong>
-                  {showInterest ? money(analytics.interest.remainingEstimate) : hiddenMoney}
+                  {showInterest ? money(analytics.interest.remainingEstimate) : hiddenSkeleton}
                 </strong>
               </div>
               <div>
@@ -730,6 +792,48 @@ function Balance({
                 Close
               </button>
               <button type="button" onClick={unlockVisibility}>
+                Unlock
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {apolloPromptOpen && (
+        <div className="interest-password-overlay">
+          <div className="interest-password-box">
+            <h3>Unlock Apollo</h3>
+            <input
+              type="password"
+              placeholder="Password"
+              value={apolloPassword}
+              onChange={(event) => {
+                setApolloPassword(event.target.value);
+                setApolloError(false);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  unlockApollo();
+                }
+              }}
+            />
+            {apolloError && (
+              <p style={{ color: "red", marginBottom: "12px" }}>
+                Incorrect password
+              </p>
+            )}
+            <div className="interest-password-actions">
+              <button
+                type="button"
+                onClick={() => {
+                  setApolloPromptOpen(false);
+                  setApolloPassword("");
+                  setApolloError(false);
+                }}
+              >
+                Close
+              </button>
+              <button type="button" onClick={unlockApollo}>
                 Unlock
               </button>
             </div>

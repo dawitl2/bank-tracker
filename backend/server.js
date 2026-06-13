@@ -14,6 +14,7 @@ const BASE_URL = "https://bank-backend-anhp.onrender.com";
 const GENERATED_TRANSACTION_FIELDS = ["id", "created_at"];
 const BOA_SMS_STATE_ID = 1;
 const BOA_SMS_TOKEN = process.env.BOA_SMS_API_TOKEN || "boa123";
+const BOA_SMS_HISTORY_MONTHS = 3;
 
 const cleanTransactionPayload = (payload) => {
   const transaction = { ...payload };
@@ -80,6 +81,54 @@ const formatBoaSmsState = (row) => ({
   last_sms_at: row?.last_sms_at ?? null,
   updated_at: row?.updated_at ?? null
 });
+
+const getBoaSmsCutoffIso = () => {
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - BOA_SMS_HISTORY_MONTHS);
+  return cutoff.toISOString();
+};
+
+const buildBoaSmsEvent = ({
+  payload,
+  sender,
+  smsReceivedAt,
+  messageHash,
+  currentBalance,
+  latestWithdrawalAmount,
+  latestDepositAmount
+}) => {
+  const amount = latestDepositAmount ?? latestWithdrawalAmount;
+
+  if (amount === null) {
+    return null;
+  }
+
+  const transactionType =
+    latestDepositAmount !== null ? "deposit" : "withdrawal";
+
+  return {
+    sms_received_at: smsReceivedAt,
+    sender,
+    message_hash:
+      messageHash ||
+      `${sender || "unknown"}-${smsReceivedAt}-${transactionType}-${amount}`,
+    transaction_type: transactionType,
+    amount,
+    balance_after: currentBalance,
+    raw_reference: payload.reference || null
+  };
+};
+
+const pruneOldBoaSmsEvents = async () => {
+  const { error } = await supabase
+    .from("boa_sms_events")
+    .delete()
+    .lt("sms_received_at", getBoaSmsCutoffIso());
+
+  if (error) {
+    console.error("BOA SMS PRUNE ERROR:", error);
+  }
+};
 
 
 /*
@@ -384,11 +433,13 @@ app.post("/boa-sms/account-state", requireBoaSmsToken, async (req, res) => {
   const payload = req.body || {};
   const now = new Date().toISOString();
   const smsReceivedAt = payload.sms_received_at || now;
+  const sender = payload.sender || null;
+  const messageHash = payload.message_hash || null;
   const update = {
     id: BOA_SMS_STATE_ID,
     last_sms_at: smsReceivedAt,
-    last_sender: payload.sender || null,
-    last_message_hash: payload.message_hash || null,
+    last_sender: sender,
+    last_message_hash: messageHash,
     updated_at: now
   };
 
@@ -435,7 +486,93 @@ app.post("/boa-sms/account-state", requireBoaSmsToken, async (req, res) => {
     });
   }
 
+  const event = buildBoaSmsEvent({
+    payload,
+    sender,
+    smsReceivedAt,
+    messageHash,
+    currentBalance,
+    latestWithdrawalAmount,
+    latestDepositAmount
+  });
+
+  if (event) {
+    const { error: eventError } = await supabase
+      .from("boa_sms_events")
+      .upsert(event, { onConflict: "message_hash" });
+
+    if (eventError) {
+      console.error("BOA SMS EVENT UPSERT ERROR:", eventError);
+    } else {
+      pruneOldBoaSmsEvents();
+    }
+  }
+
   res.status(201).json(formatBoaSmsState(data));
+});
+
+app.get("/boa-sms/monthly-summary", async (req, res) => {
+
+  const { data, error } = await supabase
+    .from("boa_sms_events")
+    .select("sms_received_at, transaction_type, amount")
+    .gte("sms_received_at", getBoaSmsCutoffIso())
+    .order("sms_received_at", { ascending: false });
+
+  if (error) {
+    console.error("BOA SMS SUMMARY ERROR:", error);
+    return res.status(500).json({
+      error: "BOA SMS summary fetch failed",
+      details: error.message
+    });
+  }
+
+  const monthMap = new Map();
+
+  (data || []).forEach((event) => {
+    const parsedDate = new Date(event.sms_received_at);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return;
+    }
+
+    const key = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, "0")}`;
+
+    if (!monthMap.has(key)) {
+      monthMap.set(key, {
+        key,
+        Withdraw: 0,
+        Deposit: 0,
+        count: 0
+      });
+    }
+
+    const month = monthMap.get(key);
+    const amount = parseMoneyValue(event.amount) || 0;
+
+    if (event.transaction_type === "deposit") {
+      month.Deposit += amount;
+    }
+
+    if (event.transaction_type === "withdrawal") {
+      month.Withdraw += amount;
+    }
+
+    month.count += 1;
+  });
+
+  const summary = [...monthMap.values()]
+    .sort((a, b) => b.key.localeCompare(a.key))
+    .map((month) => ({
+      ...month,
+      Net: month.Deposit - month.Withdraw
+    }));
+
+  res.json({
+    months: summary,
+    source: "BOA SMS",
+    retention_months: BOA_SMS_HISTORY_MONTHS
+  });
 });
 
 

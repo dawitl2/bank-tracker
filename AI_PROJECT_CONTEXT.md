@@ -11,7 +11,7 @@ There are two connected parts:
 1. The main React web app tracks receipt-based transactions and analytics.
 2. A separate Android companion app reads BOA SMS messages and sends only the latest account state to the backend.
 
-The BOA SMS integration is intentionally simple:
+The BOA SMS latest-state integration is intentionally simple:
 
 - It stores the latest known current balance.
 - It stores the latest known withdrawal amount.
@@ -19,6 +19,8 @@ The BOA SMS integration is intentionally simple:
 - It does not store SMS transaction history.
 - It does not create transaction tables.
 - It does not calculate balances from receipts.
+
+There is also a small BOA SMS event table for summary totals only. It stores deduped deposit/withdrawal SMS events for the last three months and feeds the Month Summary money-in/money-out view.
 
 The Apollo side of the balance card must use the BOA SMS account state, not receipt-processing calculations.
 
@@ -43,6 +45,7 @@ Known BOA SMS state route:
 ```text
 GET https://bank-backend-anhp.onrender.com/boa-sms/account-state
 POST https://bank-backend-anhp.onrender.com/boa-sms/account-state
+GET https://bank-backend-anhp.onrender.com/boa-sms/monthly-summary
 ```
 
 Render log from current deployment showed:
@@ -392,6 +395,7 @@ Responsibilities:
 - Shows latest parsed BOA SMS from the phone.
 - Refreshes latest useful BOA SMS from the inbox.
 - Sends latest parsed BOA SMS to backend.
+- Syncs useful BOA deposit/withdrawal SMS from the last three months for summary backfill.
 - Provides parser test UI.
 
 It searches recent inbox messages, parses only useful BOA messages, and ignores OTP/promotional/unrelated SMS.
@@ -449,6 +453,7 @@ Routes used:
 ```text
 GET /boa-sms/account-state
 POST /boa-sms/account-state
+GET /boa-sms/monthly-summary
 ```
 
 POST uses bearer auth with the stored token.
@@ -511,6 +516,41 @@ latest_withdrawal_amount: 112
 latest_deposit_amount: 5
 last_message_hash: corrected-from-user-samples
 ```
+
+### `public.boa_sms_events`
+
+This table stores deduped BOA SMS deposit/withdrawal events for the three-month summary.
+
+SQL setup file:
+
+```text
+backend/sql/boa_sms_events.sql
+```
+
+Schema:
+
+```sql
+create table if not exists public.boa_sms_events (
+  id bigserial primary key,
+  sms_received_at timestamp with time zone not null,
+  sender text null,
+  message_hash text not null,
+  transaction_type text not null,
+  amount numeric(14, 2) not null,
+  balance_after numeric(14, 2) null,
+  raw_reference text null,
+  created_at timestamp with time zone not null default now(),
+  constraint boa_sms_events_message_hash_key unique (message_hash),
+  constraint boa_sms_events_transaction_type_check
+    check (transaction_type in ('deposit', 'withdrawal'))
+);
+```
+
+Purpose:
+
+- Monthly money in/out summary from BOA SMS.
+- No raw SMS body is stored.
+- The backend prunes rows older than three months when new SMS updates arrive.
 
 ### `public.transactions`
 

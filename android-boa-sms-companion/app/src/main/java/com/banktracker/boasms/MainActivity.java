@@ -15,6 +15,8 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -34,6 +36,20 @@ public final class MainActivity extends Activity {
     private String latestInboxSender;
     private String latestInboxBody;
     private long latestInboxDate;
+
+    private static final class PendingSmsUpdate {
+        final BoaSmsUpdate update;
+        final String sender;
+        final String body;
+        final long receivedAt;
+
+        PendingSmsUpdate(BoaSmsUpdate update, String sender, String body, long receivedAt) {
+            this.update = update;
+            this.sender = sender;
+            this.body = body;
+            this.receivedAt = receivedAt;
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,6 +126,10 @@ public final class MainActivity extends Activity {
         Button sendLatestButton = button("Send latest BOA SMS now");
         sendLatestButton.setOnClickListener(view -> sendLatestInboxUpdate());
         root.addView(sendLatestButton);
+
+        Button syncThreeMonthsButton = button("Sync last 3 months BOA SMS");
+        syncThreeMonthsButton.setOnClickListener(view -> syncLastThreeMonths());
+        root.addView(syncThreeMonthsButton);
 
         root.addView(text("Send status", 17, true));
         lastStatus = statusText(SettingsStore.getLastStatus(this));
@@ -278,6 +298,97 @@ public final class MainActivity extends Activity {
                 });
             } catch (Exception error) {
                 SettingsStore.setLastStatus(getApplicationContext(), "Send failed: " + error.getMessage());
+                runOnUiThread(() -> {
+                    lastStatus.setText(SettingsStore.getLastStatus(this));
+                    lastStatus.setTextColor(Color.rgb(180, 0, 0));
+                });
+            }
+        });
+    }
+
+    private void syncLastThreeMonths() {
+        if (checkSelfPermission(Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
+            lastStatus.setText("Read SMS permission is needed to sync the last 3 months.");
+            lastStatus.setTextColor(Color.rgb(180, 80, 0));
+            return;
+        }
+
+        lastStatus.setText("Scanning last 3 months of BOA SMS...");
+        lastStatus.setTextColor(Color.rgb(80, 80, 80));
+
+        executor.execute(() -> {
+            List<PendingSmsUpdate> updates = new ArrayList<>();
+            long cutoff = System.currentTimeMillis() - (92L * 24L * 60L * 60L * 1000L);
+
+            String[] projection = {
+                Telephony.Sms.ADDRESS,
+                Telephony.Sms.BODY,
+                Telephony.Sms.DATE
+            };
+
+            try (Cursor cursor = getContentResolver().query(
+                Telephony.Sms.Inbox.CONTENT_URI,
+                projection,
+                Telephony.Sms.DATE + " >= ?",
+                new String[] { String.valueOf(cutoff) },
+                Telephony.Sms.DATE + " ASC"
+            )) {
+                if (cursor != null) {
+                    int senderIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.ADDRESS);
+                    int bodyIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.BODY);
+                    int dateIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.DATE);
+
+                    while (cursor.moveToNext()) {
+                        String sender = cursor.getString(senderIndex);
+                        String body = cursor.getString(bodyIndex);
+                        long receivedAt = cursor.getLong(dateIndex);
+                        BoaSmsUpdate update = BoaSmsParser.parse(sender, body);
+
+                        if (update != null && (update.latestDepositAmount != null || update.latestWithdrawalAmount != null)) {
+                            updates.add(new PendingSmsUpdate(update, sender, body, receivedAt));
+                        }
+                    }
+                }
+
+                if (updates.isEmpty()) {
+                    SettingsStore.setLastStatus(getApplicationContext(), "No useful BOA deposit/withdrawal SMS found in the last 3 months.");
+                    runOnUiThread(() -> {
+                        lastStatus.setText(SettingsStore.getLastStatus(this));
+                        lastStatus.setTextColor(Color.rgb(180, 80, 0));
+                    });
+                    return;
+                }
+
+                int sent = 0;
+
+                for (PendingSmsUpdate pending : updates) {
+                    ApiClient.sendUpdate(
+                        getApplicationContext(),
+                        pending.update,
+                        pending.sender,
+                        pending.receivedAt,
+                        sha256(pending.sender + "\n" + pending.body)
+                    );
+                    sent++;
+                }
+
+                PendingSmsUpdate latest = updates.get(updates.size() - 1);
+                SettingsStore.setLastExtracted(
+                    getApplicationContext(),
+                    SmsTools.describeUpdate(latest.update, latest.sender, latest.receivedAt)
+                );
+                SettingsStore.setLastStatus(
+                    getApplicationContext(),
+                    "Synced " + sent + " BOA SMS updates from the last 3 months."
+                );
+                runOnUiThread(() -> {
+                    refreshStatus();
+                    lastStatus.setText(SettingsStore.getLastStatus(this));
+                    lastStatus.setTextColor(Color.rgb(24, 128, 56));
+                    testConnection();
+                });
+            } catch (Exception error) {
+                SettingsStore.setLastStatus(getApplicationContext(), "3-month sync failed: " + error.getMessage());
                 runOnUiThread(() -> {
                     lastStatus.setText(SettingsStore.getLastStatus(this));
                     lastStatus.setTextColor(Color.rgb(180, 0, 0));

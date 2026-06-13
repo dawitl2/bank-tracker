@@ -26,6 +26,7 @@ function App() {
   const [view, setView] = useState("transactions");
   const [transactions, setTransactions] = useState([]);
   const [boaSmsState, setBoaSmsState] = useState(null);
+  const [boaSmsSummary, setBoaSmsSummary] = useState([]);
   const [boaSmsLoading, setBoaSmsLoading] = useState(false);
 
   const [showModal, setShowModal] = useState(false);
@@ -74,6 +75,7 @@ function App() {
 
     fetchTransactions();
     fetchBoaSmsState();
+    fetchBoaSmsSummary();
 
   // Initial app hydration should run once when the app mounts.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -245,13 +247,33 @@ function App() {
     }
   };
 
+  const fetchBoaSmsSummary = async () => {
+    try {
+      const res = await fetch(`${API_URL}/boa-sms/monthly-summary`);
+      const data = await readApiResponse(res);
+
+      if (!res.ok) {
+        console.error("BOA SMS SUMMARY ERROR:", data);
+        return;
+      }
+
+      setBoaSmsSummary(Array.isArray(data.months) ? data.months : []);
+    } catch (err) {
+      console.error("BOA SMS SUMMARY FETCH ERROR:", err);
+    }
+  };
+
   useEffect(() => {
     if (view !== "balance") {
       return undefined;
     }
 
     fetchBoaSmsState();
-    const timer = setInterval(fetchBoaSmsState, 15000);
+    fetchBoaSmsSummary();
+    const timer = setInterval(() => {
+      fetchBoaSmsState();
+      fetchBoaSmsSummary();
+    }, 15000);
 
     return () => clearInterval(timer);
   // Keep the SMS snapshot fresh while the Balance/Apollo card is open.
@@ -1034,6 +1056,7 @@ function App() {
             <Balance
               balance={currentBalance}
               boaSmsState={boaSmsState}
+              boaSmsSummary={boaSmsSummary}
               boaSmsLoading={boaSmsLoading}
               onRefreshBoaSmsState={fetchBoaSmsState}
               lastWithdraw={lastWithdraw}
