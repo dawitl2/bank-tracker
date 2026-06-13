@@ -57,11 +57,11 @@ const parseAmount = (value) =>
 
 const formatSmsMoney = (value) => {
   const parsed = parseAmount(value);
-  return parsed ? money(parsed) : "-";
+  return parsed ? money(parsed) : "0.0";
 };
 
 const formatSmsDate = (value) => {
-  if (!value) return "Waiting for BOA SMS";
+  if (!value) return "No BOA SMS yet";
 
   const parsed = new Date(value);
 
@@ -364,6 +364,7 @@ function Balance({
     a.key.localeCompare(b.key)
   );
   const hiddenMoney = "•••••";
+  const isSmsNumberLoading = isFlipped && (boaSmsLoading || !boaSmsState);
   const displayedBalance = isFlipped
     ? formatSmsMoney(boaSmsState?.current_balance)
     : money(balance);
@@ -459,8 +460,8 @@ function Balance({
               {isFlipped ? "Apollo balance" : "Balance"}
             </span>
             <div className="balance-value-wrap">
-              <h1 className={isFlipped && boaSmsLoading ? "money-updating" : ""}>
-                {showBalance ? displayedBalance : hiddenMoney}
+              <h1 className={isSmsNumberLoading ? "money-updating" : ""}>
+                {isSmsNumberLoading ? "..." : showBalance ? displayedBalance : hiddenMoney}
               </h1>
               <button
                 className="balance-visibility-btn"
@@ -480,8 +481,8 @@ function Balance({
               {isFlipped ? "Apollo withdraw" : "Withdraw"}
             </span>
             <div className="balance-value-wrap">
-              <h1 className={isFlipped && boaSmsLoading ? "money-updating" : ""}>
-                {showBalance ? displayedWithdraw : hiddenMoney}
+              <h1 className={isSmsNumberLoading ? "money-updating" : ""}>
+                {isSmsNumberLoading ? "..." : showBalance ? displayedWithdraw : hiddenMoney}
               </h1>
               <button
                 className="balance-visibility-btn"

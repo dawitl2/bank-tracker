@@ -245,6 +245,19 @@ function App() {
     }
   };
 
+  useEffect(() => {
+    if (view !== "balance") {
+      return undefined;
+    }
+
+    fetchBoaSmsState();
+    const timer = setInterval(fetchBoaSmsState, 15000);
+
+    return () => clearInterval(timer);
+  // Keep the SMS snapshot fresh while the Balance/Apollo card is open.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
+
   const sendTableTotalToCalculator = (tableTotal) => {
     setCalculatorImportValue(String(tableTotal));
     setCalculatorImportToken((current) => current + 1);

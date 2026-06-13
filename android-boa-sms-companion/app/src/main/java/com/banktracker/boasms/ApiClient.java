@@ -5,6 +5,7 @@ import android.content.Context;
 import org.json.JSONObject;
 
 import java.io.OutputStream;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -62,6 +63,46 @@ final class ApiClient {
         if (status < 200 || status >= 300) {
             throw new IllegalStateException("Backend returned HTTP " + status);
         }
+    }
+
+    static String fetchAccountState(Context context) throws Exception {
+        String apiUrl = SettingsStore.getApiUrl(context);
+
+        if (apiUrl.isEmpty()) {
+            throw new IllegalStateException("Backend URL is not configured.");
+        }
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(apiUrl + "/boa-sms/account-state").openConnection();
+        connection.setRequestMethod("GET");
+        connection.setConnectTimeout(8000);
+        connection.setReadTimeout(8000);
+
+        int status = connection.getResponseCode();
+        String response = readResponse(status >= 200 && status < 300
+            ? connection.getInputStream()
+            : connection.getErrorStream());
+
+        if (status < 200 || status >= 300) {
+            throw new IllegalStateException("Backend returned HTTP " + status + ": " + response);
+        }
+
+        return response;
+    }
+
+    private static String readResponse(InputStream stream) throws Exception {
+        if (stream == null) {
+            return "";
+        }
+
+        byte[] buffer = new byte[4096];
+        StringBuilder response = new StringBuilder();
+        int read;
+
+        while ((read = stream.read(buffer)) != -1) {
+            response.append(new String(buffer, 0, read, StandardCharsets.UTF_8));
+        }
+
+        return response.toString();
     }
 
     private static String isoUtc(long millis) {

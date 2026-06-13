@@ -88,21 +88,6 @@ KEEP ALIVE SYSTEM (ETHIOPIAN TIME)
 ========================================
 */
 
-const isActiveTime = () => {
-  const now = new Date();
-
-  const ethTime = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Africa/Addis_Ababa",
-    hour: "numeric",
-    hour12: false
-  }).format(now);
-
-  const hour = parseInt(ethTime);
-
-  // Active: 6 AM → 11:59 PM
-  return hour >= 6 && hour < 24;
-};
-
 const pingServer = async () => {
   try {
     await fetch(BASE_URL);
@@ -114,11 +99,7 @@ const pingServer = async () => {
 
 // Run every 5 minutes
 setInterval(() => {
-  if (isActiveTime()) {
-    pingServer();
-  } else {
-    console.log("😴 Sleeping time (no ping)");
-  }
+  pingServer();
 }, 5 * 60 * 1000);
 
 

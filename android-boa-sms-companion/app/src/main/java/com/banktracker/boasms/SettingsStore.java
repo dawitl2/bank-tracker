@@ -8,6 +8,7 @@ final class SettingsStore {
     private static final String KEY_API_URL = "api_url";
     private static final String KEY_API_TOKEN = "api_token";
     private static final String KEY_LAST_STATUS = "last_status";
+    private static final String KEY_LAST_EXTRACTED = "last_extracted";
 
     private SettingsStore() {
     }
@@ -34,6 +35,14 @@ final class SettingsStore {
 
     static void setLastStatus(Context context, String status) {
         getPrefs(context).edit().putString(KEY_LAST_STATUS, status).apply();
+    }
+
+    static String getLastExtracted(Context context) {
+        return getPrefs(context).getString(KEY_LAST_EXTRACTED, "No BOA SMS parsed on this phone yet.");
+    }
+
+    static void setLastExtracted(Context context, String summary) {
+        getPrefs(context).edit().putString(KEY_LAST_EXTRACTED, summary).apply();
     }
 
     private static SharedPreferences getPrefs(Context context) {

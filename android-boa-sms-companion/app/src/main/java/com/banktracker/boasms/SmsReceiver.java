@@ -47,6 +47,7 @@ public final class SmsReceiver extends BroadcastReceiver {
         EXECUTOR.execute(() -> {
             try {
                 ApiClient.sendUpdate(appContext, update, finalSender, finalReceivedAt, sha256(finalSender + "\n" + finalBody));
+                SettingsStore.setLastExtracted(appContext, SmsTools.describeUpdate(update, finalSender, finalReceivedAt));
                 SettingsStore.setLastStatus(appContext, "Last BOA update sent successfully.");
             } catch (Exception error) {
                 SettingsStore.setLastStatus(appContext, "Last BOA update failed: " + error.getMessage());
