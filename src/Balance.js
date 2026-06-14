@@ -258,6 +258,9 @@ function ConstructionPanel() {
       return;
     }
     setMoneySpentInput(selectedHouse.money_spent ? String(selectedHouse.money_spent) : "");
+  // Sync only when a different house is selected, not on every houses update,
+  // so the input isn't clobbered while editing.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedHouse?.id]);
 
 
@@ -627,6 +630,9 @@ function Balance({
 
   useEffect(() => {
     if (isFlipped) onRefreshBoaSmsState?.();
+  // Only refresh when the card is flipped, not on every parent re-render
+  // that passes a new onRefreshBoaSmsState reference.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFlipped]);
 
   const analytics = useMemo(() => {
