@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import {
   Area,
   AreaChart,
@@ -239,6 +239,10 @@ function ConstructionPanel() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [moneySpentInput, setMoneySpentInput] = useState("");
   const [moneySpentSaving, setMoneySpentSaving] = useState(false);
+  const [photoPromptOpen, setPhotoPromptOpen] = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const cameraInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
 
   const loadHouses = useCallback(async () => {
     setLoading(true);
@@ -368,6 +372,50 @@ function ConstructionPanel() {
     }
   };
 
+  const uploadHousePhoto = async (houseId, file) => {
+    if (!file) return;
+
+    setPhotoUploading(true);
+    setError(null);
+
+    const extension = (file.type.split("/")[1] || "jpg").toLowerCase();
+    const path = `${houseId}.${extension}`;
+
+    try {
+      const uploadRes = await fetch(
+        `${SUPABASE_URL}/storage/v1/object/construction-photos/${path}`,
+        {
+          method: "POST",
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+            "Content-Type": file.type || "image/jpeg",
+            "x-upsert": "true"
+          },
+          body: file
+        }
+      );
+
+      if (!uploadRes.ok) {
+        const errText = await uploadRes.text();
+        throw new Error(errText || "Upload failed");
+      }
+
+      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/construction-photos/${path}?t=${Date.now()}`;
+
+      await sbFetch(`/construction_houses?id=eq.${houseId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ image_url: publicUrl })
+      });
+
+      setHouses(prev => prev.map(h => h.id === houseId ? { ...h, image_url: publicUrl } : h));
+    } catch (e) {
+      setError("Could not upload photo.");
+    } finally {
+      setPhotoUploading(false);
+    }
+  };
+
   const handleDeleteHouse = (house) => {
     setDeleteTarget(house);
   };
@@ -471,6 +519,52 @@ function ConstructionPanel() {
                 </button>
               </div>
               <button className="construction-close-btn" onClick={() => setSelectedHouse(null)}>✕</button>
+            </div>
+
+            <div className="construction-photo-wrap">
+              {selectedHouse.image_url ? (
+                <img
+                  src={selectedHouse.image_url}
+                  alt={selectedHouse.name}
+                  className="construction-photo-img"
+                />
+              ) : (
+                <div className="construction-photo-placeholder">No photo yet</div>
+              )}
+              {photoUploading && (
+                <div className="construction-photo-uploading">Uploading...</div>
+              )}
+              <button
+                className="construction-photo-replace-btn"
+                onClick={() => setPhotoPromptOpen(true)}
+                disabled={photoUploading}
+                type="button"
+              >
+                {selectedHouse.image_url ? "Replace photo" : "Add photo"}
+              </button>
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                style={{ display: "none" }}
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (file) uploadHousePhoto(selectedHouse.id, file);
+                }}
+              />
+              <input
+                ref={galleryInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (file) uploadHousePhoto(selectedHouse.id, file);
+                }}
+              />
             </div>
 
             {(() => {
@@ -598,6 +692,44 @@ function ConstructionPanel() {
                 disabled={deleteLoading}
               >
                 {deleteLoading ? "Deleting..." : "Yes, Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {photoPromptOpen && (
+        <div className="confirm-overlay" onClick={() => setPhotoPromptOpen(false)}>
+          <div className="confirm-box" onClick={e => e.stopPropagation()}>
+            <h2>Add Photo</h2>
+            <p>Take a new picture or choose one from your gallery.</p>
+
+            <div className="confirm-actions">
+              <button
+                className="close-btn"
+                onClick={() => setPhotoPromptOpen(false)}
+              >
+                Cancel
+              </button>
+
+              <button
+                className="construction-photo-source-btn"
+                onClick={() => {
+                  setPhotoPromptOpen(false);
+                  galleryInputRef.current?.click();
+                }}
+              >
+                Gallery
+              </button>
+
+              <button
+                className="construction-photo-source-btn"
+                onClick={() => {
+                  setPhotoPromptOpen(false);
+                  cameraInputRef.current?.click();
+                }}
+              >
+                Camera
               </button>
             </div>
           </div>
