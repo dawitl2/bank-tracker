@@ -225,6 +225,8 @@ function ConstructionPanel() {
   const [error, setError] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [moneySpentInput, setMoneySpentInput] = useState("");
+  const [moneySpentSaving, setMoneySpentSaving] = useState(false);
 
   const loadHouses = useCallback(async () => {
     setLoading(true);
@@ -249,6 +251,15 @@ function ConstructionPanel() {
   }, []);
 
   useEffect(() => { loadHouses(); }, [loadHouses]);
+
+  useEffect(() => {
+    if (!selectedHouse) {
+      setMoneySpentInput("");
+      return;
+    }
+    setMoneySpentInput(selectedHouse.money_spent ? String(selectedHouse.money_spent) : "");
+  }, [selectedHouse?.id]);
+
 
   const toggleItem = async (houseId, itemId) => {
     const current = checkedByHouse[houseId]?.[itemId] ?? false;
@@ -315,6 +326,30 @@ function ConstructionPanel() {
       setError("Could not rename house.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const updateMoneySpent = async (houseId, rawValue) => {
+    const cleaned = rawValue.toString().replace(/[^\d.-]/g, "");
+    const value = parseFloat(cleaned);
+    const next = Number.isFinite(value) ? value : 0;
+    const current = houses.find(h => h.id === houseId)?.money_spent ?? 0;
+
+    if (next === Number(current)) return;
+
+    setMoneySpentSaving(true);
+    setHouses(prev => prev.map(h => h.id === houseId ? { ...h, money_spent: next } : h));
+
+    try {
+      await sbFetch(`/construction_houses?id=eq.${houseId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ money_spent: next })
+      });
+    } catch (e) {
+      setHouses(prev => prev.map(h => h.id === houseId ? { ...h, money_spent: current } : h));
+      setError("Could not update money spent.");
+    } finally {
+      setMoneySpentSaving(false);
     }
   };
 
@@ -468,6 +503,28 @@ function ConstructionPanel() {
                         })}
                       </div>
                     ))}
+                  </div>
+
+                  <div className="construction-money-spent">
+                    <span className="construction-money-spent-label">Money spent</span>
+                    <div className="construction-money-spent-row">
+                      <span className="construction-money-spent-currency">ETB</span>
+                      <input
+                        className="construction-money-spent-input"
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="0"
+                        value={moneySpentInput}
+                        onChange={e => setMoneySpentInput(e.target.value)}
+                        onBlur={() => updateMoneySpent(selectedHouse.id, moneySpentInput)}
+                        onKeyDown={e => {
+                          if (e.key === "Enter") {
+                            e.currentTarget.blur();
+                          }
+                        }}
+                        disabled={moneySpentSaving}
+                      />
+                    </div>
                   </div>
                 </>
               );

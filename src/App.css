@@ -3064,3 +3064,55 @@ a {
 .confirm-overlay {
   z-index: 1100;
 }
+
+
+
+
+
+.construction-money-spent {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.construction-money-spent-label {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.6;
+  margin-bottom: 6px;
+}
+
+.construction-money-spent-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.construction-money-spent-currency {
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0.5;
+}
+
+.construction-money-spent-input {
+  font-size: 22px;
+  font-weight: 700;
+  font-family: inherit;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 2px 0;
+  width: 100%;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s ease;
+}
+
+.construction-money-spent-input:focus {
+  border-bottom-color: rgba(0, 0, 0, 0.25);
+}
+
+.construction-money-spent-input:disabled {
+  opacity: 0.5;
+}
