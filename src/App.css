@@ -2651,5 +2651,416 @@ a {
 
 
 
+/* ========================= */
+/* CONSTRUCTION PANEL        */
+/* ========================= */
+
+.construction-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  background: rgba(0, 0, 0, 0.48);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.construction-detail-modal {
+  width: min(520px, 100%);
+  max-height: 82vh;
+  background: white;
+  border-radius: 14px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+
+.construction-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.construction-detail-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #20231f;
+  flex: 1;
+}
+
+.construction-close-btn {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.07);
+  cursor: pointer;
+  font-size: 15px;
+  color: #555;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.construction-export-btn {
+  background: none;
+  border: 1px solid rgba(244, 163, 0, 0.5);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #8a5b00;
+}
+
+.construction-export-btn:hover {
+  background: rgba(244, 163, 0, 0.1);
+}
+
+.construction-overall-prog {
+  display: grid;
+  gap: 5px;
+}
+
+.construction-overall-bg {
+  height: 8px;
+  border-radius: 999px;
+  background: #eee;
+}
+
+.construction-overall-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #f4a300;
+  transition: width 0.35s;
+}
+
+.construction-overall-label {
+  font-size: 12px;
+  color: #666;
+  text-align: right;
+}
+
+.construction-checklist-scroll {
+  overflow-y: auto;
+  display: grid;
+  gap: 12px;
+  padding-right: 4px;
+}
+
+.construction-section {
+  display: grid;
+  gap: 4px;
+}
+
+.construction-section-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 6px 0 4px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 2px;
+}
+
+.construction-item-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.construction-item-row:hover {
+  background: rgba(244, 163, 0, 0.08);
+}
+
+.construction-item-row.locked {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.construction-checkbox {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1.5px solid #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+  transition: all 0.15s;
+}
+
+.construction-checkbox.checked {
+  background: #f4a300;
+  border-color: #f4a300;
+}
+
+.construction-item-label {
+  font-size: 14px;
+  color: #20231f;
+  flex: 1;
+}
+
+.construction-houses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.construction-house-card {
+  background: #fbfcf8;
+  border: 1px solid rgba(24, 24, 22, 0.08);
+  border-radius: 12px;
+  padding: 14px 12px 12px;
+  cursor: pointer;
+  display: grid;
+  gap: 7px;
+  transition: border-color 0.18s;
+}
+
+.construction-house-card:hover {
+  border-color: rgba(244, 163, 0, 0.4);
+}
+
+.construction-house-card.selected {
+  border: 1.5px solid #f4a300;
+  background: rgba(244, 163, 0, 0.04);
+}
+
+.construction-house-icon {
+  font-size: 26px;
+  text-align: center;
+}
+
+.construction-house-name-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.construction-house-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #20231f;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.construction-house-edit {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px;
+  line-height: 1;
+  color: #888;
+}
+
+.construction-prog-bg {
+  height: 5px;
+  border-radius: 999px;
+  background: #eee;
+}
+
+.construction-prog-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #f4a300;
+  transition: width 0.3s;
+}
+
+.construction-prog-label {
+  font-size: 11px;
+  color: #888;
+}
+
+.construction-add-house {
+  background: none;
+  border: 1.5px dashed rgba(244, 163, 0, 0.4);
+  border-radius: 12px;
+  padding: 14px 12px;
+  cursor: pointer;
+  color: #888;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.18s, color 0.18s;
+  min-height: 100px;
+}
+
+.construction-add-house:hover {
+  border-color: #f4a300;
+  color: #f4a300;
+}
+
+.construction-mini-modal {
+  width: min(320px, 100%);
+  background: white;
+  border-radius: 12px;
+  padding: 22px;
+  display: grid;
+  gap: 14px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.26);
+}
+
+.construction-mini-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #20231f;
+}
+
+.construction-mini-input {
+  width: 100%;
+  padding: 11px 13px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 15px;
+  background: #fafafa;
+  color: #20231f;
+}
+
+.construction-mini-input:focus {
+  outline: 2px solid rgba(244, 163, 0, 0.35);
+  border-color: #f4a300;
+}
+
+.construction-mini-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.construction-mini-cancel {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #666;
+}
+
+.construction-mini-confirm {
+  background: #f4a300;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #111;
+}
+
+.construction-mini-danger {
+  background: #b42318;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  color: white;
+  margin-right: auto;
+}
+
+.construction-card {
+  align-content: start;
+}
+
+.construction-action-btn {
+  background: #f4a300;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #111;
+}
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+.construction-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.construction-detail-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.construction-detail-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.construction-detail-edit-btn,
+.construction-detail-delete-btn {
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.construction-detail-edit-btn:hover,
+.construction-detail-delete-btn:hover {
+  background: rgba(0, 0, 0, 0.12);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.construction-detail-delete-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.construction-overlay {
+  z-index: 1000;
+}
+
+.confirm-overlay {
+  z-index: 1100;
+}
