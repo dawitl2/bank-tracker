@@ -274,11 +274,8 @@ function ConstructionPanel() {
       return;
     }
     setMoneySpentInput(selectedHouse.money_spent ? formatWithCommas(String(selectedHouse.money_spent)) : "");
-  // Sync only when a different house is selected, not on every houses update,
-  // so the input isn't clobbered while editing.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedHouse?.id]);
-
 
   const toggleItem = async (houseId, itemId) => {
     const current = checkedByHouse[houseId]?.[itemId] ?? false;
@@ -495,6 +492,8 @@ function ConstructionPanel() {
       {selectedHouse && (
         <div className="construction-overlay" onClick={() => setSelectedHouse(null)}>
           <div className="construction-detail-modal" onClick={e => e.stopPropagation()}>
+
+            {/* ── Header (never scrolls) ── */}
             <div className="construction-detail-header">
               <div className="construction-detail-title-row">
                 <span className="construction-detail-title">🏠 {selectedHouse.name}</span>
@@ -521,57 +520,61 @@ function ConstructionPanel() {
               <button className="construction-close-btn" onClick={() => setSelectedHouse(null)}>✕</button>
             </div>
 
-            <div className="construction-photo-wrap">
-              {selectedHouse.image_url ? (
-                <img
-                  src={selectedHouse.image_url}
-                  alt={selectedHouse.name}
-                  className="construction-photo-img"
-                />
-              ) : (
-                <div className="construction-photo-placeholder">No photo yet</div>
-              )}
-              {photoUploading && (
-                <div className="construction-photo-uploading">Uploading...</div>
-              )}
-              <button
-                className="construction-photo-replace-btn"
-                onClick={() => setPhotoPromptOpen(true)}
-                disabled={photoUploading}
-                type="button"
-              >
-                {selectedHouse.image_url ? "Replace photo" : "Add photo"}
-              </button>
-              <input
-                ref={cameraInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                style={{ display: "none" }}
-                onChange={e => {
-                  const file = e.target.files?.[0];
-                  e.target.value = "";
-                  if (file) uploadHousePhoto(selectedHouse.id, file);
-                }}
-              />
-              <input
-                ref={galleryInputRef}
-                type="file"
-                accept="image/*"
-                style={{ display: "none" }}
-                onChange={e => {
-                  const file = e.target.files?.[0];
-                  e.target.value = "";
-                  if (file) uploadHousePhoto(selectedHouse.id, file);
-                }}
-              />
-            </div>
-
+            {/* ── Everything below scrolls together ── */}
             {(() => {
               const checked = checkedByHouse[selectedHouse.id] || { building_block: true };
               const prog = getProgress(checked);
               return (
-                <>
+                <div className="construction-checklist-scroll">
+
+                  {/* Photo */}
+                  <div className="construction-photo-wrap">
+                    {selectedHouse.image_url ? (
+                      <img
+                        src={selectedHouse.image_url}
+                        alt={selectedHouse.name}
+                        className="construction-photo-img"
+                      />
+                    ) : (
+                      <div className="construction-photo-placeholder">No photo yet</div>
+                    )}
+                    {photoUploading && (
+                      <div className="construction-photo-uploading">Uploading...</div>
+                    )}
+                    <button
+                      className="construction-photo-replace-btn"
+                      onClick={() => setPhotoPromptOpen(true)}
+                      disabled={photoUploading}
+                      type="button"
+                    >
+                      {selectedHouse.image_url ? "Replace photo" : "Add photo"}
+                    </button>
+                    <input
+                      ref={cameraInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      style={{ display: "none" }}
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        e.target.value = "";
+                        if (file) uploadHousePhoto(selectedHouse.id, file);
+                      }}
+                    />
+                    <input
+                      ref={galleryInputRef}
+                      type="file"
+                      accept="image/*"
+                      style={{ display: "none" }}
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        e.target.value = "";
+                        if (file) uploadHousePhoto(selectedHouse.id, file);
+                      }}
+                    />
+                  </div>
+
+                  {/* Progress bar */}
                   <div className="construction-overall-prog">
                     <div className="construction-overall-bg">
                       <div className="construction-overall-fill" style={{ width: `${prog.pct}%` }} />
@@ -579,30 +582,30 @@ function ConstructionPanel() {
                     <div className="construction-overall-label">{prog.pct}% complete · {prog.checked} of {prog.total} done</div>
                   </div>
 
-                  <div className="construction-checklist-scroll">
-                    {CONSTRUCTION_SECTIONS.map(section => (
-                      <div key={section.label} className="construction-section">
-                        <div className="construction-section-label">{section.label}</div>
-                        {section.items.map(item => {
-                          const isChecked = !!checked[item.id];
-                          const isLocked = !!item.locked;
-                          return (
-                            <div
-                              key={item.id}
-                              className={`construction-item-row${isLocked ? " locked" : ""}`}
-                              onClick={() => !isLocked && toggleItem(selectedHouse.id, item.id)}
-                            >
-                              <div className={`construction-checkbox${isChecked ? " checked" : ""}`}>
-                                {isChecked && "✓"}
-                              </div>
-                              <span className="construction-item-label">{item.label}</span>
+                  {/* Checklist sections */}
+                  {CONSTRUCTION_SECTIONS.map(section => (
+                    <div key={section.label} className="construction-section">
+                      <div className="construction-section-label">{section.label}</div>
+                      {section.items.map(item => {
+                        const isChecked = !!checked[item.id];
+                        const isLocked = !!item.locked;
+                        return (
+                          <div
+                            key={item.id}
+                            className={`construction-item-row${isLocked ? " locked" : ""}`}
+                            onClick={() => !isLocked && toggleItem(selectedHouse.id, item.id)}
+                          >
+                            <div className={`construction-checkbox${isChecked ? " checked" : ""}`}>
+                              {isChecked && "✓"}
                             </div>
-                          );
-                        })}
-                      </div>
-                    ))}
-                  </div>
+                            <span className="construction-item-label">{item.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
 
+                  {/* Money spent (at the bottom of the scroll) */}
                   <div className="construction-money-spent">
                     <span className="construction-money-spent-label">Money spent</span>
                     <div className="construction-money-spent-row">
@@ -619,17 +622,17 @@ function ConstructionPanel() {
                           setMoneySpentInput(current => current.replace(/\.$/, ""));
                         }}
                         onKeyDown={e => {
-                          if (e.key === "Enter") {
-                            e.currentTarget.blur();
-                          }
+                          if (e.key === "Enter") e.currentTarget.blur();
                         }}
                         disabled={moneySpentSaving}
                       />
                     </div>
                   </div>
-                </>
+
+                </div>
               );
             })()}
+
           </div>
         </div>
       )}
@@ -672,11 +675,9 @@ function ConstructionPanel() {
         <div className="confirm-overlay">
           <div className="confirm-box">
             <h2>Delete House?</h2>
-
             <p>
               This will remove {deleteTarget.name || "this house"} and its checklist from the database.
             </p>
-
             <div className="confirm-actions">
               <button
                 className="close-btn"
@@ -685,7 +686,6 @@ function ConstructionPanel() {
               >
                 Close
               </button>
-
               <button
                 className="delete-confirm-btn"
                 onClick={confirmDeleteHouse}
@@ -703,7 +703,6 @@ function ConstructionPanel() {
           <div className="confirm-box" onClick={e => e.stopPropagation()}>
             <h2>Add Photo</h2>
             <p>Take a new picture or choose one from your gallery.</p>
-
             <div className="confirm-actions">
               <button
                 className="close-btn"
@@ -711,7 +710,6 @@ function ConstructionPanel() {
               >
                 Cancel
               </button>
-
               <button
                 className="construction-photo-source-btn"
                 onClick={() => {
@@ -721,7 +719,6 @@ function ConstructionPanel() {
               >
                 Gallery
               </button>
-
               <button
                 className="construction-photo-source-btn"
                 onClick={() => {
@@ -766,8 +763,6 @@ function Balance({
 
   useEffect(() => {
     if (isFlipped) onRefreshBoaSmsState?.();
-  // Only refresh when the card is flipped, not on every parent re-render
-  // that passes a new onRefreshBoaSmsState reference.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFlipped]);
 

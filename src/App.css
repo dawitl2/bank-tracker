@@ -2678,7 +2678,6 @@ a {
   box-shadow: 0 28px 70px rgba(0, 0, 0, 0.28);
   overflow: hidden;
 }
-
 .construction-detail-header {
   display: flex;
   align-items: center;
@@ -2750,8 +2749,9 @@ a {
   display: grid;
   gap: 12px;
   padding-right: 4px;
+  flex: 1 1 0;
+  min-height: 0;
 }
-
 .construction-section {
   display: grid;
   gap: 4px;
@@ -3150,21 +3150,52 @@ a {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 .construction-photo-wrap {
   position: relative;
-  width: 100%;
-  aspect-ratio: 1 / 1;
+  width: 280px;
+  height: 280px;
   border-radius: 12px;
   overflow: hidden;
-  margin: 14px 0;
+  margin: 14px auto;
   background: rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
 }
 
 .construction-photo-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
   display: block;
 }
 
