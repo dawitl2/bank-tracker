@@ -144,6 +144,18 @@ async function sbFetch(path, options = {}) {
 const money = (value) => Math.round(value || 0).toLocaleString("en-US");
 const parseAmount = (value) => parseFloat(value?.toString().replace(/[^\d.-]/g, "")) || 0;
 
+const formatWithCommas = (raw) => {
+  let cleaned = raw.toString().replace(/[^\d.]/g, "");
+  const firstDot = cleaned.indexOf(".");
+  if (firstDot !== -1) {
+    cleaned = cleaned.slice(0, firstDot + 1) + cleaned.slice(firstDot + 1).replace(/\./g, "");
+  }
+  const [intPart, decPart] = cleaned.split(".");
+  if (!intPart && decPart === undefined) return "";
+  const formattedInt = (intPart || "0").replace(/^0+(?=\d)/, "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return decPart !== undefined ? `${formattedInt || "0"}.${decPart}` : formattedInt;
+};
+
 const formatSmsMoney = (value) => {
   const parsed = parseAmount(value);
   return parsed ? money(parsed) : "0.0";
@@ -257,7 +269,7 @@ function ConstructionPanel() {
       setMoneySpentInput("");
       return;
     }
-    setMoneySpentInput(selectedHouse.money_spent ? String(selectedHouse.money_spent) : "");
+    setMoneySpentInput(selectedHouse.money_spent ? formatWithCommas(String(selectedHouse.money_spent)) : "");
   // Sync only when a different house is selected, not on every houses update,
   // so the input isn't clobbered while editing.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -415,17 +427,6 @@ function ConstructionPanel() {
                 <div className="construction-house-icon">🏠</div>
                 <div className="construction-house-name-row">
                   <span className="construction-house-name">{house.name}</span>
-                  <button
-                    className="construction-house-edit"
-                    onClick={e => {
-                      e.stopPropagation();
-                      setNameInput(house.name);
-                      setModal({ type: "edit", house });
-                    }}
-                    title="Edit"
-                  >
-                    ✏️
-                  </button>
                 </div>
                 <div className="construction-prog-bg">
                   <div className="construction-prog-fill" style={{ width: `${prog.pct}%` }} />
@@ -518,8 +519,11 @@ function ConstructionPanel() {
                         inputMode="decimal"
                         placeholder="0"
                         value={moneySpentInput}
-                        onChange={e => setMoneySpentInput(e.target.value)}
-                        onBlur={() => updateMoneySpent(selectedHouse.id, moneySpentInput)}
+                        onChange={e => setMoneySpentInput(formatWithCommas(e.target.value))}
+                        onBlur={() => {
+                          updateMoneySpent(selectedHouse.id, moneySpentInput);
+                          setMoneySpentInput(current => current.replace(/\.$/, ""));
+                        }}
                         onKeyDown={e => {
                           if (e.key === "Enter") {
                             e.currentTarget.blur();
