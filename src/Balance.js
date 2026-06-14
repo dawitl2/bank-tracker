@@ -39,6 +39,12 @@ const ANALYTICS_CONFIG = {
       color: "#c73939",
       match: (person) => person === "dawit"
     },
+{
+      key: "enku",
+      label: "Enku",
+      color: "#b87200",
+      match: (person) => person === "enku"
+    },
     {
       key: "other",
       label: "Other",
@@ -169,6 +175,9 @@ function Balance({
 
   // 3D card flip state
   const [isFlipped, setIsFlipped] = useState(false);
+  const [apolloUnlocked, setApolloUnlocked] = useState(
+    () => localStorage.getItem("apollo_visibility_day") === getVisibilityDayKey()
+  );
 
   useEffect(() => {
     if (isFlipped) {
@@ -382,11 +391,12 @@ function Balance({
   const hiddenCardMoney = "*****";
   const hiddenSkeleton = <span className="money-skeleton" aria-label="Hidden value"></span>;
   const isSmsNumberLoading = isFlipped && (boaSmsLoading || !boaSmsState);
+  const apolloLocked = isFlipped && !apolloUnlocked;
   const displayedBalance = isFlipped
-    ? formatSmsMoney(boaSmsState?.current_balance)
+    ? (apolloLocked ? hiddenSkeleton : formatSmsMoney(boaSmsState?.current_balance))
     : money(balance);
   const displayedWithdraw = isFlipped
-    ? formatSmsMoney(boaSmsState?.latest_withdrawal_amount)
+    ? (apolloLocked ? hiddenSkeleton : formatSmsMoney(boaSmsState?.latest_withdrawal_amount))
     : money(analytics.totalWithdraw);
   const balanceDetail = isFlipped ? (
     <>
@@ -425,18 +435,21 @@ function Balance({
       return;
     }
 
+    setIsFlipped(true);
+
     if (localStorage.getItem("apollo_visibility_day") === getVisibilityDayKey()) {
-      setIsFlipped(true);
       return;
     }
 
-    setApolloPromptOpen(true);
+    setTimeout(() => {
+      setApolloPromptOpen(true);
+    }, 400);
   };
 
-  const unlockApollo = () => {
+const unlockApollo = () => {
     if (apolloPassword === VISIBILITY_PASSWORD) {
       localStorage.setItem("apollo_visibility_day", getVisibilityDayKey());
-      setIsFlipped(true);
+      setApolloUnlocked(true);
       setApolloPromptOpen(false);
       setApolloPassword("");
       setApolloError(false);
@@ -504,13 +517,14 @@ function Balance({
               {isFlipped ? "Apollo balance" : "Balance"}
             </span>
             <div className="balance-value-wrap">
-              <h1 className={isSmsNumberLoading ? "money-updating" : ""}>
-                {isSmsNumberLoading ? "..." : showBalance ? displayedBalance : hiddenCardMoney}
+       <h1 className={isSmsNumberLoading || apolloLocked ? "money-updating" : ""}>
+                {isSmsNumberLoading ? "..." : apolloLocked ? hiddenSkeleton : showBalance ? displayedBalance : hiddenCardMoney}
               </h1>
               <button
                 className="balance-visibility-btn"
-                onClick={requestVisibility}
+                onClick={apolloLocked ? undefined : requestVisibility}
                 type="button"
+                style={apolloLocked ? { opacity: 0.3, pointerEvents: "none" } : {}}
               >
                 {showBalance ? <FaEyeSlash /> : <FaEye />}
               </button>
@@ -525,13 +539,14 @@ function Balance({
               {isFlipped ? "Apollo withdraw" : "Withdraw"}
             </span>
             <div className="balance-value-wrap">
-              <h1 className={isSmsNumberLoading ? "money-updating" : ""}>
-                {isSmsNumberLoading ? "..." : showBalance ? displayedWithdraw : hiddenCardMoney}
+              <h1 className={isSmsNumberLoading || apolloLocked ? "money-updating" : ""}>
+                {isSmsNumberLoading ? "..." : apolloLocked ? hiddenSkeleton : showBalance ? displayedWithdraw : hiddenCardMoney}
               </h1>
               <button
                 className="balance-visibility-btn"
-                onClick={requestVisibility}
+                onClick={apolloLocked ? undefined : requestVisibility}
                 type="button"
+                style={apolloLocked ? { opacity: 0.3, pointerEvents: "none" } : {}}
               >
                 {showBalance ? <FaEyeSlash /> : <FaEye />}
               </button>
@@ -576,7 +591,24 @@ function Balance({
                   </div>
                 </div>
               )}
-              {isFlipped ? (
+           {isFlipped && apolloLocked ? (
+                [1, 2, 3].map((i) => (
+                  <div className="summary-row" key={i}>
+                    <div>
+                      <strong>{hiddenSkeleton}</strong>
+                      <small>{hiddenSkeleton}</small>
+                    </div>
+                    <div>
+                      <small>Amount</small>
+                      <strong>{hiddenSkeleton}</strong>
+                    </div>
+                    <div>
+                      <small>Balance</small>
+                      <strong>{hiddenSkeleton}</strong>
+                    </div>
+                  </div>
+                ))
+              ) : isFlipped ? (
                 smsRecentRows.map((event) => (
                   <div className="summary-row" key={event.key}>
                     <div>
@@ -840,9 +872,10 @@ function Balance({
               </p>
             )}
             <div className="interest-password-actions">
-              <button
+<button
                 type="button"
                 onClick={() => {
+                  setIsFlipped(false);
                   setApolloPromptOpen(false);
                   setApolloPassword("");
                   setApolloError(false);

@@ -992,9 +992,12 @@ h1 {
   background-color: rgba(224, 94, 79, 0.10); /* soft red */
 }
 
+.enku-row {
+  background-color: rgba(184, 114, 0, 0.10);
+}
 /* SAFETY: default hover (optional but stable UX) */
 .transaction-table tbody tr:hover {
-  background-color: rgba(0, 0, 0, 0.03);
+  background-color: transparent;
 }
 
 .transaction-row {
@@ -1315,10 +1318,13 @@ h1 {
     background-color: rgba(244, 163, 0, 0.10);
   }
 
-  .dawit-row {
+.dawit-row {
     background-color: rgba(224, 94, 79, 0.08);
   }
 
+.enku-row {
+    background-color: rgba(184, 114, 0, 0.10);
+  }
   .add-btn {
     left: calc((75vw - min(1220px, calc(100vw - 48px))) / 2 + 58px);
     right: auto;
@@ -2417,10 +2423,14 @@ a {
     background-color: rgba(244, 163, 0, 0.10);
   }
 
-  .transaction-table tbody tr.dawit-row {
+ .transaction-table tbody tr.dawit-row {
     background-color: rgba(224, 94, 79, 0.08);
   }
 
+.transaction-table tbody tr.enku-row {
+    background:
+      linear-gradient(90deg, rgba(184, 114, 0, 0.18), rgba(255,255,255,0.94) 42%);
+  }
   .amount,
   .transaction-table .amount {
     color: #333;

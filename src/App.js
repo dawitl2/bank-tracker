@@ -18,9 +18,9 @@ const PERSON_OPTIONS = [
   { label: "Mihret", value: "mihret" },
   { label: "Asnake", value: "asnake" },
   { label: "Yiss", value: "yiss" },
+  { label: "Enku", value: "enku" },
   { label: "Null", value: "null" }
 ];
-
 function App() {
 
   const [view, setView] = useState("transactions");
@@ -865,14 +865,17 @@ function App() {
       return tx.person === "asnake";
     }
 
-    if (personFilter === "YISS") {
+   if (personFilter === "YISS") {
       return tx.person === "yiss";
+    }
+
+    if (personFilter === "ENKU") {
+      return tx.person === "enku";
     }
 
     if (personFilter === "DAWIT") {
       return tx.person === "dawit";
     }
-
     if (personFilter === "CONSTRUCTION") {
 
       return (

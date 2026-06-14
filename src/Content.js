@@ -13,17 +13,17 @@ function Content({
   const [actionMenu, setActionMenu] = useState(null);
   const [longPressTimer, setLongPressTimer] = useState(null);
 
-  const options = [
+const options = [
     "ALL",
     "Withdraw",
     "Deposit",
     "MIHRET",
     "ASNAKE",
     "YISS",
+    "ENKU",
     "DAWIT",
     "CONSTRUCTION"
   ];
-
   const handleSelect = (value) => {
     setPersonFilter(value);
     setOpen(false);
@@ -130,6 +130,9 @@ function Content({
     ) {
       return "construction-row";
     }
+
+// ENKU SPECIAL
+    if (person === "enku") return "enku-row";
 
     // DAWIT SPECIAL
     if (person === "dawit") return "dawit-row";
