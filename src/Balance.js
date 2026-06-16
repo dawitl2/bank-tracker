@@ -579,7 +579,10 @@ function ConstructionPanel() {
                     />
                   </div>
 
-                  <button
+
+                      {/* 
+                    
+                    <button
                     className="construction-visualizer-card"
                     onClick={() => setVisualizingHouse(selectedHouse)}
                     type="button"
@@ -591,6 +594,10 @@ function ConstructionPanel() {
                     </span>
                     <span className="construction-visualizer-arrow">Open</span>
                   </button>
+                    
+                       */}
+
+                  
 
                   {/* Progress bar */}
                   <div className="construction-overall-prog">
