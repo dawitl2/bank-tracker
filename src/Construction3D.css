@@ -10,8 +10,8 @@
 }
 
 .construction-3d-panel {
-  width: min(1120px, 100%);
-  height: min(780px, 94vh);
+  width: min(1180px, 100%);
+  height: min(820px, 94vh);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
@@ -96,7 +96,8 @@
 .construction-3d-body {
   min-height: 0;
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-columns: 310px minmax(0, 1fr);
+  position: relative;
 }
 
 .construction-3d-tools {
@@ -117,6 +118,23 @@
   border: 1px solid rgba(32, 35, 31, 0.09);
   border-radius: 10px;
   background: #ffffff;
+}
+
+.construction-3d-shape-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.construction-3d-shape-grid button {
+  min-height: 46px;
+  justify-content: flex-start;
+}
+
+.construction-3d-shape-grid button.active {
+  border-color: rgba(244, 163, 0, 0.72);
+  background: #20231f;
+  color: #f4a300;
 }
 
 .construction-3d-tool-block.compact {
@@ -176,6 +194,12 @@
   cursor: pointer;
 }
 
+.construction-3d-action-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
 .construction-3d-tool-block button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -203,6 +227,49 @@
   padding: 0;
   background: transparent;
   cursor: pointer;
+}
+
+.construction-3d-swatches {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.construction-3d-swatches button {
+  min-height: 32px;
+  border-radius: 8px;
+  padding: 0;
+  background: var(--swatch);
+}
+
+.construction-3d-swatches button.active {
+  border: 3px solid #20231f;
+  box-shadow: 0 0 0 2px #f4a300;
+}
+
+.construction-3d-dimension-grid {
+  display: grid;
+  gap: 9px;
+}
+
+.construction-3d-dimension-grid label {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 52px;
+  align-items: center;
+  gap: 8px;
+  color: #20231f;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.construction-3d-dimension-grid input {
+  width: 100%;
+  accent-color: #f4a300;
+}
+
+.construction-3d-dimension-grid b {
+  font-size: 11px;
+  text-align: right;
 }
 
 .construction-3d-texture-btn {
@@ -271,7 +338,7 @@
   height: 100%;
   display: block;
   touch-action: none;
-  cursor: crosshair;
+  cursor: copy;
 }
 
 .construction-3d-plan-empty,
@@ -325,6 +392,10 @@
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
 }
 
+.construction-3d-mobile-stepper {
+  display: none;
+}
+
 .construction-3d-joysticks {
   position: absolute;
   inset: auto 18px 18px;
@@ -372,7 +443,7 @@
   }
 
   .construction-3d-panel {
-    height: 94vh;
+    height: 96vh;
     border-radius: 10px;
   }
 
@@ -392,26 +463,69 @@
 
   .construction-3d-body {
     grid-template-columns: 1fr;
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
   }
 
   .construction-3d-tools {
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(210px, 250px);
-    overflow-x: auto;
-    overflow-y: hidden;
+    display: none;
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
     border-right: 0;
-    border-bottom: 1px solid rgba(32, 35, 31, 0.09);
+    border-bottom: 0;
   }
 
   .construction-3d-stage {
     min-height: 0;
   }
+
+  .construction-3d-body-tools .construction-3d-tools {
+    display: grid;
+  }
+
+  .construction-3d-body-tools .construction-3d-stage {
+    display: none;
+  }
+
+  .construction-3d-body-plan .construction-3d-tools,
+  .construction-3d-body-walk .construction-3d-tools {
+    display: none;
+  }
+
+  .construction-3d-mobile-stepper {
+    min-height: 52px;
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) 52px;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-top: 1px solid rgba(32, 35, 31, 0.1);
+    background: #ffffff;
+  }
+
+  .construction-3d-mobile-stepper button {
+    width: 42px;
+    height: 38px;
+    border: 1px solid rgba(32, 35, 31, 0.1);
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #f7f3ea;
+    color: #20231f;
+  }
+
+  .construction-3d-mobile-stepper span {
+    justify-self: center;
+    color: #20231f;
+    font-size: 13px;
+    font-weight: 900;
+  }
 }
 
 @media (max-width: 520px) {
   .construction-3d-tools {
-    grid-auto-columns: minmax(190px, 78vw);
     padding: 10px;
   }
 
