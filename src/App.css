@@ -3200,6 +3200,71 @@ a {
   opacity: 0.85;
 }
 
+.construction-visualizer-card {
+  width: 100%;
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(32, 35, 31, 0.1);
+  border-radius: 10px;
+  padding: 12px;
+  background: linear-gradient(135deg, #ffffff, #f8f2e4);
+  color: #20231f;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 10px 22px rgba(32, 35, 31, 0.06);
+  transition: transform 0.16s ease, border-color 0.16s ease;
+}
+
+.construction-visualizer-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(244, 163, 0, 0.55);
+}
+
+.construction-visualizer-mark {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  background: #20231f;
+  color: #f4a300;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.construction-visualizer-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.construction-visualizer-copy strong {
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.construction-visualizer-copy small {
+  color: #6f685b;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.construction-visualizer-arrow {
+  flex: 0 0 auto;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #f4a300;
+  color: #20231f;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .construction-lightbox {
   position: fixed;
   inset: 0;

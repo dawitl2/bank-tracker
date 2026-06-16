@@ -14,6 +14,7 @@ import {
   YAxis
 } from "recharts";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import Construction3D from "./Construction3D";
 
 const SUPABASE_URL = "https://ywplzexakisliebyjtyf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_nmA6IJsDGUVki5i0smS1Tg_MLXy5_wX";
@@ -242,6 +243,7 @@ function ConstructionPanel() {
   const [photoPromptOpen, setPhotoPromptOpen] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState(null);
+  const [visualizingHouse, setVisualizingHouse] = useState(null);
   const cameraInputRef = useRef(null);
   const galleryInputRef = useRef(null);
 
@@ -577,6 +579,19 @@ function ConstructionPanel() {
                     />
                   </div>
 
+                  <button
+                    className="construction-visualizer-card"
+                    onClick={() => setVisualizingHouse(selectedHouse)}
+                    type="button"
+                  >
+                    <span className="construction-visualizer-mark">3D</span>
+                    <span className="construction-visualizer-copy">
+                      <strong>Plan and visualize</strong>
+                      <small>Draw walls, add texture, then walk inside</small>
+                    </span>
+                    <span className="construction-visualizer-arrow">Open</span>
+                  </button>
+
                   {/* Progress bar */}
                   <div className="construction-overall-prog">
                     <div className="construction-overall-bg">
@@ -745,6 +760,13 @@ function ConstructionPanel() {
             onClick={e => e.stopPropagation()}
           />
         </div>
+      )}
+
+      {visualizingHouse && (
+        <Construction3D
+          house={visualizingHouse}
+          onClose={() => setVisualizingHouse(null)}
+        />
       )}
     </>
   );
