@@ -241,6 +241,7 @@ function ConstructionPanel() {
   const [moneySpentSaving, setMoneySpentSaving] = useState(false);
   const [photoPromptOpen, setPhotoPromptOpen] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [lightboxUrl, setLightboxUrl] = useState(null);
   const cameraInputRef = useRef(null);
   const galleryInputRef = useRef(null);
 
@@ -534,6 +535,8 @@ function ConstructionPanel() {
                         src={selectedHouse.image_url}
                         alt={selectedHouse.name}
                         className="construction-photo-img"
+                        onClick={() => setLightboxUrl(selectedHouse.image_url)}
+                        style={{ cursor: "zoom-in" }}
                       />
                     ) : (
                       <div className="construction-photo-placeholder">No photo yet</div>
@@ -730,6 +733,17 @@ function ConstructionPanel() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {lightboxUrl && (
+        <div className="construction-lightbox" onClick={() => setLightboxUrl(null)}>
+          <img
+            src={lightboxUrl}
+            alt="Full size"
+            className="construction-lightbox-img"
+            onClick={e => e.stopPropagation()}
+          />
         </div>
       )}
     </>
