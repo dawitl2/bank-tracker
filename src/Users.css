@@ -1,0 +1,300 @@
+/* Users.css - Styling for the Users page and User Details dashboard */
+
+.users-container {
+  padding: 20px 0;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* User Grid on /users */
+.users-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.user-card {
+  background: #fbfcf8;
+  border: 1px solid rgba(24, 24, 22, 0.08);
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(34, 39, 34, 0.03);
+}
+
+.user-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(34, 39, 34, 0.08);
+  border-color: #f4a300;
+}
+
+/* Initial Avatar Placeholders */
+.avatar-placeholder {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 28px;
+  color: white;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  text-transform: uppercase;
+}
+
+/* User Specific Colors for Avatars & Themes */
+.avatar-dawit { background: linear-gradient(135deg, #c73939, #f05a5a); }
+.avatar-mihret { background: linear-gradient(135deg, #f4a300, #ffc83b); }
+.avatar-asnake { background: linear-gradient(135deg, #b87200, #f4a300); }
+.avatar-yiss { background: linear-gradient(135deg, #20231f, #4a4f47); }
+.avatar-enku { background: linear-gradient(135deg, #8c52ff, #b58aff); }
+.avatar-other { background: linear-gradient(135deg, #6f7d87, #9bb0be); }
+
+.user-card h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #20231f;
+  margin-bottom: 4px;
+}
+
+.user-card .user-role {
+  font-size: 13px;
+  color: #74796e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.user-card-stats {
+  width: 100%;
+  border-top: 1px solid rgba(24, 24, 22, 0.06);
+  padding-top: 16px;
+  display: flex;
+  justify-content: space-around;
+}
+
+.user-card-stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-card-stat span {
+  font-size: 11px;
+  color: #74796e;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.user-card-stat strong {
+  font-size: 15px;
+  color: #20231f;
+  font-weight: 700;
+}
+
+/* User Detail View */
+.user-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(24, 24, 22, 0.12);
+  border-radius: 999px;
+  background: white;
+  color: #20231f;
+  padding: 8px 18px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.back-btn:hover {
+  background: #f5f5f5;
+  border-color: #20231f;
+  transform: translateX(-2px);
+}
+
+.user-profile-summary {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.avatar-large {
+  width: 90px;
+  height: 90px;
+  font-size: 36px;
+  margin-bottom: 0;
+}
+
+.user-profile-info h2 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #20231f;
+  margin: 0 0 4px 0;
+}
+
+.user-profile-info p {
+  color: #74796e;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Detail Metrics Grid */
+.detail-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.metric-card {
+  background: #fbfcf8;
+  border: 1px solid rgba(24, 24, 22, 0.08);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(34, 39, 34, 0.02);
+}
+
+.metric-card span {
+  font-size: 11px;
+  color: #74796e;
+  text-transform: uppercase;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.metric-card strong {
+  font-size: 24px;
+  color: #20231f;
+  font-weight: 700;
+  display: block;
+}
+
+.metric-card.spent-card strong {
+  color: #c73939;
+}
+
+.metric-card.received-card strong {
+  color: #53a460;
+}
+
+/* Charts & Breakdown Layout */
+.user-analytics-section {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  margin-bottom: 30px;
+}
+
+@media (max-width: 1024px) {
+  .user-analytics-section {
+    grid-template-columns: 1fr;
+  }
+}
+
+.user-charts-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Categories Breakdown List */
+.categories-card {
+  background: #fbfcf8;
+  border: 1px solid rgba(24, 24, 22, 0.08);
+  border-radius: 12px;
+  padding: 24px;
+  height: 100%;
+}
+
+.categories-card h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #20231f;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(24, 24, 22, 0.06);
+  padding-bottom: 12px;
+}
+
+.categories-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.category-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.category-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.category-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #20231f;
+}
+
+.category-count {
+  font-size: 12px;
+  color: #74796e;
+}
+
+.category-amount {
+  font-size: 15px;
+  font-weight: 700;
+  color: #20231f;
+}
+
+/* Inline Badges in Transactions Table */
+.user-inline-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  margin-left: 8px;
+  transition: opacity 0.15s ease;
+}
+
+.user-inline-badge:hover {
+  opacity: 0.85;
+}
+
+.user-inline-badge.badge-dawit { background-color: #fee2e2; color: #991b1b; }
+.user-inline-badge.badge-mihret { background-color: #fef3c7; color: #92400e; }
+.user-inline-badge.badge-asnake { background-color: #fffbeb; color: #b45309; }
+.user-inline-badge.badge-yiss { background-color: #f3f4f6; color: #1f2937; }
+.user-inline-badge.badge-enku { background-color: #f3e8ff; color: #6b21a8; }
+.user-inline-badge.badge-other { background-color: #e5e7eb; color: #4b5563; }
+.user-inline-badge.badge-null { display: none; }

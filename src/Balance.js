@@ -580,7 +580,9 @@ function ConstructionPanel() {
                   </div>
 
 
+                    {/* 3D will be shown when its fully built and ready */}
                       {/* 
+                    
                     
                     <button
                     className="construction-visualizer-card"

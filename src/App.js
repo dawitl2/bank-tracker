@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import Content from "./Content";
 import Balance from "./Balance";
 import Calculator from "./Calculator";
+import Users from "./Users";
 import "./App.css";
 
 const BASE_BALANCE = 1209518;
@@ -23,7 +24,39 @@ const PERSON_OPTIONS = [
 ];
 function App() {
 
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [view, setView] = useState("transactions");
+
+  useEffect(() => {
+    const handleLocationChange = () => {
+      const path = window.location.pathname;
+      setCurrentPath(path);
+      if (path.startsWith("/balance")) {
+        setView("balance");
+      } else if (path.startsWith("/users") || path.startsWith("/usersomething")) {
+        setView("users");
+      } else {
+        setView("transactions");
+      }
+    };
+    handleLocationChange();
+    window.addEventListener("popstate", handleLocationChange);
+    return () => {
+      window.removeEventListener("popstate", handleLocationChange);
+    };
+  }, []);
+
+  const navigate = (path) => {
+    window.history.pushState({}, "", path);
+    setCurrentPath(path);
+    if (path.startsWith("/balance")) {
+      setView("balance");
+    } else if (path.startsWith("/users") || path.startsWith("/usersomething")) {
+      setView("users");
+    } else {
+      setView("transactions");
+    }
+  };
   const [transactions, setTransactions] = useState([]);
   const [boaSmsState, setBoaSmsState] = useState(null);
   const [boaSmsSummary, setBoaSmsSummary] = useState([]);
@@ -1010,23 +1043,30 @@ function App() {
 
         <button
           className={view === "transactions" ? "active" : ""}
-          onClick={() => setView("transactions")}
+          onClick={() => navigate("/transactions")}
         >
           Transactions
         </button>
 
         <button
           className={view === "balance" ? "active" : ""}
-          onClick={() => setView("balance")}
+          onClick={() => navigate("/balance")}
         >
           Balance
+        </button>
+
+        <button
+          className={view === "users" ? "active" : ""}
+          onClick={() => navigate("/users")}
+        >
+          Users
         </button>
 
       </div>
 
       <div className="content">
 
-        {view === "transactions" ? (
+        {view === "transactions" && (
           <>
 
             <Content
@@ -1036,6 +1076,7 @@ function App() {
               onEditTransaction={handleEditTransaction}
               onDeleteTransaction={handleDeleteTransaction}
               onSendTableTotal={sendTableTotalToCalculator}
+              navigate={navigate}
             />
 
             <button
@@ -1053,7 +1094,9 @@ function App() {
             </button>
 
           </>
-        ) : (
+        )}
+
+        {view === "balance" && (
           <>
 
             <Balance
@@ -1077,6 +1120,14 @@ function App() {
             </button>
 
           </>
+        )}
+
+        {view === "users" && (
+          <Users
+            transactions={transactions}
+            currentPath={currentPath}
+            navigate={navigate}
+          />
         )}
 
         {showCalculator && (

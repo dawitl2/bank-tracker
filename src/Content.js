@@ -7,7 +7,8 @@ function Content({
   setPersonFilter,
   onEditTransaction,
   onDeleteTransaction,
-  onSendTableTotal
+  onSendTableTotal,
+  navigate
 }) {
   const [open, setOpen] = useState(false);
   const [actionMenu, setActionMenu] = useState(null);
@@ -246,7 +247,21 @@ const options = [
               <td className="amount">{tx.amount}</td>
               <td>{tx.date}</td>
               <td>{tx.reference}</td>
-              <td>{tx.narrative}</td>
+              <td>
+                {tx.narrative}
+                {tx.person && (
+                  <button
+                    type="button"
+                    className={`user-inline-badge badge-${tx.person.toLowerCase()}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/users/${tx.person.toLowerCase()}`);
+                    }}
+                  >
+                    {tx.person}
+                  </button>
+                )}
+              </td>
 
               <td className="action">
                 {tx.receipt_url ? (
