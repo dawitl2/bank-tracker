@@ -165,7 +165,21 @@ export default function Users({
     const clientY = event.clientY ?? event.changedTouches?.[0]?.clientY ?? 0;
 
     setActionMenu({
+      type: "payment",
       tx,
+      x: Math.min(clientX, window.innerWidth - 190),
+      y: Math.min(clientY, window.innerHeight - 180)
+    });
+  };
+
+  const openPersonActionMenu = (event, person) => {
+    event.preventDefault();
+    const clientX = event.clientX ?? event.changedTouches?.[0]?.clientX ?? 0;
+    const clientY = event.clientY ?? event.changedTouches?.[0]?.clientY ?? 0;
+
+    setActionMenu({
+      type: "person",
+      person,
       x: Math.min(clientX, window.innerWidth - 190),
       y: Math.min(clientY, window.innerHeight - 180)
     });
@@ -174,6 +188,13 @@ export default function Users({
   const startLongPress = (event, tx) => {
     const timer = setTimeout(() => {
       openActionMenu(event, tx);
+    }, 650);
+    setLongPressTimer(timer);
+  };
+
+  const startPersonLongPress = (event, person) => {
+    const timer = setTimeout(() => {
+      openPersonActionMenu(event, person);
     }, 650);
     setLongPressTimer(timer);
   };
@@ -254,49 +275,91 @@ export default function Users({
   };
 
   const handleEditClick = () => {
-    const tx = actionMenu.tx;
-    setEditPaymentTarget(tx);
-    setNewPayment({
-      amount: tx.amount?.toString() || "",
-      date: tx.date || "",
-      reference: tx.reference || "",
-      narrative: tx.narrative || ""
-    });
-    setShowAddPaymentModal(true);
-    setActionMenu(null);
+    if (actionMenu.type === "person") {
+      const p = actionMenu.person;
+      setNewPerson({ name: p.name, role: p.role || "" });
+      setShowEditPersonModal(true);
+      setActionMenu(null);
+    } else {
+      const tx = actionMenu.tx;
+      setEditPaymentTarget(tx);
+      setNewPayment({
+        amount: tx.amount?.toString() || "",
+        date: tx.date || "",
+        reference: tx.reference || "",
+        narrative: tx.narrative || ""
+      });
+      setShowAddPaymentModal(true);
+      setActionMenu(null);
+    }
   };
 
   const handleDeleteClick = async () => {
-    const tx = actionMenu.tx;
-    const targetTable = selectedUserId === "dawit" ? "parking" : selectedUserId === "yiss" ? "suqe" : null;
-    if (!targetTable) return;
-
-    if (!window.confirm("Are you sure you want to delete this payment?")) {
+    if (actionMenu.type === "person") {
+      const p = actionMenu.person;
       setActionMenu(null);
-      return;
-    }
 
-    setDbSaving(true);
-    try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/${targetTable}?id=eq.${tx.id}`, {
-        method: "DELETE",
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`
+      // Confirmation 1
+      const confirm1 = window.confirm(`Are you sure you want to delete ${p.name}?`);
+      if (!confirm1) return;
+
+      // Confirmation 2
+      const confirm2 = window.confirm(`WARNING: This will permanently delete ${p.name} and decouple their tracked data. Are you ABSOLUTELY sure?`);
+      if (!confirm2) return;
+
+      setDbSaving(true);
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/people?id=eq.${p.id}`, {
+          method: "DELETE",
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`
+          }
+        });
+
+        if (res.ok) {
+          await fetchPeople();
+        } else {
+          alert("Failed to delete person from Supabase.");
         }
-      });
-
-      if (res.ok) {
-        await fetchDbPayments();
-        setActionMenu(null);
-      } else {
-        alert("Failed to delete payment from Supabase.");
+      } catch (err) {
+        console.error("DELETE PERSON ERROR:", err);
+        alert("An error occurred during delete.");
+      } finally {
+        setDbSaving(false);
       }
-    } catch (err) {
-      console.error("DELETE ERROR:", err);
-      alert("An error occurred during delete.");
-    } finally {
-      setDbSaving(false);
+    } else {
+      const tx = actionMenu.tx;
+      const targetTable = selectedUserId === "dawit" ? "parking" : selectedUserId === "yiss" ? "suqe" : null;
+      if (!targetTable) return;
+
+      if (!window.confirm("Are you sure you want to delete this payment?")) {
+        setActionMenu(null);
+        return;
+      }
+
+      setDbSaving(true);
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/${targetTable}?id=eq.${tx.id}`, {
+          method: "DELETE",
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`
+          }
+        });
+
+        if (res.ok) {
+          await fetchDbPayments();
+          setActionMenu(null);
+        } else {
+          alert("Failed to delete payment from Supabase.");
+        }
+      } catch (err) {
+        console.error("DELETE ERROR:", err);
+        alert("An error occurred during delete.");
+      } finally {
+        setDbSaving(false);
+      }
     }
   };
 
@@ -391,40 +454,6 @@ export default function Users({
     }
   };
 
-  // Delete a person in Supabase (requires DOUBLE confirmation)
-  const handleDeletePerson = async (user, event) => {
-    event.stopPropagation(); // Prevent card navigation click trigger
-
-    // Confirmation 1
-    const confirm1 = window.confirm(`Are you sure you want to delete ${user.name}?`);
-    if (!confirm1) return;
-
-    // Confirmation 2
-    const confirm2 = window.confirm(`WARNING: This will permanently delete ${user.name} and decouple their tracked data. Are you ABSOLUTELY sure?`);
-    if (!confirm2) return;
-
-    setDbSaving(true);
-    try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/people?id=eq.${user.id}`, {
-        method: "DELETE",
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`
-        }
-      });
-
-      if (res.ok) {
-        await fetchPeople();
-      } else {
-        alert("Failed to delete person from Supabase.");
-      }
-    } catch (err) {
-      console.error("DELETE PERSON ERROR:", err);
-      alert("An error occurred during delete.");
-    } finally {
-      setDbSaving(false);
-    }
-  };
 
   // Calculate global summary stats for each user (for the list view)
   const { usersSummary, totalOutflowTracked } = useMemo(() => {
@@ -623,13 +652,6 @@ export default function Users({
             <h2>Tracked Outflow Share</h2>
             <p>Analyzing total spending of <b>{money(totalOutflowTracked)} ETB</b> across team members.</p>
           </div>
-          <button
-            className="back-btn"
-            onClick={() => setShowAddPersonModal(true)}
-            style={{ background: "#eeb833", borderColor: "#eeb833", color: "#000", height: "fit-content", padding: "10px 20px" }}
-          >
-            + Add Person
-          </button>
         </div>
 
         <div className="users-grid">
@@ -642,15 +664,12 @@ export default function Users({
                 key={user.id}
                 className="user-card"
                 onClick={() => navigate(`/balance/people/${user.id}`)}
+                onContextMenu={(event) => openPersonActionMenu(event, user)}
+                onTouchStart={(event) => startPersonLongPress(event, user)}
+                onTouchEnd={stopLongPress}
+                onTouchMove={stopLongPress}
+                onTouchCancel={stopLongPress}
               >
-                {/* Delete Person Button (✕) with double-confirmation */}
-                <button
-                  className="delete-person-btn"
-                  onClick={(e) => handleDeletePerson(user, e)}
-                  title={`Delete ${user.name}`}
-                >
-                  ✕
-                </button>
 
                 <div className={`avatar-placeholder ${avatarClass}`}>
                   {user.name.charAt(0)}
@@ -694,6 +713,16 @@ export default function Users({
               </div>
             );
           })}
+        </div>
+
+        <div className="add-person-btn-container">
+          <button
+            className="back-btn"
+            onClick={() => setShowAddPersonModal(true)}
+            style={{ background: "#eeb833", borderColor: "#eeb833", color: "#000" }}
+          >
+            + Add Person
+          </button>
         </div>
 
         {/* Modal for adding a person */}

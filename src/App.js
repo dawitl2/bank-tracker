@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { FaLink, FaQrcode, FaImage, FaCar } from "react-icons/fa";
 import Content from "./Content";
 import Balance from "./Balance";
 import Calculator from "./Calculator";
@@ -1311,32 +1312,44 @@ function App() {
                     className="receipt-choice-card"
                     onClick={() => setReceiptMode("link")}
                   >
-                    <span>Link</span>
-                    <small>Paste a receipt link</small>
+                    <div className="receipt-choice-details">
+                      <span>Link</span>
+                      <small>Paste a receipt link</small>
+                    </div>
+                    <FaLink className="receipt-choice-icon" />
                   </button>
 
                   <button
                     className="receipt-choice-card"
                     onClick={() => setReceiptMode("qr")}
                   >
-                    <span>QR</span>
-                    <small>Scan from camera</small>
+                    <div className="receipt-choice-details">
+                      <span>QR</span>
+                      <small>Scan from camera</small>
+                    </div>
+                    <FaQrcode className="receipt-choice-icon" />
                   </button>
 
                   <button
                     className="receipt-choice-card"
                     onClick={() => setReceiptMode("image")}
                   >
-                    <span>Image</span>
-                    <small>Read a screenshot</small>
+                    <div className="receipt-choice-details">
+                      <span>Image</span>
+                      <small>Read a screenshot</small>
+                    </div>
+                    <FaImage className="receipt-choice-icon" />
                   </button>
 
                   <button
                     className="receipt-choice-card"
                     onClick={() => setReceiptMode("parking")}
                   >
-                    <span>Parking</span>
-                    <small>Add parking payment</small>
+                    <div className="receipt-choice-details">
+                      <span>Parking</span>
+                      <small className="cursive-text">Add parking payment (<span className="parking-dave-label">Dave</span>)</small>
+                    </div>
+                    <FaCar className="receipt-choice-icon" />
                   </button>
                 </div>
               )}
@@ -1418,51 +1431,56 @@ function App() {
               )}
 
               {!receiptDraft && receiptMode === "parking" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "10px" }}>
-                  <label className="draft-field">
-                    <span>Amount (ETB)</span>
-                    <input
-                      type="number"
-                      placeholder="0.00"
-                      value={parkingDraft.amount}
-                      onChange={(e) => setParkingDraft({ ...parkingDraft, amount: e.target.value })}
-                      disabled={draftSaving}
-                      required
-                    />
-                  </label>
+                <div className="receipt-draft-box" style={{ marginTop: "15px" }}>
+                  <h3 style={{ textTransform: "uppercase", fontSize: "12px", color: "#555", fontWeight: "800", marginBottom: "12px" }}>
+                    Dave's Parking Payment
+                  </h3>
+                  <div className="receipt-draft-grid">
+                    <label className="draft-field">
+                      <span>Amount (ETB)</span>
+                      <input
+                        type="number"
+                        placeholder="0.00"
+                        value={parkingDraft.amount}
+                        onChange={(e) => setParkingDraft({ ...parkingDraft, amount: e.target.value })}
+                        disabled={draftSaving}
+                        required
+                      />
+                    </label>
 
-                  <label className="draft-field">
-                    <span>Date / Time</span>
-                    <input
-                      type="text"
-                      value={parkingDraft.date}
-                      onChange={(e) => setParkingDraft({ ...parkingDraft, date: e.target.value })}
-                      disabled={draftSaving}
-                      required
-                    />
-                  </label>
+                    <label className="draft-field">
+                      <span>Date / Time</span>
+                      <input
+                        type="text"
+                        value={parkingDraft.date}
+                        onChange={(e) => setParkingDraft({ ...parkingDraft, date: e.target.value })}
+                        disabled={draftSaving}
+                        required
+                      />
+                    </label>
 
-                  <label className="draft-field">
-                    <span>Plate Number / Ref</span>
-                    <input
-                      type="text"
-                      placeholder="e.g. Code 3 - AA 12345"
-                      value={parkingDraft.reference}
-                      onChange={(e) => setParkingDraft({ ...parkingDraft, reference: e.target.value })}
-                      disabled={draftSaving}
-                    />
-                  </label>
+                    <label className="draft-field">
+                      <span>Plate Number / Ref</span>
+                      <input
+                        type="text"
+                        placeholder="e.g. Code 3 - AA 12345"
+                        value={parkingDraft.reference}
+                        onChange={(e) => setParkingDraft({ ...parkingDraft, reference: e.target.value })}
+                        disabled={draftSaving}
+                      />
+                    </label>
 
-                  <label className="draft-field">
-                    <span>Narrative</span>
-                    <input
-                      type="text"
-                      placeholder="Payment description..."
-                      value={parkingDraft.narrative}
-                      onChange={(e) => setParkingDraft({ ...parkingDraft, narrative: e.target.value })}
-                      disabled={draftSaving}
-                    />
-                  </label>
+                    <label className="draft-field">
+                      <span>Narrative</span>
+                      <input
+                        type="text"
+                        placeholder="Payment description..."
+                        value={parkingDraft.narrative}
+                        onChange={(e) => setParkingDraft({ ...parkingDraft, narrative: e.target.value })}
+                        disabled={draftSaving}
+                      />
+                    </label>
+                  </div>
                 </div>
               )}
 
