@@ -3367,6 +3367,117 @@ a {
   font-size: 11px;
 }
 
+/* Secure Login UI Screen */
+.password-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: linear-gradient(135deg, #181816, #20231f);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.password-box {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  padding: 35px 30px;
+  width: 100%;
+  max-width: 360px;
+  border: 1px solid rgba(244, 163, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  animation: modalFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.login-header h2 {
+  font-size: 19px;
+  font-weight: 700;
+  color: #20231f;
+  margin-top: 10px;
+  letter-spacing: -0.3px;
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.login-field label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #74796e;
+  letter-spacing: 0.5px;
+}
+
+.login-field input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.login-field input:focus:not(:disabled) {
+  border-color: #f4a300;
+  box-shadow: 0 0 0 3px rgba(244, 163, 0, 0.12);
+}
+
+.login-field input:disabled {
+  background: #f8fafc;
+  color: #94a3b8;
+  border-color: #e2e8f0;
+  font-weight: 500;
+  cursor: not-allowed;
+}
+
+.login-submit-btn {
+  background: #f4a300;
+  color: #20231f;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 13px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s ease;
+  margin-top: 8px;
+}
+
+.login-submit-btn:hover {
+  background: #eeb833;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(244, 163, 0, 0.2);
+}
+
+.login-submit-btn:active {
+  transform: translateY(0);
+}
+
+.login-error-msg {
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
 
 
 

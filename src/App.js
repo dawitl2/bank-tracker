@@ -1087,33 +1087,59 @@ function App() {
   */
 
   if (!authenticated) {
-
     return (
       <div className="password-overlay">
-
         <div className="password-box">
+          <div className="login-header">
+            <img 
+              src="/logo.png" 
+              alt="Bank Logo" 
+              className="login-logo" 
+              style={{ height: "46px", width: "auto", margin: "0 auto 12px dsb", display: "block" }} 
+              onError={(e) => {
+                // Fallback text if logo is not found or fails to load
+                e.target.style.display = "none";
+              }}
+            />
+            <h2>Secure Portal Access</h2>
+          </div>
 
-          <h2>Enter Password</h2>
+          <div className="login-field">
+            <label>Username</label>
+            <input 
+              type="text" 
+              value="Dawit Enku" 
+              disabled 
+              placeholder="Username" 
+            />
+          </div>
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={inputPassword}
-            onChange={(e) => setInputPassword(e.target.value)}
-          />
-
-          <button onClick={handlePasswordSubmit}>
-            Submit
-          </button>
+          <div className="login-field">
+            <label>Password</label>
+            <input
+              type="password"
+              placeholder="Enter Access Key"
+              value={inputPassword}
+              onChange={(e) => setInputPassword(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handlePasswordSubmit();
+                }
+              }}
+              autoFocus
+            />
+          </div>
 
           {passwordError && (
-            <p style={{ color: "red", marginTop: "10px" }}>
-              Incorrect password
-            </p>
+            <div className="login-error-msg">
+              Access Denied: Incorrect password
+            </div>
           )}
 
+          <button className="login-submit-btn" onClick={handlePasswordSubmit}>
+            Authorize
+          </button>
         </div>
-
       </div>
     );
   }
