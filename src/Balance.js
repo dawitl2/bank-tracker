@@ -779,7 +779,9 @@ function Balance({
   navigate,
   parkingPayments = [],
   suqePayments = [],
-  fetchDbPayments
+  fetchDbPayments,
+  people = [],
+  fetchPeople
 }) {
   const [activePanel, setActivePanel] = useState("summary");
 
@@ -1126,6 +1128,8 @@ function Balance({
             parkingPayments={parkingPayments}
             suqePayments={suqePayments}
             fetchDbPayments={fetchDbPayments}
+            people={people}
+            fetchPeople={fetchPeople}
           />
         )}
 

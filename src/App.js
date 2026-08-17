@@ -56,13 +56,21 @@ function App() {
       setView("transactions");
     }
   };
+  const DEFAULT_PEOPLE = useMemo(() => [
+    { id: "dawit", name: "Dawit", role: "Administrator", class: "avatar-dawit" },
+    { id: "mihret", name: "Mihret", role: "Construction Manager", class: "avatar-mihret" },
+    { id: "asnake", name: "Asnake", role: "Project Coordinator", class: "avatar-asnake" },
+    { id: "yiss", name: "Yiss", role: "Finance Officer", class: "avatar-yiss" },
+    { id: "enku", name: "Enku", role: "Procurement Specialist", class: "avatar-enku" }
+  ], []);
+
   const [transactions, setTransactions] = useState([]);
   const [boaSmsState, setBoaSmsState] = useState(null);
   const [boaSmsSummary, setBoaSmsSummary] = useState([]);
   const [boaSmsLoading, setBoaSmsLoading] = useState(false);
   const [parkingPayments, setParkingPayments] = useState([]);
   const [suqePayments, setSuqePayments] = useState([]);
-  const [people, setPeople] = useState([]);
+  const [people, setPeople] = useState(DEFAULT_PEOPLE);
 
   const [parkingDraft, setParkingDraft] = useState({
     amount: "",
@@ -81,12 +89,19 @@ function App() {
       });
       if (res.ok) {
         const data = await res.json();
-        setPeople(data);
+        if (data && data.length > 0) {
+          setPeople(data);
+        } else {
+          setPeople(DEFAULT_PEOPLE);
+        }
+      } else {
+        setPeople(DEFAULT_PEOPLE);
       }
     } catch (err) {
       console.error("Error fetching people in App:", err);
+      setPeople(DEFAULT_PEOPLE);
     }
-  }, []);
+  }, [DEFAULT_PEOPLE]);
 
   const personOptions = useMemo(() => {
     return [
