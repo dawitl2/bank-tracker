@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import Content from "./Content";
 import Balance from "./Balance";
 import Calculator from "./Calculator";
-import Users from "./Users";
 import "./App.css";
 
 const BASE_BALANCE = 1209518;
@@ -33,8 +32,6 @@ function App() {
       setCurrentPath(path);
       if (path.startsWith("/balance")) {
         setView("balance");
-      } else if (path.startsWith("/users") || path.startsWith("/usersomething")) {
-        setView("users");
       } else {
         setView("transactions");
       }
@@ -51,8 +48,6 @@ function App() {
     setCurrentPath(path);
     if (path.startsWith("/balance")) {
       setView("balance");
-    } else if (path.startsWith("/users") || path.startsWith("/usersomething")) {
-      setView("users");
     } else {
       setView("transactions");
     }
@@ -1055,13 +1050,6 @@ function App() {
           Balance
         </button>
 
-        <button
-          className={view === "users" ? "active" : ""}
-          onClick={() => navigate("/users")}
-        >
-          Users
-        </button>
-
       </div>
 
       <div className="content">
@@ -1110,6 +1098,8 @@ function App() {
               transactions={transactions}
               constructionOnly={constructionOnly}
               setConstructionOnly={setConstructionOnly}
+              currentPath={currentPath}
+              navigate={navigate}
             />
 
             <button
@@ -1120,14 +1110,6 @@ function App() {
             </button>
 
           </>
-        )}
-
-        {view === "users" && (
-          <Users
-            transactions={transactions}
-            currentPath={currentPath}
-            navigate={navigate}
-          />
         )}
 
         {showCalculator && (

@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import Construction3D from "./Construction3D";
+import Users from "./Users";
 
 const SUPABASE_URL = "https://ywplzexakisliebyjtyf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_nmA6IJsDGUVki5i0smS1Tg_MLXy5_wX";
@@ -787,9 +788,25 @@ function Balance({
   boaSmsSummary = [],
   boaSmsLoading = false,
   onRefreshBoaSmsState,
-  transactions = []
+  transactions = [],
+  currentPath,
+  navigate
 }) {
   const [activePanel, setActivePanel] = useState("summary");
+
+  useEffect(() => {
+    if (!currentPath) return;
+    if (currentPath.startsWith("/balance/people")) {
+      setActivePanel("people");
+    } else {
+      const parts = currentPath.split("/").filter(Boolean);
+      if (parts[0] === "balance" && parts[1]) {
+        setActivePanel(parts[1]);
+      } else if (parts[0] === "balance") {
+        setActivePanel("summary");
+      }
+    }
+  }, [currentPath]);
   const getVisibilityDayKey = () => new Date().toISOString().slice(0, 10);
   const [showBalance, setShowBalance] = useState(false);
   const [showInterest, setShowInterest] = useState(
@@ -912,8 +929,6 @@ function Balance({
       }
     };
   }, [balance, transactions]);
-
-  const strongestGroup = analytics.groupTotals.filter(g => g.amount > 0).sort((a, b) => b.amount - a.amount)[0] || analytics.groupTotals[0];
   const panelOptions = [
     { key: "summary", label: "Summary" },
     { key: "people", label: "People" },
@@ -1065,7 +1080,7 @@ function Balance({
           <button
             key={option.key}
             className={activePanel === option.key ? "active" : ""}
-            onClick={() => setActivePanel(option.key)}
+            onClick={() => navigate(`/balance/${option.key}`)}
             type="button"
           >
             {option.label}
@@ -1117,22 +1132,11 @@ function Balance({
         )}
 
         {activePanel === "people" && (
-          <article className="analytics-card focus-card">
-            <span>People Involved</span>
-            <h2>{strongestGroup.label}</h2>
-            <p>{money(strongestGroup.amount)} is the largest spend lane.</p>
-            <div className="people-list">
-              {analytics.groupTotals.map((group) => (
-                <div className="person-row" key={group.key}>
-                  <div><strong>{group.label}</strong><small>{group.count} tx</small></div>
-                  <div className="person-bar" aria-hidden="true">
-                    <span style={{ width: `${group.share}%`, backgroundColor: group.color }}></span>
-                  </div>
-                  <b>{money(group.amount)}</b>
-                </div>
-              ))}
-            </div>
-          </article>
+          <Users
+            transactions={transactions}
+            currentPath={currentPath}
+            navigate={navigate}
+          />
         )}
 
         {activePanel === "interest" && (

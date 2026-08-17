@@ -64,12 +64,12 @@ const getCategory = (narrative) => {
 };
 
 export default function Users({ transactions, currentPath, navigate }) {
-  // Extract user details path (e.g. /users/dawit or /usersomething/dawit)
+  // Extract user details path (e.g. /balance/people/dawit)
   const selectedUserId = useMemo(() => {
     const parts = currentPath.split("/").filter(Boolean);
-    // If path is like /users/dawit or /usersomething/dawit
-    if (parts.length > 1) {
-      return parts[1].toLowerCase();
+    // If path is like /balance/people/dawit
+    if (parts.length > 2 && parts[0] === "balance" && parts[1] === "people") {
+      return parts[2].toLowerCase();
     }
     return null;
   }, [currentPath]);
@@ -238,7 +238,7 @@ export default function Users({ transactions, currentPath, navigate }) {
             <div
               key={user.id}
               className="user-card"
-              onClick={() => navigate(`/users/${user.id}`)}
+              onClick={() => navigate(`/balance/people/${user.id}`)}
             >
               <div className={`avatar-placeholder ${user.class}`}>
                 {user.name.charAt(0)}
@@ -289,7 +289,7 @@ export default function Users({ transactions, currentPath, navigate }) {
             <p>{selectedUser.role} &bull; {userTxs.length} Transactions</p>
           </div>
         </div>
-        <button className="back-btn" onClick={() => navigate("/users")}>
+        <button className="back-btn" onClick={() => navigate("/balance/people")}>
           &larr; Back to People
         </button>
       </div>

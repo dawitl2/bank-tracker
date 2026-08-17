@@ -255,7 +255,7 @@ const options = [
                     className={`user-inline-badge badge-${tx.person.toLowerCase()}`}
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate(`/users/${tx.person.toLowerCase()}`);
+                      navigate(`/balance/people/${tx.person.toLowerCase()}`);
                     }}
                   >
                     {tx.person}
