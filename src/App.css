@@ -3372,7 +3372,11 @@ a {
   position: fixed;
   inset: 0;
   z-index: 10000;
-  background: linear-gradient(135deg, #181816, #20231f);
+  background: #fbfbf9;
+  background-image: 
+    linear-gradient(rgba(24, 24, 22, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(24, 24, 22, 0.03) 1px, transparent 1px);
+  background-size: 30px 30px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3382,14 +3386,14 @@ a {
 .password-box {
   background: #ffffff;
   border-radius: 16px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
-  padding: 35px 30px;
+  box-shadow: 0 10px 35px rgba(24, 24, 22, 0.06);
+  padding: 40px 35px;
   width: 100%;
   max-width: 360px;
-  border: 1px solid rgba(244, 163, 0, 0.15);
+  border: 1px solid rgba(24, 24, 22, 0.08);
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
   animation: modalFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -3398,12 +3402,19 @@ a {
   margin-bottom: 4px;
 }
 
+.login-logo {
+  height: 48px;
+  width: auto;
+  display: block;
+  margin: 0 auto 12px;
+}
+
 .login-header h2 {
-  font-size: 19px;
+  font-size: 20px;
   font-weight: 700;
   color: #20231f;
-  margin-top: 10px;
-  letter-spacing: -0.3px;
+  margin: 0;
+  letter-spacing: -0.4px;
 }
 
 .login-field {
@@ -3423,23 +3434,25 @@ a {
 .login-field input {
   width: 100%;
   padding: 12px 14px;
-  border: 1.5px solid #e2e8f0;
+  border: 1.5px solid rgba(24, 24, 22, 0.1);
   border-radius: 8px;
   font-size: 14px;
   outline: none;
+  background: #ffffff;
+  color: #20231f;
   transition: all 0.2s ease;
 }
 
 .login-field input:focus:not(:disabled) {
   border-color: #f4a300;
-  box-shadow: 0 0 0 3px rgba(244, 163, 0, 0.12);
+  box-shadow: 0 0 0 3px rgba(244, 163, 0, 0.15);
 }
 
 .login-field input:disabled {
-  background: #f8fafc;
-  color: #94a3b8;
-  border-color: #e2e8f0;
-  font-weight: 500;
+  background: #fafaf7;
+  color: #74796e;
+  border-color: rgba(24, 24, 22, 0.06);
+  opacity: 0.8;
   cursor: not-allowed;
 }
 
@@ -3448,19 +3461,18 @@ a {
   color: #20231f;
   font-size: 14px;
   font-weight: 700;
-  padding: 13px;
+  padding: 14px;
   border-radius: 8px;
   border: none;
   cursor: pointer;
   width: 100%;
   transition: all 0.2s ease;
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .login-submit-btn:hover {
   background: #eeb833;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(244, 163, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(244, 163, 0, 0.25);
 }
 
 .login-submit-btn:active {

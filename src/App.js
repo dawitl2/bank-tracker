@@ -1095,13 +1095,11 @@ function App() {
               src="/logo.png" 
               alt="Bank Logo" 
               className="login-logo" 
-              style={{ height: "46px", width: "auto", margin: "0 auto 12px dsb", display: "block" }} 
               onError={(e) => {
-                // Fallback text if logo is not found or fails to load
                 e.target.style.display = "none";
               }}
             />
-            <h2>Secure Portal Access</h2>
+            <h2>Welcome Back</h2>
           </div>
 
           <div className="login-field">
@@ -1118,7 +1116,7 @@ function App() {
             <label>Password</label>
             <input
               type="password"
-              placeholder="Enter Access Key"
+              placeholder="Password"
               value={inputPassword}
               onChange={(e) => setInputPassword(e.target.value)}
               onKeyDown={(e) => {
@@ -1132,12 +1130,12 @@ function App() {
 
           {passwordError && (
             <div className="login-error-msg">
-              Access Denied: Incorrect password
+              Incorrect password
             </div>
           )}
 
           <button className="login-submit-btn" onClick={handlePasswordSubmit}>
-            Authorize
+            Submit
           </button>
         </div>
       </div>
