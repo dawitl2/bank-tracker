@@ -924,7 +924,6 @@ function Balance({
     { key: "interest", label: "Interest" },
     { key: "construction", label: "Construction" }
   ];
-  const monthlyTrendAsc = [...analytics.monthlyTrend].sort((a, b) => a.key.localeCompare(b.key));
   const smsRecentRows = boaSmsSummary.map((event, index) => ({
     key: `${event.sms_received_at || "sms"}-${index}`,
     label: event.transaction_type === "deposit" ? "Deposit" : "Withdraw",
