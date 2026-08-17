@@ -15,14 +15,6 @@ const API_URL =
   process.env.REACT_APP_API_URL || "https://bank-backend-anhp.onrender.com";
 const BANK_RECEIPT_URL = "https://cs.bankofabyssinia.com/slip/";
 const GENERATED_TRANSACTION_FIELDS = ["id", "created_at"];
-const PERSON_OPTIONS = [
-  { label: "Dawit", value: "dawit" },
-  { label: "Mihret", value: "mihret" },
-  { label: "Asnake", value: "asnake" },
-  { label: "Yiss", value: "yiss" },
-  { label: "Enku", value: "enku" },
-  { label: "Null", value: "null" }
-];
 function App() {
 
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
@@ -60,6 +52,92 @@ function App() {
   const [boaSmsLoading, setBoaSmsLoading] = useState(false);
   const [parkingPayments, setParkingPayments] = useState([]);
   const [suqePayments, setSuqePayments] = useState([]);
+  const [people, setPeople] = useState([]);
+
+  const [parkingDraft, setParkingDraft] = useState({
+    amount: "",
+    date: getCurrentDateTimeString(),
+    reference: "",
+    narrative: ""
+  });
+
+  const fetchPeople = useCallback(async () => {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/people?select=*`, {
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPeople(data);
+      }
+    } catch (err) {
+      console.error("Error fetching people in App:", err);
+    }
+  }, []);
+
+  const personOptions = useMemo(() => {
+    return [
+      { label: "Dawit", value: "dawit" },
+      { label: "Mihret", value: "mihret" },
+      { label: "Asnake", value: "asnake" },
+      { label: "Yiss", value: "yiss" },
+      { label: "Enku", value: "enku" },
+      ...people
+        .filter(p => !["dawit", "mihret", "asnake", "yiss", "enku"].includes(p.id))
+        .map(p => ({ label: p.name, value: p.id })),
+      { label: "Null", value: "null" }
+    ];
+  }, [people]);
+
+  const handleParkingDraftSubmit = async () => {
+    if (!parkingDraft.amount || !parkingDraft.date) {
+      alert("Please fill in amount and date fields!");
+      return;
+    }
+    setDraftSaving(true);
+    try {
+      const payload = {
+        amount: parseFloat(parkingDraft.amount) || 0,
+        date: parkingDraft.date,
+        reference: parkingDraft.reference || "",
+        narrative: parkingDraft.narrative || "",
+        person: "dawit"
+      };
+
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/parking`, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=representation"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        await fetchDbPayments();
+        setShowModal(false);
+        setReceiptMode(null);
+        setParkingDraft({
+          amount: "",
+          date: getCurrentDateTimeString(),
+          reference: "",
+          narrative: ""
+        });
+      } else {
+        alert("Failed to save parking payment to Supabase.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred while saving parking payment.");
+    } finally {
+      setDraftSaving(false);
+    }
+  };
 
   const fetchDbPayments = useCallback(async () => {
     try {
@@ -130,10 +208,11 @@ function App() {
     fetchBoaSmsState();
     fetchBoaSmsSummary();
     fetchDbPayments();
+    fetchPeople();
 
   // Initial app hydration should run once when the app mounts.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchDbPayments]);
+  }, [fetchDbPayments, fetchPeople]);
 
   const fetchTransactions = async () => {
 
@@ -911,27 +990,7 @@ function App() {
       return tx.is_withdraw === false;
     }
 
-    if (personFilter === "MIHRET") {
-      return tx.person === "mihret";
-    }
-
-    if (personFilter === "ASNAKE") {
-      return tx.person === "asnake";
-    }
-
-   if (personFilter === "YISS") {
-      return tx.person === "yiss";
-    }
-
-    if (personFilter === "ENKU") {
-      return tx.person === "enku";
-    }
-
-    if (personFilter === "DAWIT") {
-      return tx.person === "dawit";
-    }
     if (personFilter === "CONSTRUCTION") {
-
       return (
         tx.person === "mihret" ||
         tx.person === "asnake" ||
@@ -939,7 +998,7 @@ function App() {
       );
     }
 
-    return true;
+    return (tx.person || "").toLowerCase() === personFilter.toLowerCase();
 
   });
 
@@ -1075,6 +1134,8 @@ function App() {
             parkingPayments={parkingPayments}
             suqePayments={suqePayments}
             fetchDbPayments={fetchDbPayments}
+            people={people}
+            fetchPeople={fetchPeople}
           />
         </div>
       ) : (
@@ -1116,6 +1177,7 @@ function App() {
                   onDeleteTransaction={handleDeleteTransaction}
                   onSendTableTotal={sendTableTotalToCalculator}
                   navigate={navigate}
+                  people={people}
                 />
 
                 <button
@@ -1158,6 +1220,8 @@ function App() {
                   parkingPayments={parkingPayments}
                   suqePayments={suqePayments}
                   fetchDbPayments={fetchDbPayments}
+                  people={people}
+                  fetchPeople={fetchPeople}
                 />
 
                 <button
@@ -1192,6 +1256,30 @@ function App() {
 
             <h2>{receiptDraft?.id ? "Edit Transaction" : "Add Receipt"}</h2>
 
+              {!receiptDraft && receiptMode === "parking" && (
+                  <button
+                    className="save-draft-btn"
+                    onClick={handleParkingDraftSubmit}
+                    disabled={draftSaving}
+                  >
+                    {draftSaving ? "Saving..." : "Save Parking"}
+                  </button>
+                )}
+
+                {!receiptDraft && receiptMode && (
+                  <button
+                    className="close-btn"
+                    onClick={() => {
+                      stopQrScanner();
+                      setReceiptMode(null);
+                      setQrStatus("");
+                    }}
+                    disabled={scrapeLoading || draftSaving}
+                  >
+                    Back
+                  </button>
+                )}
+
               {!receiptDraft && !receiptMode && (
                 <div className="receipt-choice-grid">
                   <button
@@ -1216,6 +1304,14 @@ function App() {
                   >
                     <span>Image</span>
                     <small>Read a screenshot</small>
+                  </button>
+
+                  <button
+                    className="receipt-choice-card"
+                    onClick={() => setReceiptMode("parking")}
+                  >
+                    <span>Parking</span>
+                    <small>Add parking payment</small>
                   </button>
                 </div>
               )}
@@ -1296,6 +1392,55 @@ function App() {
                 </div>
               )}
 
+              {!receiptDraft && receiptMode === "parking" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "10px" }}>
+                  <label className="draft-field">
+                    <span>Amount (ETB)</span>
+                    <input
+                      type="number"
+                      placeholder="0.00"
+                      value={parkingDraft.amount}
+                      onChange={(e) => setParkingDraft({ ...parkingDraft, amount: e.target.value })}
+                      disabled={draftSaving}
+                      required
+                    />
+                  </label>
+
+                  <label className="draft-field">
+                    <span>Date / Time</span>
+                    <input
+                      type="text"
+                      value={parkingDraft.date}
+                      onChange={(e) => setParkingDraft({ ...parkingDraft, date: e.target.value })}
+                      disabled={draftSaving}
+                      required
+                    />
+                  </label>
+
+                  <label className="draft-field">
+                    <span>Plate Number / Ref</span>
+                    <input
+                      type="text"
+                      placeholder="e.g. Code 3 - AA 12345"
+                      value={parkingDraft.reference}
+                      onChange={(e) => setParkingDraft({ ...parkingDraft, reference: e.target.value })}
+                      disabled={draftSaving}
+                    />
+                  </label>
+
+                  <label className="draft-field">
+                    <span>Narrative</span>
+                    <input
+                      type="text"
+                      placeholder="Payment description..."
+                      value={parkingDraft.narrative}
+                      onChange={(e) => setParkingDraft({ ...parkingDraft, narrative: e.target.value })}
+                      disabled={draftSaving}
+                    />
+                  </label>
+                </div>
+              )}
+
               {receiptDraft && (
                 <div className="receipt-draft-box">
                   <h3>Review Receipt</h3>
@@ -1316,7 +1461,7 @@ function App() {
                                 handleDraftChange(field, e.target.value)
                               }
                             >
-                              {PERSON_OPTIONS.map((option) => (
+                              {personOptions.map((option) => (
                                 <option
                                   key={option.value}
                                   value={option.value}

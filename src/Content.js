@@ -8,21 +8,18 @@ function Content({
   onEditTransaction,
   onDeleteTransaction,
   onSendTableTotal,
-  navigate
+  navigate,
+  people = []
 }) {
   const [open, setOpen] = useState(false);
   const [actionMenu, setActionMenu] = useState(null);
   const [longPressTimer, setLongPressTimer] = useState(null);
 
-const options = [
+  const options = [
     "ALL",
     "Withdraw",
     "Deposit",
-    "MIHRET",
-    "ASNAKE",
-    "YISS",
-    "ENKU",
-    "DAWIT",
+    ...people.map(p => p.name.toUpperCase()),
     "CONSTRUCTION"
   ];
   const handleSelect = (value) => {

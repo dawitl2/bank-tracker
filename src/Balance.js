@@ -1,18 +1,4 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis
-} from "recharts";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import Construction3D from "./Construction3D";
 import Users from "./Users";
@@ -936,7 +922,6 @@ function Balance({
     { key: "summary", label: "Summary" },
     { key: "people", label: "People" },
     { key: "interest", label: "Interest" },
-    { key: "charts", label: "Charts" },
     { key: "construction", label: "Construction" }
   ];
   const monthlyTrendAsc = [...analytics.monthlyTrend].sort((a, b) => a.key.localeCompare(b.key));
@@ -1166,56 +1151,7 @@ function Balance({
           </article>
         )}
 
-        {activePanel === "charts" && (
-          <div className="analytics-layout">
-            <article className="analytics-card analytics-card-wide">
-              <div className="chart-heading">
-                <div><span>Monthly Flow</span><h2>Withdraw, Deposit, Net</h2></div>
-              </div>
-              <div className="chart-panel">
-                <ResponsiveContainer>
-                  <BarChart data={monthlyTrendAsc}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="month" /><YAxis />
-                    <Tooltip formatter={(value) => money(value)} /><Legend />
-                    <Bar dataKey="Withdraw" fill="#f4a300" radius={[6, 6, 0, 0]} />
-                    <Bar dataKey="Deposit" fill="#53a460" radius={[6, 6, 0, 0]} />
-                    <Bar dataKey="Net" fill="#20231f" radius={[6, 6, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </article>
-            <article className="analytics-card analytics-card-wide">
-              <div className="chart-heading">
-                <div><span>Spend Curve</span><h2>Cumulative Withdraw</h2></div>
-              </div>
-              <div className="chart-panel split-chart">
-                <ResponsiveContainer>
-                  <AreaChart data={analytics.cumulativeTrend}>
-                    <defs>
-                      <linearGradient id="spendGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#f4a300" stopOpacity={0.55} />
-                        <stop offset="95%" stopColor="#f4a300" stopOpacity={0.04} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="date" /><YAxis />
-                    <Tooltip formatter={(value) => money(value)} />
-                    <Area type="monotone" dataKey="Spend" stroke="#f4a300" strokeWidth={3} fill="url(#spendGradient)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-                <ResponsiveContainer>
-                  <LineChart data={monthlyTrendAsc}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="month" /><YAxis allowDecimals={false} />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="peopleCount" name="People" stroke="#c73939" strokeWidth={3} dot={{ r: 4 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </article>
-          </div>
-        )}
+
 
         {activePanel === "construction" && <ConstructionPanel />}
 

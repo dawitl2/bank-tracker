@@ -563,3 +563,30 @@
     font-size: 18px;
   }
 }
+
+/* Delete Person Card floating button */
+.delete-person-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid rgba(24, 24, 22, 0.12);
+  background: white;
+  color: #74796e;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s ease;
+}
+
+.delete-person-btn:hover {
+  background: #c73939;
+  border-color: #c73939;
+  color: white;
+  transform: scale(1.05);
+}

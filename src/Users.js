@@ -16,14 +16,6 @@ import "./Users.css";
 const SUPABASE_URL = "https://ywplzexakisliebyjtyf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_nmA6IJsDGUVki5i0smS1Tg_MLXy5_wX";
 
-const USERS_LIST = [
-  { id: "dawit", name: "Dawit", role: "Administrator", class: "avatar-dawit" },
-  { id: "mihret", name: "Mihret", role: "Construction Manager", class: "avatar-mihret" },
-  { id: "asnake", name: "Asnake", role: "Project Coordinator", class: "avatar-asnake" },
-  { id: "yiss", name: "Yiss", role: "Finance Officer", class: "avatar-yiss" },
-  { id: "enku", name: "Enku", role: "Procurement Specialist", class: "avatar-enku" }
-];
-
 const parseAmount = (value) => parseFloat(value?.toString().replace(/[^\d.-]/g, "")) || 0;
 const money = (value) => Math.round(value || 0).toLocaleString("en-US");
 
@@ -78,24 +70,42 @@ const getCurrentDateTimeString = () => {
   return `${day}/${month}/${year} ${hours}:${minutes}`;
 };
 
+const getAvatarClass = (id) => {
+  const known = ["dawit", "mihret", "asnake", "yiss", "enku"];
+  return known.includes(id) ? `avatar-${id}` : "avatar-other";
+};
+
 export default function Users({
   transactions,
   currentPath,
   navigate,
   parkingPayments = [],
   suqePayments = [],
-  fetchDbPayments
+  fetchDbPayments,
+  people = [],
+  fetchPeople
 }) {
   const [dbSaving, setDbSaving] = useState(false);
   const [subTab, setSubTab] = useState("transactions");
   const [showScrollTop, setShowScrollTop] = useState(false);
+  
+  // Modals management
   const [showAddPaymentModal, setShowAddPaymentModal] = useState(false);
+  const [showAddPersonModal, setShowAddPersonModal] = useState(false);
+  const [showEditPersonModal, setShowEditPersonModal] = useState(false);
+
+  // Form states
   const [editPaymentTarget, setEditPaymentTarget] = useState(null);
   const [newPayment, setNewPayment] = useState({
     amount: "",
     date: getCurrentDateTimeString(),
     reference: "",
     narrative: ""
+  });
+
+  const [newPerson, setNewPerson] = useState({
+    name: "",
+    role: ""
   });
 
   const [actionMenu, setActionMenu] = useState(null);
@@ -111,14 +121,16 @@ export default function Users({
   }, [currentPath]);
 
   const selectedUser = useMemo(() => {
-    return USERS_LIST.find((u) => u.id === selectedUserId);
-  }, [selectedUserId]);
+    return people.find((u) => u.id === selectedUserId);
+  }, [selectedUserId, people]);
 
   // Auto Scroll to Top & Reset State on User Change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     setSubTab("transactions");
     setShowAddPaymentModal(false);
+    setShowAddPersonModal(false);
+    setShowEditPersonModal(false);
     setEditPaymentTarget(null);
     setActionMenu(null);
     setNewPayment({
@@ -126,6 +138,10 @@ export default function Users({
       date: getCurrentDateTimeString(),
       reference: "",
       narrative: ""
+    });
+    setNewPerson({
+      name: "",
+      role: ""
     });
   }, [selectedUserId]);
 
@@ -191,7 +207,6 @@ export default function Users({
 
       let res;
       if (editPaymentTarget) {
-        // UPDATE (PATCH)
         res = await fetch(`${SUPABASE_URL}/rest/v1/${targetTable}?id=eq.${editPaymentTarget.id}`, {
           method: "PATCH",
           headers: {
@@ -203,7 +218,6 @@ export default function Users({
           body: JSON.stringify(payload)
         });
       } else {
-        // CREATE (POST)
         res = await fetch(`${SUPABASE_URL}/rest/v1/${targetTable}`, {
           method: "POST",
           headers: {
@@ -286,11 +300,137 @@ export default function Users({
     }
   };
 
+  // Add a new person in Supabase
+  const handleAddPersonSubmit = async () => {
+    if (!newPerson.name || !newPerson.role) {
+      alert("Please fill in Name and Role!");
+      return;
+    }
+
+    const generatedId = newPerson.name.toLowerCase().trim().replace(/[^a-z0-9]/g, "");
+    if (!generatedId) {
+      alert("Invalid Name!");
+      return;
+    }
+
+    // Check if ID already exists
+    if (people.some(p => p.id === generatedId)) {
+      alert("A person with this name already exists!");
+      return;
+    }
+
+    setDbSaving(true);
+    try {
+      const payload = {
+        id: generatedId,
+        name: newPerson.name,
+        role: newPerson.role,
+        class: getAvatarClass(generatedId)
+      };
+
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/people`, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=representation"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        await fetchPeople();
+        setShowAddPersonModal(false);
+        setNewPerson({ name: "", role: "" });
+      } else {
+        alert("Failed to add person to Supabase.");
+      }
+    } catch (err) {
+      console.error("ADD PERSON ERROR:", err);
+      alert("An error occurred while adding person.");
+    } finally {
+      setDbSaving(false);
+    }
+  };
+
+  // Edit a person's profile details
+  const handleEditPersonSubmit = async () => {
+    if (!newPerson.name || !newPerson.role) {
+      alert("Please fill in Name and Role!");
+      return;
+    }
+
+    setDbSaving(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/people?id=eq.${selectedUser.id}`, {
+        method: "PATCH",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=representation"
+        },
+        body: JSON.stringify({
+          name: newPerson.name,
+          role: newPerson.role
+        })
+      });
+
+      if (res.ok) {
+        await fetchPeople();
+        setShowEditPersonModal(false);
+      } else {
+        alert("Failed to update profile details in Supabase.");
+      }
+    } catch (err) {
+      console.error("EDIT PERSON ERROR:", err);
+      alert("An error occurred while updating profile.");
+    } finally {
+      setDbSaving(false);
+    }
+  };
+
+  // Delete a person in Supabase (requires DOUBLE confirmation)
+  const handleDeletePerson = async (user, event) => {
+    event.stopPropagation(); // Prevent card navigation click trigger
+
+    // Confirmation 1
+    const confirm1 = window.confirm(`Are you sure you want to delete ${user.name}?`);
+    if (!confirm1) return;
+
+    // Confirmation 2
+    const confirm2 = window.confirm(`WARNING: This will permanently delete ${user.name} and decouple their tracked data. Are you ABSOLUTELY sure?`);
+    if (!confirm2) return;
+
+    setDbSaving(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/people?id=eq.${user.id}`, {
+        method: "DELETE",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`
+        }
+      });
+
+      if (res.ok) {
+        await fetchPeople();
+      } else {
+        alert("Failed to delete person from Supabase.");
+      }
+    } catch (err) {
+      console.error("DELETE PERSON ERROR:", err);
+      alert("An error occurred during delete.");
+    } finally {
+      setDbSaving(false);
+    }
+  };
+
   // Calculate global summary stats for each user (for the list view)
   const { usersSummary, totalOutflowTracked } = useMemo(() => {
     let totalOutflowTracked = 0;
 
-    const summary = USERS_LIST.map((user) => {
+    const summary = people.map((user) => {
       const userTxs = transactions.filter(
         (tx) => (tx.person || "").toLowerCase() === user.id
       );
@@ -335,7 +475,7 @@ export default function Users({
       usersSummary: summary,
       totalOutflowTracked
     };
-  }, [transactions, parkingPayments, suqePayments]);
+  }, [transactions, parkingPayments, suqePayments, people]);
 
   // Detailed user metrics & chart computations
   const detailsData = useMemo(() => {
@@ -477,15 +617,25 @@ export default function Users({
   if (!selectedUser) {
     return (
       <div className="users-container">
-        <div className="analytics-card focus-card" style={{ marginBottom: "20px" }}>
-          <span>Spending Overview</span>
-          <h2>Tracked Outflow Share</h2>
-          <p>Analyzing total receipt and custom spending of <b>{money(totalOutflowTracked)} ETB</b> across team members.</p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
+          <div className="analytics-card focus-card" style={{ flexGrow: 1, margin: 0 }}>
+            <span>Spending Overview</span>
+            <h2>Tracked Outflow Share</h2>
+            <p>Analyzing total spending of <b>{money(totalOutflowTracked)} ETB</b> across team members.</p>
+          </div>
+          <button
+            className="back-btn"
+            onClick={() => setShowAddPersonModal(true)}
+            style={{ background: "#eeb833", borderColor: "#eeb833", color: "#000", height: "fit-content", padding: "10px 20px" }}
+          >
+            + Add Person
+          </button>
         </div>
 
         <div className="users-grid">
           {usersSummary.map((user) => {
             const userPercent = totalOutflowTracked > 0 ? Math.round((user.spent / totalOutflowTracked) * 100) : 0;
+            const avatarClass = getAvatarClass(user.id);
 
             return (
               <div
@@ -493,7 +643,16 @@ export default function Users({
                 className="user-card"
                 onClick={() => navigate(`/balance/people/${user.id}`)}
               >
-                <div className={`avatar-placeholder ${user.class}`}>
+                {/* Delete Person Button (✕) with double-confirmation */}
+                <button
+                  className="delete-person-btn"
+                  onClick={(e) => handleDeletePerson(user, e)}
+                  title={`Delete ${user.name}`}
+                >
+                  ✕
+                </button>
+
+                <div className={`avatar-placeholder ${avatarClass}`}>
                   {user.name.charAt(0)}
                 </div>
 
@@ -512,7 +671,7 @@ export default function Users({
                       className="category-progress-fill"
                       style={{
                         width: `${userPercent}%`,
-                        background: user.id === "dawit" ? "#c73939" : user.id === "mihret" ? "#f4a300" : user.id === "asnake" ? "#b87200" : user.id === "yiss" ? "#20231f" : "#8c52ff"
+                        background: user.id === "dawit" ? "#c73939" : user.id === "mihret" ? "#f4a300" : user.id === "asnake" ? "#b87200" : user.id === "yiss" ? "#20231f" : user.id === "enku" ? "#8c52ff" : "#6f7d87"
                       }}
                     ></div>
                   </div>
@@ -536,6 +695,61 @@ export default function Users({
             );
           })}
         </div>
+
+        {/* Modal for adding a person */}
+        {showAddPersonModal && (
+          <div className="modal-overlay" style={{ zIndex: 2000 }}>
+            <div className="modal" style={{ maxWidth: "420px" }}>
+              <h2>Add New Person</h2>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "20px" }}>
+                <label className="draft-field">
+                  <span>Name</span>
+                  <input
+                    type="text"
+                    placeholder="Enter full name..."
+                    value={newPerson.name}
+                    onChange={(e) => setNewPerson({ ...newPerson, name: e.target.value })}
+                    disabled={dbSaving}
+                    required
+                  />
+                </label>
+
+                <label className="draft-field">
+                  <span>Role</span>
+                  <input
+                    type="text"
+                    placeholder="e.g. Project Coordinator"
+                    value={newPerson.role}
+                    onChange={(e) => setNewPerson({ ...newPerson, role: e.target.value })}
+                    disabled={dbSaving}
+                    required
+                  />
+                </label>
+              </div>
+
+              <div className="modal-buttons" style={{ marginTop: "28px" }}>
+                <button
+                  className="save-draft-btn"
+                  onClick={handleAddPersonSubmit}
+                  disabled={dbSaving}
+                >
+                  {dbSaving ? "Saving..." : "Add Person"}
+                </button>
+                <button
+                  className="close-btn"
+                  onClick={() => {
+                    setShowAddPersonModal(false);
+                    setNewPerson({ name: "", role: "" });
+                  }}
+                  disabled={dbSaving}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Floating Scroll to Top button */}
         {showScrollTop && (
@@ -568,6 +782,8 @@ export default function Users({
     return true;
   });
 
+  const avatarClass = getAvatarClass(selectedUser.id);
+
   return (
     <div className="users-container">
       {/* Top Header Bar with Back Button & Mini Logo */}
@@ -580,21 +796,33 @@ export default function Users({
 
       {/* User Profile Header Section */}
       <div className="user-detail-header" style={{ marginBottom: "30px" }}>
-        <div className="user-profile-summary">
-          <div className={`avatar-placeholder avatar-large ${selectedUser.class}`}>
-            {selectedUser.name.charAt(0)}
-          </div>
-          <div className="user-profile-info">
-            <h2>{selectedUser.name}</h2>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginTop: "4px" }}>
-              <span className="user-badge" style={{ background: "#eeb833", color: "#000", fontWeight: "700", fontSize: "11px", padding: "2px 8px", borderRadius: "4px", textTransform: "uppercase" }}>
-                {selectedUser.role}
-              </span>
-              <span style={{ color: "#74796e", fontSize: "13px" }}>
-                &bull; {allTransactions.length} Total Payments Tracked
-              </span>
+        <div className="user-profile-summary" style={{ width: "100%", justifyContent: "space-between", flexWrap: "wrap", gap: "15px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+            <div className={`avatar-placeholder avatar-large ${avatarClass}`}>
+              {selectedUser.name.charAt(0)}
+            </div>
+            <div className="user-profile-info">
+              <h2>{selectedUser.name}</h2>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginTop: "4px" }}>
+                <span className="user-badge" style={{ background: "#eeb833", color: "#000", fontWeight: "700", fontSize: "11px", padding: "2px 8px", borderRadius: "4px", textTransform: "uppercase" }}>
+                  {selectedUser.role}
+                </span>
+                <span style={{ color: "#74796e", fontSize: "13px" }}>
+                  &bull; {allTransactions.length} Total Payments Tracked
+                </span>
+              </div>
             </div>
           </div>
+          <button
+            className="back-btn"
+            onClick={() => {
+              setNewPerson({ name: selectedUser.name, role: selectedUser.role || "" });
+              setShowEditPersonModal(true);
+            }}
+            style={{ fontSize: "13px", height: "fit-content", padding: "8px 16px" }}
+          >
+            Edit Profile
+          </button>
         </div>
       </div>
 
@@ -889,6 +1117,61 @@ export default function Users({
                 onClick={() => {
                   setShowAddPaymentModal(false);
                   setEditPaymentTarget(null);
+                }}
+                disabled={dbSaving}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal for editing person details */}
+      {showEditPersonModal && (
+        <div className="modal-overlay" style={{ zIndex: 2000 }}>
+          <div className="modal" style={{ maxWidth: "420px" }}>
+            <h2>Edit Profile Details</h2>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "20px" }}>
+              <label className="draft-field">
+                <span>Name</span>
+                <input
+                  type="text"
+                  placeholder="Enter name..."
+                  value={newPerson.name}
+                  onChange={(e) => setNewPerson({ ...newPerson, name: e.target.value })}
+                  disabled={dbSaving}
+                  required
+                />
+              </label>
+
+              <label className="draft-field">
+                <span>Role</span>
+                <input
+                  type="text"
+                  placeholder="Enter role..."
+                  value={newPerson.role}
+                  onChange={(e) => setNewPerson({ ...newPerson, role: e.target.value })}
+                  disabled={dbSaving}
+                  required
+                />
+              </label>
+            </div>
+
+            <div className="modal-buttons" style={{ marginTop: "28px" }}>
+              <button
+                className="save-draft-btn"
+                onClick={handleEditPersonSubmit}
+                disabled={dbSaving}
+              >
+                {dbSaving ? "Saving..." : "Save Changes"}
+              </button>
+              <button
+                className="close-btn"
+                onClick={() => {
+                  setShowEditPersonModal(false);
+                  setNewPerson({ name: "", role: "" });
                 }}
                 disabled={dbSaving}
               >
