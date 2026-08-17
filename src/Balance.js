@@ -790,7 +790,10 @@ function Balance({
   onRefreshBoaSmsState,
   transactions = [],
   currentPath,
-  navigate
+  navigate,
+  parkingPayments = [],
+  suqePayments = [],
+  fetchDbPayments
 }) {
   const [activePanel, setActivePanel] = useState("summary");
 
@@ -1136,6 +1139,9 @@ function Balance({
             transactions={transactions}
             currentPath={currentPath}
             navigate={navigate}
+            parkingPayments={parkingPayments}
+            suqePayments={suqePayments}
+            fetchDbPayments={fetchDbPayments}
           />
         )}
 

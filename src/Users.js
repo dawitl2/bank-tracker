@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   AreaChart,
   Area,
@@ -78,19 +78,28 @@ const getCurrentDateTimeString = () => {
   return `${day}/${month}/${year} ${hours}:${minutes}`;
 };
 
-export default function Users({ transactions, currentPath, navigate }) {
-  const [parkingPayments, setParkingPayments] = useState([]);
-  const [suqePayments, setSuqePayments] = useState([]);
-  const [dbLoading, setDbLoading] = useState(false);
+export default function Users({
+  transactions,
+  currentPath,
+  navigate,
+  parkingPayments = [],
+  suqePayments = [],
+  fetchDbPayments
+}) {
+  const [dbSaving, setDbSaving] = useState(false);
   const [subTab, setSubTab] = useState("transactions");
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [showAddPaymentModal, setShowAddPaymentModal] = useState(false);
+  const [editPaymentTarget, setEditPaymentTarget] = useState(null);
   const [newPayment, setNewPayment] = useState({
     amount: "",
     date: getCurrentDateTimeString(),
     reference: "",
     narrative: ""
   });
+
+  const [actionMenu, setActionMenu] = useState(null);
+  const [longPressTimer, setLongPressTimer] = useState(null);
 
   // Extract user details path (e.g. /balance/people/dawit)
   const selectedUserId = useMemo(() => {
@@ -105,43 +114,13 @@ export default function Users({ transactions, currentPath, navigate }) {
     return USERS_LIST.find((u) => u.id === selectedUserId);
   }, [selectedUserId]);
 
-  // Fetch Supabase custom payments for parking and suqe
-  const fetchDbPayments = useCallback(async () => {
-    setDbLoading(true);
-    try {
-      const headers = {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`
-      };
-      const [parkingRes, suqeRes] = await Promise.all([
-        fetch(`${SUPABASE_URL}/rest/v1/parking?select=*`, { headers }),
-        fetch(`${SUPABASE_URL}/rest/v1/suqe?select=*`, { headers })
-      ]);
-
-      if (parkingRes.ok && suqeRes.ok) {
-        const parkingData = await parkingRes.json();
-        const suqeData = await suqeRes.json();
-        setParkingPayments(parkingData);
-        setSuqePayments(suqeData);
-      } else {
-        console.error("Error fetching custom payments from Supabase");
-      }
-    } catch (err) {
-      console.error("DB FETCH ERROR:", err);
-    } finally {
-      setDbLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchDbPayments();
-  }, [fetchDbPayments]);
-
-  // Auto Scroll to Top on User Change
+  // Auto Scroll to Top & Reset State on User Change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     setSubTab("transactions");
     setShowAddPaymentModal(false);
+    setEditPaymentTarget(null);
+    setActionMenu(null);
     setNewPayment({
       amount: "",
       date: getCurrentDateTimeString(),
@@ -163,7 +142,34 @@ export default function Users({ transactions, currentPath, navigate }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Mutate/Create new custom payment directly to Supabase
+  // Long-press gestures and context menu handlers
+  const openActionMenu = (event, tx) => {
+    event.preventDefault();
+    const clientX = event.clientX ?? event.changedTouches?.[0]?.clientX ?? 0;
+    const clientY = event.clientY ?? event.changedTouches?.[0]?.clientY ?? 0;
+
+    setActionMenu({
+      tx,
+      x: Math.min(clientX, window.innerWidth - 190),
+      y: Math.min(clientY, window.innerHeight - 180)
+    });
+  };
+
+  const startLongPress = (event, tx) => {
+    const timer = setTimeout(() => {
+      openActionMenu(event, tx);
+    }, 650);
+    setLongPressTimer(timer);
+  };
+
+  const stopLongPress = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  };
+
+  // Mutate (Create / Update / Delete) custom payment directly to Supabase
   const handleAddPaymentSubmit = async () => {
     const targetTable = selectedUserId === "dawit" ? "parking" : selectedUserId === "yiss" ? "suqe" : null;
     if (!targetTable) return;
@@ -173,7 +179,7 @@ export default function Users({ transactions, currentPath, navigate }) {
       return;
     }
 
-    setDbLoading(true);
+    setDbSaving(true);
     try {
       const payload = {
         amount: parseFloat(newPayment.amount) || 0,
@@ -183,20 +189,37 @@ export default function Users({ transactions, currentPath, navigate }) {
         person: selectedUserId
       };
 
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/${targetTable}`, {
-        method: "POST",
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-          "Content-Type": "application/json",
-          Prefer: "return=representation"
-        },
-        body: JSON.stringify(payload)
-      });
+      let res;
+      if (editPaymentTarget) {
+        // UPDATE (PATCH)
+        res = await fetch(`${SUPABASE_URL}/rest/v1/${targetTable}?id=eq.${editPaymentTarget.id}`, {
+          method: "PATCH",
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+            "Content-Type": "application/json",
+            Prefer: "return=representation"
+          },
+          body: JSON.stringify(payload)
+        });
+      } else {
+        // CREATE (POST)
+        res = await fetch(`${SUPABASE_URL}/rest/v1/${targetTable}`, {
+          method: "POST",
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+            "Content-Type": "application/json",
+            Prefer: "return=representation"
+          },
+          body: JSON.stringify(payload)
+        });
+      }
 
       if (res.ok) {
         await fetchDbPayments();
         setShowAddPaymentModal(false);
+        setEditPaymentTarget(null);
         setNewPayment({
           amount: "",
           date: getCurrentDateTimeString(),
@@ -212,7 +235,54 @@ export default function Users({ transactions, currentPath, navigate }) {
       console.error("SAVE ERROR:", err);
       alert("An error occurred during save.");
     } finally {
-      setDbLoading(false);
+      setDbSaving(false);
+    }
+  };
+
+  const handleEditClick = () => {
+    const tx = actionMenu.tx;
+    setEditPaymentTarget(tx);
+    setNewPayment({
+      amount: tx.amount?.toString() || "",
+      date: tx.date || "",
+      reference: tx.reference || "",
+      narrative: tx.narrative || ""
+    });
+    setShowAddPaymentModal(true);
+    setActionMenu(null);
+  };
+
+  const handleDeleteClick = async () => {
+    const tx = actionMenu.tx;
+    const targetTable = selectedUserId === "dawit" ? "parking" : selectedUserId === "yiss" ? "suqe" : null;
+    if (!targetTable) return;
+
+    if (!window.confirm("Are you sure you want to delete this payment?")) {
+      setActionMenu(null);
+      return;
+    }
+
+    setDbSaving(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${targetTable}?id=eq.${tx.id}`, {
+        method: "DELETE",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`
+        }
+      });
+
+      if (res.ok) {
+        await fetchDbPayments();
+        setActionMenu(null);
+      } else {
+        alert("Failed to delete payment from Supabase.");
+      }
+    } catch (err) {
+      console.error("DELETE ERROR:", err);
+      alert("An error occurred during delete.");
+    } finally {
+      setDbSaving(false);
     }
   };
 
@@ -709,7 +779,6 @@ export default function Users({ transactions, currentPath, navigate }) {
                     : "Shop / Grocery Name"
                 }
               </th>
-              <th>Category</th>
               <th>Narrative</th>
               <th>Receipt</th>
             </tr>
@@ -719,24 +788,22 @@ export default function Users({ transactions, currentPath, navigate }) {
               <tr
                 key={tx.id}
                 className={tx.is_withdraw === false ? "deposit-row" : "transaction-row"}
+                onContextMenu={(event) => subTab !== "transactions" && openActionMenu(event, tx)}
+                onTouchStart={(event) => subTab !== "transactions" && startLongPress(event, tx)}
+                onTouchEnd={stopLongPress}
+                onTouchMove={stopLongPress}
+                onTouchCancel={stopLongPress}
               >
                 <td>{idx + 1}</td>
                 <td className="amount">{subTab === "transactions" ? tx.amount : `${money(tx.amount)} ETB`}</td>
                 <td>{tx.date}</td>
                 <td>{tx.reference}</td>
                 <td>
-                  <span style={{
-                    fontSize: "11px",
-                    fontWeight: "600",
-                    background: "rgba(24, 24, 22, 0.06)",
-                    padding: "2px 8px",
-                    borderRadius: "4px",
-                    color: "#20231f"
-                  }}>
+                  <span className={`user-inline-badge badge-${selectedUser.id}`} style={{ marginLeft: 0, marginRight: "8px" }}>
                     {tx.category}
                   </span>
+                  {tx.narrative}
                 </td>
-                <td>{tx.narrative}</td>
                 <td className="action">
                   {!tx.is_custom && tx.receipt_url ? (
                     <a href={tx.receipt_url} target="_blank" rel="noopener noreferrer">
@@ -752,15 +819,15 @@ export default function Users({ transactions, currentPath, navigate }) {
         </table>
       ) : (
         <div className="analytics-card" style={{ textAlign: "center", padding: "40px", color: "#74796e" }}>
-          {dbLoading ? "Loading payments..." : `No ${subTab === "transactions" ? "receipt transactions" : subTab === "parking" ? "parking payments" : "suqe payments"} registered`}
+          {dbSaving ? "Processing..." : `No ${subTab === "transactions" ? "receipt transactions" : subTab === "parking" ? "parking payments" : "suqe payments"} registered`}
         </div>
       )}
 
-      {/* Modal for adding parking/suqe payments */}
+      {/* Modal for adding/editing parking/suqe payments */}
       {showAddPaymentModal && (
         <div className="modal-overlay" style={{ zIndex: 2000 }}>
           <div className="modal" style={{ maxWidth: "420px" }}>
-            <h2>Add {selectedUser.id === "dawit" ? "Parking" : "Suqe"} Payment</h2>
+            <h2>{editPaymentTarget ? "Edit" : "Add"} {selectedUser.id === "dawit" ? "Parking" : "Suqe"} Payment</h2>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "20px" }}>
               <label className="draft-field">
@@ -770,7 +837,7 @@ export default function Users({ transactions, currentPath, navigate }) {
                   placeholder="0.00"
                   value={newPayment.amount}
                   onChange={(e) => setNewPayment({ ...newPayment, amount: e.target.value })}
-                  disabled={dbLoading}
+                  disabled={dbSaving}
                   required
                 />
               </label>
@@ -781,7 +848,7 @@ export default function Users({ transactions, currentPath, navigate }) {
                   type="text"
                   value={newPayment.date}
                   onChange={(e) => setNewPayment({ ...newPayment, date: e.target.value })}
-                  disabled={dbLoading}
+                  disabled={dbSaving}
                   required
                 />
               </label>
@@ -793,7 +860,7 @@ export default function Users({ transactions, currentPath, navigate }) {
                   placeholder={selectedUser.id === "dawit" ? "e.g. Code 3 - AA 12345" : "e.g. Merkato Shop #2"}
                   value={newPayment.reference}
                   onChange={(e) => setNewPayment({ ...newPayment, reference: e.target.value })}
-                  disabled={dbLoading}
+                  disabled={dbSaving}
                 />
               </label>
 
@@ -804,7 +871,7 @@ export default function Users({ transactions, currentPath, navigate }) {
                   placeholder="Payment description..."
                   value={newPayment.narrative}
                   onChange={(e) => setNewPayment({ ...newPayment, narrative: e.target.value })}
-                  disabled={dbLoading}
+                  disabled={dbSaving}
                 />
               </label>
             </div>
@@ -813,18 +880,53 @@ export default function Users({ transactions, currentPath, navigate }) {
               <button
                 className="save-draft-btn"
                 onClick={handleAddPaymentSubmit}
-                disabled={dbLoading}
+                disabled={dbSaving}
               >
-                {dbLoading ? "Saving..." : "Save Payment"}
+                {dbSaving ? "Saving..." : editPaymentTarget ? "Save Changes" : "Save Payment"}
               </button>
               <button
                 className="close-btn"
-                onClick={() => setShowAddPaymentModal(false)}
-                disabled={dbLoading}
+                onClick={() => {
+                  setShowAddPaymentModal(false);
+                  setEditPaymentTarget(null);
+                }}
+                disabled={dbSaving}
               >
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Action Menu (Edit / Delete / Close) */}
+      {actionMenu && (
+        <div
+          className="row-action-backdrop"
+          onClick={() => setActionMenu(null)}
+        >
+          <div
+            className="row-action-menu"
+            style={{
+              left: actionMenu.x,
+              top: actionMenu.y
+            }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button onClick={handleEditClick}>
+              Edit
+            </button>
+
+            <button
+              className="danger"
+              onClick={handleDeleteClick}
+            >
+              Delete
+            </button>
+
+            <button onClick={() => setActionMenu(null)}>
+              Close
+            </button>
           </div>
         </div>
       )}

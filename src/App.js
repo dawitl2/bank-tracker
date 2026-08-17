@@ -1,9 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Content from "./Content";
 import Balance from "./Balance";
 import Calculator from "./Calculator";
 import Users from "./Users";
 import "./App.css";
+
+const SUPABASE_URL = "https://ywplzexakisliebyjtyf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_nmA6IJsDGUVki5i0smS1Tg_MLXy5_wX";
 
 const BASE_BALANCE = 1209518;
 const VERSION = "1.3.3.25"; // html.css.sys.db
@@ -11,8 +14,6 @@ const PASSWORD = "dawit123";
 const API_URL =
   process.env.REACT_APP_API_URL || "https://bank-backend-anhp.onrender.com";
 const BANK_RECEIPT_URL = "https://cs.bankofabyssinia.com/slip/";
-const SUPABASE_URL = "https://ywplzexakisliebyjtyf.supabase.co";
-const SUPABASE_KEY = "sb_publishable_nmA6IJsDGUVki5i0smS1Tg_MLXy5_wX";
 const GENERATED_TRANSACTION_FIELDS = ["id", "created_at"];
 const PERSON_OPTIONS = [
   { label: "Dawit", value: "dawit" },
@@ -57,6 +58,29 @@ function App() {
   const [boaSmsState, setBoaSmsState] = useState(null);
   const [boaSmsSummary, setBoaSmsSummary] = useState([]);
   const [boaSmsLoading, setBoaSmsLoading] = useState(false);
+  const [parkingPayments, setParkingPayments] = useState([]);
+  const [suqePayments, setSuqePayments] = useState([]);
+
+  const fetchDbPayments = useCallback(async () => {
+    try {
+      const headers = {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`
+      };
+      const [parkingRes, suqeRes] = await Promise.all([
+        fetch(`${SUPABASE_URL}/rest/v1/parking?select=*`, { headers }),
+        fetch(`${SUPABASE_URL}/rest/v1/suqe?select=*`, { headers })
+      ]);
+      if (parkingRes.ok && suqeRes.ok) {
+        const parkingData = await parkingRes.json();
+        const suqeData = await suqeRes.json();
+        setParkingPayments(parkingData);
+        setSuqePayments(suqeData);
+      }
+    } catch (err) {
+      console.error("DB FETCH ERROR IN APP:", err);
+    }
+  }, []);
 
   const [showModal, setShowModal] = useState(false);
   const [receiptMode, setReceiptMode] = useState(null);
@@ -105,10 +129,11 @@ function App() {
     fetchTransactions();
     fetchBoaSmsState();
     fetchBoaSmsSummary();
+    fetchDbPayments();
 
   // Initial app hydration should run once when the app mounts.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchDbPayments]);
 
   const fetchTransactions = async () => {
 
@@ -954,6 +979,16 @@ function App() {
 
   });
 
+  // Deduct custom payments from overall balance!
+  if (!constructionOnly) {
+    parkingPayments.forEach((p) => {
+      totalWithdraw += parseFloat(p.amount) || 0;
+    });
+    suqePayments.forEach((s) => {
+      totalWithdraw += parseFloat(s.amount) || 0;
+    });
+  }
+
   const currentBalance = BASE_BALANCE - totalWithdraw;
 
   const lastWithdraw = transactions.find(
@@ -1037,6 +1072,9 @@ function App() {
             transactions={transactions}
             currentPath={currentPath}
             navigate={navigate}
+            parkingPayments={parkingPayments}
+            suqePayments={suqePayments}
+            fetchDbPayments={fetchDbPayments}
           />
         </div>
       ) : (
@@ -1108,11 +1146,18 @@ function App() {
                   onRefreshBoaSmsState={fetchBoaSmsState}
                   lastWithdraw={lastWithdraw}
                   totalWithdraw={totalWithdraw}
-                  transactions={transactions}
+                  transactions={[
+                    ...transactions,
+                    ...parkingPayments.map(p => ({ ...p, is_withdraw: true, person: "dawit" })),
+                    ...suqePayments.map(s => ({ ...s, is_withdraw: true, person: "yiss" }))
+                  ]}
                   constructionOnly={constructionOnly}
                   setConstructionOnly={setConstructionOnly}
                   currentPath={currentPath}
                   navigate={navigate}
+                  parkingPayments={parkingPayments}
+                  suqePayments={suqePayments}
+                  fetchDbPayments={fetchDbPayments}
                 />
 
                 <button
