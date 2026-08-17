@@ -1153,19 +1153,40 @@ function Balance({
                   </div>
                 ))
               ) : (
-                receiptSummaryRows.map((m) => (
-                  <div className="summary-row" key={m.key}>
-                    <div><strong>{m.monthLabel}</strong><small>{m.meta}</small></div>
-                    <div><small>Withdraw</small><strong>{money(m.Withdraw)}</strong></div>
-                    <div><small>Deposit</small><strong>{money(m.Deposit)}</strong></div>
-                    <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                receiptSummaryRows.map((m) => {
+                  const upSparkline = (
+                    <svg width="24" height="12" viewBox="0 0 24 12" fill="none" style={{ marginRight: '4px' }}>
+                      <path d="M2 10L6 8L10 9L14 5L18 6L22 2" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  );
+
+                  const downSparkline = (
+                    <svg width="24" height="12" viewBox="0 0 24 12" fill="none" style={{ marginRight: '4px' }}>
+                      <path d="M2 2L6 4L10 3L14 7L18 6L22 10" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  );
+
+                  const neutralSparkline = (
+                    <svg width="24" height="12" viewBox="0 0 24 12" fill="none" style={{ marginRight: '4px' }}>
+                      <path d="M2 6H22" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  );
+
+                  return (
+                    <div className="summary-row" key={m.key}>
+                      <div><strong>{m.monthLabel}</strong><small>{m.meta}</small></div>
+                      <div><small>Withdraw</small><strong>{money(m.Withdraw)}</strong></div>
+                      <div><small>Deposit</small><strong>{money(m.Deposit)}</strong></div>
                       <span className={`trend-badge trend-${m.trendClass}`} title="Spending change compared to previous month">
-                        <span style={{ fontSize: "8px", marginRight: "2px" }}>{m.trendIcon}</span>
-                        {m.displayVal}
+                        {m.trendClass === "up" && upSparkline}
+                        {m.trendClass === "down" && downSparkline}
+                        {m.trendClass === "neutral" && neutralSparkline}
+                        <span className="trend-arrow">{m.trendIcon}</span>
+                        <span className="trend-val">{m.displayVal}</span>
                       </span>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </article>
