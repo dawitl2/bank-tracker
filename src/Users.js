@@ -1053,7 +1053,7 @@ export default function Users({
               >
                 <td>{idx + 1}</td>
                 <td className="amount">{subTab === "transactions" ? tx.amount : `${money(tx.amount)} ETB`}</td>
-                <td>{tx.date}</td>
+                <td className="date-cell">{tx.date}</td>
                 <td>{tx.reference}</td>
                 <td>
                   <span className={`user-inline-badge badge-${selectedUser.id}`} style={{ marginLeft: 0, marginRight: "8px" }}>

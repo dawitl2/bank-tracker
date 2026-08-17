@@ -3312,6 +3312,45 @@ a {
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
 }
 
+/* Date Cell styling (making dates smaller and secondary) */
+.date-cell {
+  font-size: 11px !important;
+  opacity: 0.85;
+  color: #74796e !important;
+  font-family: inherit;
+}
+
+/* Crypto / Stock trend badge for Balance summary monthly rows */
+.trend-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.95;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.trend-up {
+  background-color: rgba(83, 164, 96, 0.08); /* subtle light green background */
+  color: #388e3c; /* dull green text */
+}
+
+.trend-down {
+  background-color: rgba(199, 57, 57, 0.08); /* subtle light red background */
+  color: #d32f2f; /* dull red text */
+}
+
+.trend-neutral {
+  background-color: rgba(116, 121, 110, 0.08); /* subtle grey background */
+  color: #74796e; /* dull grey text */
+}
+
 
 
 

@@ -933,9 +933,54 @@ function Balance({
     amount: parseAmount(event.amount),
     balanceAfter: parseAmount(event.balance_after)
   }));
-  const receiptSummaryRows = analytics.monthlyTrend.map((month) => ({
-    ...month, monthLabel: fullMonthLabel(month.key), meta: `${month.peopleCount} people`
-  }));
+  const receiptSummaryRows = useMemo(() => {
+    const rawRows = analytics.monthlyTrend.map((month) => ({
+      ...month,
+      monthLabel: fullMonthLabel(month.key),
+      meta: `${month.peopleCount} people`
+    }));
+
+    return rawRows.map((m, idx) => {
+      const prevMonth = rawRows[idx + 1];
+      let trendClass = "neutral";
+      let trendIcon = "";
+      let displayVal = "—";
+
+      if (prevMonth) {
+        const currentSpent = m.Withdraw;
+        const prevSpent = prevMonth.Withdraw;
+
+        if (prevSpent > 0) {
+          const diff = currentSpent - prevSpent;
+          const pct = Math.abs((diff / prevSpent) * 100).toFixed(0);
+
+          if (diff < 0) {
+            trendClass = "up";
+            trendIcon = "▲";
+            displayVal = `${pct}%`;
+          } else if (diff > 0) {
+            trendClass = "down";
+            trendIcon = "▼";
+            displayVal = `${pct}%`;
+          } else {
+            trendClass = "neutral";
+            trendIcon = "•";
+            displayVal = "0%";
+          }
+        }
+      } else {
+        trendClass = "neutral";
+        displayVal = "new";
+      }
+
+      return {
+        ...m,
+        trendClass,
+        trendIcon,
+        displayVal
+      };
+    });
+  }, [analytics.monthlyTrend]);
   const hiddenCardMoney = "*****";
   const hiddenSkeleton = <span className="money-skeleton" aria-label="Hidden value"></span>;
   const isSmsNumberLoading = isFlipped && (boaSmsLoading || !boaSmsState);
@@ -1113,6 +1158,12 @@ function Balance({
                     <div><strong>{m.monthLabel}</strong><small>{m.meta}</small></div>
                     <div><small>Withdraw</small><strong>{money(m.Withdraw)}</strong></div>
                     <div><small>Deposit</small><strong>{money(m.Deposit)}</strong></div>
+                    <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                      <span className={`trend-badge trend-${m.trendClass}`} title="Spending change compared to previous month">
+                        <span style={{ fontSize: "8px", marginRight: "2px" }}>{m.trendIcon}</span>
+                        {m.displayVal}
+                      </span>
+                    </div>
                   </div>
                 ))
               )}

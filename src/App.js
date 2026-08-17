@@ -1347,7 +1347,7 @@ function App() {
                   >
                     <div className="receipt-choice-details">
                       <span>Parking</span>
-                      <small className="cursive-text">Add parking payment (<span className="parking-dave-label">Dave</span>)</small>
+                      <small>Add parking payment (<span className="parking-dave-label">Dave</span>)</small>
                     </div>
                     <FaCar className="receipt-choice-icon" />
                   </button>

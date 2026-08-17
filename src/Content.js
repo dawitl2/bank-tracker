@@ -242,7 +242,7 @@ function Content({
 
               <td>{index + 1}</td>
               <td className="amount">{tx.amount}</td>
-              <td>{tx.date}</td>
+              <td className="date-cell">{tx.date}</td>
               <td>{tx.reference}</td>
               <td>
                 {tx.narrative}
