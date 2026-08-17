@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import Content from "./Content";
 import Balance from "./Balance";
 import Calculator from "./Calculator";
+import Users from "./Users";
 import "./App.css";
 
 const BASE_BALANCE = 1209518;
@@ -997,6 +998,8 @@ function App() {
     );
   }
 
+  const isUserDetailPage = currentPath.startsWith("/balance/people/") && currentPath.split("/").filter(Boolean).length > 2;
+
   return (
     <div className="app">
 
@@ -1028,98 +1031,110 @@ function App() {
         </div>
       )}
 
-      <img
-        src="/logo.png"
-        className="logo"
-        alt="bank logo"
-      />
-
-      <div className="toggle">
-
-        <button
-          className={view === "transactions" ? "active" : ""}
-          onClick={() => navigate("/transactions")}
-        >
-          Transactions
-        </button>
-
-        <button
-          className={view === "balance" ? "active" : ""}
-          onClick={() => navigate("/balance")}
-        >
-          Balance
-        </button>
-
-      </div>
-
-      <div className="content">
-
-        {view === "transactions" && (
-          <>
-
-            <Content
-              transactions={filteredTransactions}
-              personFilter={personFilter}
-              setPersonFilter={setPersonFilter}
-              onEditTransaction={handleEditTransaction}
-              onDeleteTransaction={handleDeleteTransaction}
-              onSendTableTotal={sendTableTotalToCalculator}
-              navigate={navigate}
-            />
-
-            <button
-              className="add-btn"
-              onClick={openReceiptModal}
-            >
-              +
-            </button>
-
-            <button
-              className="calculator-btn"
-              onClick={() => setShowCalculator(!showCalculator)}
-            >
-              🧮 Calculator
-            </button>
-
-          </>
-        )}
-
-        {view === "balance" && (
-          <>
-
-            <Balance
-              balance={currentBalance}
-              boaSmsState={boaSmsState}
-              boaSmsSummary={boaSmsSummary}
-              boaSmsLoading={boaSmsLoading}
-              onRefreshBoaSmsState={fetchBoaSmsState}
-              lastWithdraw={lastWithdraw}
-              totalWithdraw={totalWithdraw}
-              transactions={transactions}
-              constructionOnly={constructionOnly}
-              setConstructionOnly={setConstructionOnly}
-              currentPath={currentPath}
-              navigate={navigate}
-            />
-
-            <button
-              className="calculator-btn"
-              onClick={() => setShowCalculator(!showCalculator)}
-            >
-              🧮 Calculator
-            </button>
-
-          </>
-        )}
-
-        {showCalculator && (
-          <Calculator
-            importValue={calculatorImportValue}
-            importToken={calculatorImportToken}
+      {isUserDetailPage ? (
+        <div className="content" style={{ padding: "30px 20px" }}>
+          <Users
+            transactions={transactions}
+            currentPath={currentPath}
+            navigate={navigate}
           />
-        )}
+        </div>
+      ) : (
+        <>
+          <img
+            src="/logo.png"
+            className="logo"
+            alt="bank logo"
+          />
 
-      </div>
+          <div className="toggle">
+
+            <button
+              className={view === "transactions" ? "active" : ""}
+              onClick={() => navigate("/transactions")}
+            >
+              Transactions
+            </button>
+
+            <button
+              className={view === "balance" ? "active" : ""}
+              onClick={() => navigate("/balance")}
+            >
+              Balance
+            </button>
+
+          </div>
+
+          <div className="content">
+
+            {view === "transactions" && (
+              <>
+
+                <Content
+                  transactions={filteredTransactions}
+                  personFilter={personFilter}
+                  setPersonFilter={setPersonFilter}
+                  onEditTransaction={handleEditTransaction}
+                  onDeleteTransaction={handleDeleteTransaction}
+                  onSendTableTotal={sendTableTotalToCalculator}
+                  navigate={navigate}
+                />
+
+                <button
+                  className="add-btn"
+                  onClick={openReceiptModal}
+                >
+                  +
+                </button>
+
+                <button
+                  className="calculator-btn"
+                  onClick={() => setShowCalculator(!showCalculator)}
+                >
+                  🧮 Calculator
+                </button>
+
+              </>
+            )}
+
+            {view === "balance" && (
+              <>
+
+                <Balance
+                  balance={currentBalance}
+                  boaSmsState={boaSmsState}
+                  boaSmsSummary={boaSmsSummary}
+                  boaSmsLoading={boaSmsLoading}
+                  onRefreshBoaSmsState={fetchBoaSmsState}
+                  lastWithdraw={lastWithdraw}
+                  totalWithdraw={totalWithdraw}
+                  transactions={transactions}
+                  constructionOnly={constructionOnly}
+                  setConstructionOnly={setConstructionOnly}
+                  currentPath={currentPath}
+                  navigate={navigate}
+                />
+
+                <button
+                  className="calculator-btn"
+                  onClick={() => setShowCalculator(!showCalculator)}
+                >
+                  🧮 Calculator
+                </button>
+
+              </>
+            )}
+
+            {showCalculator && (
+              <Calculator
+                importValue={calculatorImportValue}
+                importToken={calculatorImportToken}
+              />
+            )}
+
+          </div>
+        </>
+      )}
 
       <footer className="footer">
         Version {VERSION}

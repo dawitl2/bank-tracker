@@ -10,6 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer
 } from "recharts";
+import { FaArrowLeft, FaChevronRight } from "react-icons/fa";
 import "./Users.css";
 
 const USERS_LIST = [
@@ -67,7 +68,6 @@ export default function Users({ transactions, currentPath, navigate }) {
   // Extract user details path (e.g. /balance/people/dawit)
   const selectedUserId = useMemo(() => {
     const parts = currentPath.split("/").filter(Boolean);
-    // If path is like /balance/people/dawit
     if (parts.length > 2 && parts[0] === "balance" && parts[1] === "people") {
       return parts[2].toLowerCase();
     }
@@ -79,8 +79,10 @@ export default function Users({ transactions, currentPath, navigate }) {
   }, [selectedUserId]);
 
   // Calculate global summary stats for each user (for the list view)
-  const usersSummary = useMemo(() => {
-    return USERS_LIST.map((user) => {
+  const { usersSummary, totalOutflowTracked } = useMemo(() => {
+    let totalOutflowTracked = 0;
+    
+    const summary = USERS_LIST.map((user) => {
       const userTxs = transactions.filter(
         (tx) => (tx.person || "").toLowerCase() === user.id
       );
@@ -96,6 +98,8 @@ export default function Users({ transactions, currentPath, navigate }) {
           spent += amt;
         }
       });
+      
+      totalOutflowTracked += spent;
 
       return {
         ...user,
@@ -104,6 +108,11 @@ export default function Users({ transactions, currentPath, navigate }) {
         txCount: userTxs.length
       };
     });
+
+    return {
+      usersSummary: summary,
+      totalOutflowTracked
+    };
   }, [transactions]);
 
   // Detailed user metrics & chart computations
@@ -225,45 +234,76 @@ export default function Users({ transactions, currentPath, navigate }) {
     };
   }, [selectedUser, transactions]);
 
-  // Render main users list
+  // Render main users list nested in Balance Tab
   if (!selectedUser) {
     return (
       <div className="users-container">
-        <div className="transactions-header">
-          <h1>People & Spending Summary</h1>
+        <div className="analytics-card focus-card" style={{ marginBottom: "20px" }}>
+          <span>Spending Overview</span>
+          <h2>Tracked Outflow Share</h2>
+          <p>Analyzing total receipt spending of <b>{money(totalOutflowTracked)} ETB</b> across team members.</p>
         </div>
 
         <div className="users-grid">
-          {usersSummary.map((user) => (
-            <div
-              key={user.id}
-              className="user-card"
-              onClick={() => navigate(`/balance/people/${user.id}`)}
-            >
-              <div className={`avatar-placeholder ${user.class}`}>
-                {user.name.charAt(0)}
-              </div>
-              <h3>{user.name}</h3>
-              <div className="user-role">{user.role}</div>
+          {usersSummary.map((user) => {
+            const userPercent = totalOutflowTracked > 0 ? Math.round((user.spent / totalOutflowTracked) * 100) : 0;
+            
+            return (
+              <div
+                key={user.id}
+                className="user-card"
+                onClick={() => navigate(`/balance/people/${user.id}`)}
+              >
+                <div className={`avatar-placeholder ${user.class}`}>
+                  {user.name.charAt(0)}
+                </div>
+                
+                <div className="user-card-info">
+                  <h3>{user.name}</h3>
+                  <div className="user-role">{user.role}</div>
+                </div>
 
-              <div className="user-card-stats">
-                <div className="user-card-stat">
-                  <span>Spent</span>
-                  <strong>{money(user.spent)}</strong>
+                <div className="user-card-progress-wrapper" style={{ flexGrow: 1, width: "100%", margin: "10px 0 15px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#74796e", marginBottom: "4px" }}>
+                    <span>Share of outflow</span>
+                    <strong>{userPercent}%</strong>
+                  </div>
+                  <div className="category-progress-track" style={{ height: "6px", background: "rgba(24, 24, 22, 0.06)", borderRadius: "3px", overflow: "hidden" }}>
+                    <div 
+                      className="category-progress-fill" 
+                      style={{ 
+                        height: "100%", 
+                        width: `${userPercent}%`,
+                        background: user.id === "dawit" ? "#c73939" : user.id === "mihret" ? "#f4a300" : user.id === "asnake" ? "#b87200" : user.id === "yiss" ? "#20231f" : "#8c52ff",
+                        borderRadius: "3px" 
+                      }}
+                    ></div>
+                  </div>
                 </div>
-                <div className="user-card-stat">
-                  <span>Tx Count</span>
-                  <strong>{user.txCount}</strong>
+
+                <div className="user-card-stats">
+                  <div className="user-card-stat">
+                    <span>Spent</span>
+                    <strong>{money(user.spent)}</strong>
+                  </div>
+                  <div className="user-card-stat">
+                    <span>Tx Count</span>
+                    <strong>{user.txCount}</strong>
+                  </div>
+                </div>
+
+                <div className="user-card-arrow" aria-hidden="true">
+                  <FaChevronRight />
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
   }
 
-  // Render detailed user view
+  // Render detailed user view (DEDICATED FULL-PAGE VIEW)
   const {
     transactions: userTxs,
     totalSpent,
@@ -278,66 +318,78 @@ export default function Users({ transactions, currentPath, navigate }) {
 
   return (
     <div className="users-container">
-      {/* Header & Back Button */}
-      <div className="user-detail-header">
+      {/* Top Header Bar with Back Button & Mini Logo */}
+      <div className="user-page-top-bar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(24, 24, 22, 0.08)", paddingBottom: "16px", marginBottom: "24px" }}>
+        <button className="back-btn" onClick={() => navigate("/balance/people")} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <FaArrowLeft /> Back to People
+        </button>
+        <img src="/logo.png" alt="Bank Logo" style={{ height: "32px", width: "auto" }} />
+      </div>
+
+      {/* User Profile Header Section */}
+      <div className="user-detail-header" style={{ marginBottom: "30px" }}>
         <div className="user-profile-summary">
           <div className={`avatar-placeholder avatar-large ${selectedUser.class}`}>
             {selectedUser.name.charAt(0)}
           </div>
           <div className="user-profile-info">
             <h2>{selectedUser.name}</h2>
-            <p>{selectedUser.role} &bull; {userTxs.length} Transactions</p>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginTop: "4px" }}>
+              <span className="user-badge" style={{ background: "#eeb833", color: "#000", fontWeight: "700", fontSize: "11px", padding: "2px 8px", borderRadius: "4px", textTransform: "uppercase" }}>
+                {selectedUser.role}
+              </span>
+              <span style={{ color: "#74796e", fontSize: "13px" }}>
+                &bull; {userTxs.length} Transactions Tracked
+              </span>
+            </div>
           </div>
         </div>
-        <button className="back-btn" onClick={() => navigate("/balance/people")}>
-          &larr; Back to People
-        </button>
       </div>
 
-      {/* Metric Cards */}
+      {/* Metric Cards Grid */}
       <div className="detail-metrics-grid">
         <div className="metric-card spent-card">
-          <span>Total Spent</span>
+          <span>Total Outflow</span>
           <strong>{money(totalSpent)} ETB</strong>
         </div>
         <div className="metric-card received-card">
-          <span>Total Received</span>
+          <span>Total Inflow</span>
           <strong>{money(totalReceived)} ETB</strong>
         </div>
         <div className="metric-card">
-          <span>Net Cashflow</span>
+          <span>Net Balance</span>
           <strong style={{ color: netFlow >= 0 ? "#53a460" : "#c73939" }}>
             {netFlow >= 0 ? "+" : ""}{money(netFlow)} ETB
           </strong>
         </div>
         <div className="metric-card">
-          <span>Average Spent / Tx</span>
+          <span>Avg. Ticket Size</span>
           <strong>{money(avgTransaction)} ETB</strong>
         </div>
       </div>
 
-      {/* Charts & Breakdown */}
+      {/* Charts & Category Breakdown Grid */}
       <div className="user-analytics-section">
-        {/* Left Side: Recharts */}
+        {/* Left Side: Trends and Charts */}
         <div className="user-charts-wrapper">
           <article className="analytics-card">
             <div className="chart-heading">
               <div>
-                <span>Monthly Spending Curve</span>
-                <h2>Withdrawals Over Time</h2>
+                <span>Outflow History Curve</span>
+                <h2>Monthly Spending Trend</h2>
               </div>
             </div>
-            <div className="chart-panel" style={{ height: "260px", marginTop: "16px" }}>
+            <div className="chart-panel" style={{ height: "240px", marginTop: "16px" }}>
               {monthlyTrend.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={monthlyTrend}>
+                  <AreaChart data={monthlyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
                       <linearGradient id="userSpendGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#f4a300" stopOpacity={0.6} />
-                        <stop offset="95%" stopColor="#f4a300" stopOpacity={0.05} />
+                        <stop offset="5%" stopColor="#f4a300" stopOpacity={0.5} />
+                        <stop offset="95%" stopColor="#f4a300" stopOpacity={0.02} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(24, 24, 22, 0.08)" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(24, 24, 22, 0.05)" />
                     <XAxis dataKey="name" stroke="#74796e" fontSize={11} tickLine={false} />
                     <YAxis stroke="#74796e" fontSize={11} tickLine={false} tickFormatter={(val) => money(val)} />
                     <Tooltip formatter={(value) => [`${money(value)} ETB`, "Spent"]} />
@@ -345,7 +397,7 @@ export default function Users({ transactions, currentPath, navigate }) {
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
-                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", color: "#74796e" }}>
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", color: "#74796e", fontSize: "13px" }}>
                   No historical trend data available
                 </div>
               )}
@@ -355,23 +407,23 @@ export default function Users({ transactions, currentPath, navigate }) {
           <article className="analytics-card">
             <div className="chart-heading">
               <div>
-                <span>Spending by Categories</span>
+                <span>Outflow Breakdown</span>
                 <h2>Category Distribution</h2>
               </div>
             </div>
-            <div className="chart-panel" style={{ height: "260px", marginTop: "16px" }}>
+            <div className="chart-panel" style={{ height: "240px", marginTop: "16px" }}>
               {totalSpent > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={categories.filter((c) => c.value > 0)}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(24, 24, 22, 0.08)" />
+                  <BarChart data={categories.filter((c) => c.value > 0)} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(24, 24, 22, 0.05)" />
                     <XAxis dataKey="name" stroke="#74796e" fontSize={10} tickLine={false} />
                     <YAxis stroke="#74796e" fontSize={11} tickLine={false} tickFormatter={(val) => money(val)} />
                     <Tooltip formatter={(value) => [`${money(value)} ETB`, "Spent"]} />
-                    <Bar dataKey="value" name="Amount Spent" fill="#20231f" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="value" name="Amount Spent" fill="#20231f" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", color: "#74796e" }}>
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", color: "#74796e", fontSize: "13px" }}>
                   No spending categories data available
                 </div>
               )}
@@ -379,24 +431,39 @@ export default function Users({ transactions, currentPath, navigate }) {
           </article>
         </div>
 
-        {/* Right Side: Category lists & metadata */}
+        {/* Right Side: Detailed Category Progress Lists */}
         <div className="categories-card">
           <h3>Spending Breakdown</h3>
           <div className="categories-list">
             {categories.map((cat) => (
-              <div key={cat.name} className="category-item">
-                <div className="category-info">
-                  <span className="category-name">{cat.name}</span>
-                  <span className="category-count">
-                    {cat.count} txs &bull; {cat.percent}%
-                  </span>
+              <div key={cat.name} style={{ display: "flex", flexDirection: "column", gap: "6px", borderBottom: "1px solid rgba(24, 24, 22, 0.04)", paddingBottom: "12px" }}>
+                <div className="category-item">
+                  <div className="category-info">
+                    <span className="category-name">{cat.name}</span>
+                    <span className="category-count">{cat.count} transactions</span>
+                  </div>
+                  <strong className="category-amount">{money(cat.value)} ETB</strong>
                 </div>
-                <strong className="category-amount">{money(cat.value)} ETB</strong>
+                
+                {/* Horizontal Progress Bar representing Category Share */}
+                <div style={{ width: "100%", height: "6px", background: "rgba(24, 24, 22, 0.05)", borderRadius: "3px", overflow: "hidden" }}>
+                  <div 
+                    style={{ 
+                      height: "100%", 
+                      width: `${cat.percent}%`, 
+                      background: cat.name === "Construction" ? "#f4a300" : "#20231f",
+                      borderRadius: "3px"
+                    }}
+                  ></div>
+                </div>
+                <div style={{ display: "flex", justifyContent: "flex-end", fontSize: "10px", color: "#74796e" }}>
+                  <span>{cat.percent}% of outflow</span>
+                </div>
               </div>
             ))}
           </div>
 
-          <div style={{ marginTop: "28px", paddingTop: "20px", borderTop: "1px solid rgba(24, 24, 22, 0.06)" }}>
+          <div style={{ marginTop: "20px", paddingTop: "15px", borderTop: "1px solid rgba(24, 24, 22, 0.06)" }}>
             <span style={{ fontSize: "11px", textTransform: "uppercase", color: "#74796e", fontWeight: "700" }}>
               Largest Single Expense
             </span>
@@ -412,7 +479,7 @@ export default function Users({ transactions, currentPath, navigate }) {
         </div>
       </div>
 
-      {/* User's Transactions List */}
+      {/* User's Transactions List Table */}
       <div className="transactions-header" style={{ marginTop: "40px", marginBottom: "20px" }}>
         <h2>Transactions History</h2>
       </div>
