@@ -488,3 +488,78 @@
     font-size: 12px;
   }
 }
+
+/* Sub-toggle choice tabs for Dawit/Yiss */
+.sub-toggle-bar {
+  display: flex;
+  gap: 10px;
+  margin-top: 30px;
+  margin-bottom: 5px;
+}
+
+.sub-toggle-bar button {
+  background: white;
+  border: 1px solid rgba(24, 24, 22, 0.12);
+  border-radius: 6px;
+  color: #20231f;
+  padding: 8px 16px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sub-toggle-bar button:hover {
+  background: #f5f5f5;
+  border-color: #20231f;
+}
+
+.sub-toggle-bar button.active {
+  background: #20231f;
+  color: white;
+  border-color: #20231f;
+}
+
+/* Floating scroll to top button */
+.scroll-top-btn {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #eeb833;
+  color: #20231f;
+  border: none;
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  transition: all 0.2s ease-in-out;
+  animation: popIn 0.2s ease-out;
+}
+
+.scroll-top-btn:hover {
+  background-color: #20231f;
+  color: #ffffff;
+  transform: scale(1.08);
+}
+
+@keyframes popIn {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@media (max-width: 480px) {
+  .scroll-top-btn {
+    bottom: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+}

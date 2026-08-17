@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import {
   AreaChart,
   Area,
@@ -12,6 +12,9 @@ import {
 } from "recharts";
 import { FaArrowLeft, FaChevronRight } from "react-icons/fa";
 import "./Users.css";
+
+const SUPABASE_URL = "https://ywplzexakisliebyjtyf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_nmA6IJsDGUVki5i0smS1Tg_MLXy5_wX";
 
 const USERS_LIST = [
   { id: "dawit", name: "Dawit", role: "Administrator", class: "avatar-dawit" },
@@ -64,7 +67,31 @@ const getCategory = (narrative) => {
   return "Miscellaneous";
 };
 
+// Format current date/time to DD/MM/YYYY HH:MM
+const getCurrentDateTimeString = () => {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, "0");
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const year = now.getFullYear();
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
+};
+
 export default function Users({ transactions, currentPath, navigate }) {
+  const [parkingPayments, setParkingPayments] = useState([]);
+  const [suqePayments, setSuqePayments] = useState([]);
+  const [dbLoading, setDbLoading] = useState(false);
+  const [subTab, setSubTab] = useState("transactions");
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [showAddPaymentModal, setShowAddPaymentModal] = useState(false);
+  const [newPayment, setNewPayment] = useState({
+    amount: "",
+    date: getCurrentDateTimeString(),
+    reference: "",
+    narrative: ""
+  });
+
   // Extract user details path (e.g. /balance/people/dawit)
   const selectedUserId = useMemo(() => {
     const parts = currentPath.split("/").filter(Boolean);
@@ -78,10 +105,121 @@ export default function Users({ transactions, currentPath, navigate }) {
     return USERS_LIST.find((u) => u.id === selectedUserId);
   }, [selectedUserId]);
 
+  // Fetch Supabase custom payments for parking and suqe
+  const fetchDbPayments = useCallback(async () => {
+    setDbLoading(true);
+    try {
+      const headers = {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`
+      };
+      const [parkingRes, suqeRes] = await Promise.all([
+        fetch(`${SUPABASE_URL}/rest/v1/parking?select=*`, { headers }),
+        fetch(`${SUPABASE_URL}/rest/v1/suqe?select=*`, { headers })
+      ]);
+
+      if (parkingRes.ok && suqeRes.ok) {
+        const parkingData = await parkingRes.json();
+        const suqeData = await suqeRes.json();
+        setParkingPayments(parkingData);
+        setSuqePayments(suqeData);
+      } else {
+        console.error("Error fetching custom payments from Supabase");
+      }
+    } catch (err) {
+      console.error("DB FETCH ERROR:", err);
+    } finally {
+      setDbLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDbPayments();
+  }, [fetchDbPayments]);
+
+  // Auto Scroll to Top on User Change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    setSubTab("transactions");
+    setShowAddPaymentModal(false);
+    setNewPayment({
+      amount: "",
+      date: getCurrentDateTimeString(),
+      reference: "",
+      narrative: ""
+    });
+  }, [selectedUserId]);
+
+  // Floating Back to Top scroll listener
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Mutate/Create new custom payment directly to Supabase
+  const handleAddPaymentSubmit = async () => {
+    const targetTable = selectedUserId === "dawit" ? "parking" : selectedUserId === "yiss" ? "suqe" : null;
+    if (!targetTable) return;
+
+    if (!newPayment.amount || !newPayment.date) {
+      alert("Please fill in the amount and date!");
+      return;
+    }
+
+    setDbLoading(true);
+    try {
+      const payload = {
+        amount: parseFloat(newPayment.amount) || 0,
+        date: newPayment.date,
+        reference: newPayment.reference || "",
+        narrative: newPayment.narrative || "",
+        person: selectedUserId
+      };
+
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${targetTable}`, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=representation"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        await fetchDbPayments();
+        setShowAddPaymentModal(false);
+        setNewPayment({
+          amount: "",
+          date: getCurrentDateTimeString(),
+          reference: "",
+          narrative: ""
+        });
+      } else {
+        const errorText = await res.text();
+        console.error("Save error:", errorText);
+        alert("Failed to save payment to Supabase.");
+      }
+    } catch (err) {
+      console.error("SAVE ERROR:", err);
+      alert("An error occurred during save.");
+    } finally {
+      setDbLoading(false);
+    }
+  };
+
   // Calculate global summary stats for each user (for the list view)
   const { usersSummary, totalOutflowTracked } = useMemo(() => {
     let totalOutflowTracked = 0;
-    
+
     const summary = USERS_LIST.map((user) => {
       const userTxs = transactions.filter(
         (tx) => (tx.person || "").toLowerCase() === user.id
@@ -98,14 +236,28 @@ export default function Users({ transactions, currentPath, navigate }) {
           spent += amt;
         }
       });
-      
+
+      // Add database-backed custom payments to the spent sum
+      if (user.id === "dawit") {
+        parkingPayments.forEach((p) => {
+          spent += parseAmount(p.amount);
+        });
+      } else if (user.id === "yiss") {
+        suqePayments.forEach((s) => {
+          spent += parseAmount(s.amount);
+        });
+      }
+
       totalOutflowTracked += spent;
+
+      const txCount = userTxs.length +
+        (user.id === "dawit" ? parkingPayments.length : user.id === "yiss" ? suqePayments.length : 0);
 
       return {
         ...user,
         spent,
         received,
-        txCount: userTxs.length
+        txCount
       };
     });
 
@@ -113,7 +265,7 @@ export default function Users({ transactions, currentPath, navigate }) {
       usersSummary: summary,
       totalOutflowTracked
     };
-  }, [transactions]);
+  }, [transactions, parkingPayments, suqePayments]);
 
   // Detailed user metrics & chart computations
   const detailsData = useMemo(() => {
@@ -135,7 +287,9 @@ export default function Users({ transactions, currentPath, navigate }) {
       "Utilities": 0,
       "Cash Withdrawals": 0,
       "Food & Dining": 0,
-      "Miscellaneous": 0
+      "Miscellaneous": 0,
+      "Parking Payments": 0,
+      "Suqe Payments": 0
     };
     const categoryCounts = {
       "Construction": 0,
@@ -143,15 +297,29 @@ export default function Users({ transactions, currentPath, navigate }) {
       "Utilities": 0,
       "Cash Withdrawals": 0,
       "Food & Dining": 0,
-      "Miscellaneous": 0
+      "Miscellaneous": 0,
+      "Parking Payments": 0,
+      "Suqe Payments": 0
     };
 
     // Monthly trends
     const monthlyDataMap = {};
 
-    const categorizedTxs = userTxs.map((tx) => {
+    // Map custom db payments to matching structures
+    const customDbPayments = selectedUser.id === "dawit"
+      ? parkingPayments.map(p => ({ ...p, is_withdraw: true, is_custom: true, category: "Parking Payments" }))
+      : selectedUser.id === "yiss"
+        ? suqePayments.map(s => ({ ...s, is_withdraw: true, is_custom: true, category: "Suqe Payments" }))
+        : [];
+
+    const combinedUserTxs = [
+      ...userTxs.map(t => ({ ...t, is_custom: false, category: getCategory(t.narrative) })),
+      ...customDbPayments
+    ];
+
+    const categorizedTxs = combinedUserTxs.map((tx) => {
       const amt = parseAmount(tx.amount);
-      const cat = getCategory(tx.narrative);
+      const cat = tx.category;
 
       if (tx.is_withdraw === false) {
         totalReceived += amt;
@@ -190,7 +358,6 @@ export default function Users({ transactions, currentPath, navigate }) {
 
       return {
         ...tx,
-        category: cat,
         parsedAmount: amt
       };
     });
@@ -204,7 +371,7 @@ export default function Users({ transactions, currentPath, navigate }) {
         Received: item.Received
       }));
 
-    // Format categories for chart/list
+    // Format categories for chart/list (excluding the ones with zero value)
     const categoriesBreakdown = Object.keys(categoryTotals).map((catName) => {
       const amount = categoryTotals[catName];
       const count = categoryCounts[catName];
@@ -215,14 +382,16 @@ export default function Users({ transactions, currentPath, navigate }) {
         count,
         percent
       };
-    }).sort((a, b) => b.value - a.value);
+    })
+    .filter((c) => c.value > 0 || c.count > 0)
+    .sort((a, b) => b.value - a.value);
 
     // Calculate averages
     const withdrawalsOnly = categorizedTxs.filter((tx) => tx.is_withdraw !== false);
     const avgTransaction = withdrawalsOnly.length > 0 ? totalSpent / withdrawalsOnly.length : 0;
 
     return {
-      transactions: categorizedTxs,
+      allTransactions: categorizedTxs,
       totalSpent,
       totalReceived,
       netFlow: totalReceived - totalSpent,
@@ -232,7 +401,7 @@ export default function Users({ transactions, currentPath, navigate }) {
       categories: categoriesBreakdown,
       monthlyTrend
     };
-  }, [selectedUser, transactions]);
+  }, [selectedUser, transactions, parkingPayments, suqePayments]);
 
   // Render main users list nested in Balance Tab
   if (!selectedUser) {
@@ -241,13 +410,13 @@ export default function Users({ transactions, currentPath, navigate }) {
         <div className="analytics-card focus-card" style={{ marginBottom: "20px" }}>
           <span>Spending Overview</span>
           <h2>Tracked Outflow Share</h2>
-          <p>Analyzing total receipt spending of <b>{money(totalOutflowTracked)} ETB</b> across team members.</p>
+          <p>Analyzing total receipt and custom spending of <b>{money(totalOutflowTracked)} ETB</b> across team members.</p>
         </div>
 
         <div className="users-grid">
           {usersSummary.map((user) => {
             const userPercent = totalOutflowTracked > 0 ? Math.round((user.spent / totalOutflowTracked) * 100) : 0;
-            
+
             return (
               <div
                 key={user.id}
@@ -257,7 +426,7 @@ export default function Users({ transactions, currentPath, navigate }) {
                 <div className={`avatar-placeholder ${user.class}`}>
                   {user.name.charAt(0)}
                 </div>
-                
+
                 <div className="user-card-info">
                   <h3>{user.name}</h3>
                   <div className="user-role">{user.role}</div>
@@ -268,14 +437,12 @@ export default function Users({ transactions, currentPath, navigate }) {
                     <span>Share of outflow</span>
                     <strong>{userPercent}%</strong>
                   </div>
-                  <div className="category-progress-track" style={{ height: "6px", background: "rgba(24, 24, 22, 0.06)", borderRadius: "3px", overflow: "hidden" }}>
-                    <div 
-                      className="category-progress-fill" 
-                      style={{ 
-                        height: "100%", 
+                  <div className="category-progress-track">
+                    <div
+                      className="category-progress-fill"
+                      style={{
                         width: `${userPercent}%`,
-                        background: user.id === "dawit" ? "#c73939" : user.id === "mihret" ? "#f4a300" : user.id === "asnake" ? "#b87200" : user.id === "yiss" ? "#20231f" : "#8c52ff",
-                        borderRadius: "3px" 
+                        background: user.id === "dawit" ? "#c73939" : user.id === "mihret" ? "#f4a300" : user.id === "asnake" ? "#b87200" : user.id === "yiss" ? "#20231f" : "#8c52ff"
                       }}
                     ></div>
                   </div>
@@ -299,13 +466,20 @@ export default function Users({ transactions, currentPath, navigate }) {
             );
           })}
         </div>
+
+        {/* Floating Scroll to Top button */}
+        {showScrollTop && (
+          <button className="scroll-top-btn" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label="Scroll to top">
+            &uarr;
+          </button>
+        )}
       </div>
     );
   }
 
   // Render detailed user view (DEDICATED FULL-PAGE VIEW)
   const {
-    transactions: userTxs,
+    allTransactions,
     totalSpent,
     totalReceived,
     netFlow,
@@ -316,11 +490,19 @@ export default function Users({ transactions, currentPath, navigate }) {
     monthlyTrend
   } = detailsData;
 
+  // Filter display transactions based on selected sub-tab toggle
+  const displayTxs = allTransactions.filter((tx) => {
+    if (subTab === "transactions") return !tx.is_custom;
+    if (subTab === "parking") return tx.is_custom && tx.category === "Parking Payments";
+    if (subTab === "suqe") return tx.is_custom && tx.category === "Suqe Payments";
+    return true;
+  });
+
   return (
     <div className="users-container">
       {/* Top Header Bar with Back Button & Mini Logo */}
-      <div className="user-page-top-bar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(24, 24, 22, 0.08)", paddingBottom: "16px", marginBottom: "24px" }}>
-        <button className="back-btn" onClick={() => navigate("/balance/people")} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      <div className="user-page-top-bar">
+        <button className="back-btn" onClick={() => navigate("/balance/people")}>
           <FaArrowLeft /> Back to People
         </button>
         <img src="/logo.png" alt="Bank Logo" style={{ height: "32px", width: "auto" }} />
@@ -339,7 +521,7 @@ export default function Users({ transactions, currentPath, navigate }) {
                 {selectedUser.role}
               </span>
               <span style={{ color: "#74796e", fontSize: "13px" }}>
-                &bull; {userTxs.length} Transactions Tracked
+                &bull; {allTransactions.length} Total Payments Tracked
               </span>
             </div>
           </div>
@@ -444,15 +626,13 @@ export default function Users({ transactions, currentPath, navigate }) {
                   </div>
                   <strong className="category-amount">{money(cat.value)} ETB</strong>
                 </div>
-                
-                {/* Horizontal Progress Bar representing Category Share */}
-                <div style={{ width: "100%", height: "6px", background: "rgba(24, 24, 22, 0.05)", borderRadius: "3px", overflow: "hidden" }}>
-                  <div 
-                    style={{ 
-                      height: "100%", 
-                      width: `${cat.percent}%`, 
-                      background: cat.name === "Construction" ? "#f4a300" : "#20231f",
-                      borderRadius: "3px"
+
+                <div className="category-progress-track">
+                  <div
+                    className="category-progress-fill"
+                    style={{
+                      width: `${cat.percent}%`,
+                      background: cat.name === "Construction" ? "#f4a300" : cat.name === "Parking Payments" ? "#c73939" : cat.name === "Suqe Payments" ? "#8c52ff" : "#20231f"
                     }}
                   ></div>
                 </div>
@@ -479,32 +659,69 @@ export default function Users({ transactions, currentPath, navigate }) {
         </div>
       </div>
 
-      {/* User's Transactions List Table */}
-      <div className="transactions-header" style={{ marginTop: "40px", marginBottom: "20px" }}>
-        <h2>Transactions History</h2>
+      {/* Choice Toggle Switcher for Dawit and Yiss */}
+      {selectedUser.id === "dawit" && (
+        <div className="sub-toggle-bar">
+          <button className={subTab === "transactions" ? "active" : ""} onClick={() => setSubTab("transactions")}>
+            Transactions History
+          </button>
+          <button className={subTab === "parking" ? "active" : ""} onClick={() => setSubTab("parking")}>
+            Parking Payments
+          </button>
+        </div>
+      )}
+
+      {selectedUser.id === "yiss" && (
+        <div className="sub-toggle-bar">
+          <button className={subTab === "transactions" ? "active" : ""} onClick={() => setSubTab("transactions")}>
+            Transactions History
+          </button>
+          <button className={subTab === "suqe" ? "active" : ""} onClick={() => setSubTab("suqe")}>
+            Suqe Payments
+          </button>
+        </div>
+      )}
+
+      {/* Transactions List Table / Custom Table */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "25px", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
+        <h2 style={{ fontSize: "20px", fontWeight: "600", color: "#20231f", margin: 0 }}>
+          {subTab === "transactions" ? "Transactions History" : selectedUser.id === "dawit" ? "Parking Payments" : "Suqe Payments"}
+        </h2>
+        {subTab !== "transactions" && (
+          <button className="back-btn" onClick={() => setShowAddPaymentModal(true)} style={{ background: "#eeb833", borderColor: "#eeb833", color: "#000" }}>
+            + Add Payment
+          </button>
+        )}
       </div>
 
-      {userTxs.length > 0 ? (
+      {displayTxs.length > 0 ? (
         <table className="transaction-table">
           <thead>
             <tr>
               <th>ID</th>
               <th>Amount</th>
               <th>Date / Time</th>
-              <th>Reference no</th>
+              <th>
+                {subTab === "transactions"
+                  ? "Reference no"
+                  : selectedUser.id === "dawit"
+                    ? "Plate Number / Ref"
+                    : "Shop / Grocery Name"
+                }
+              </th>
               <th>Category</th>
               <th>Narrative</th>
               <th>Receipt</th>
             </tr>
           </thead>
           <tbody>
-            {userTxs.map((tx, idx) => (
+            {displayTxs.map((tx, idx) => (
               <tr
                 key={tx.id}
                 className={tx.is_withdraw === false ? "deposit-row" : "transaction-row"}
               >
                 <td>{idx + 1}</td>
-                <td className="amount">{tx.amount}</td>
+                <td className="amount">{subTab === "transactions" ? tx.amount : `${money(tx.amount)} ETB`}</td>
                 <td>{tx.date}</td>
                 <td>{tx.reference}</td>
                 <td>
@@ -521,7 +738,7 @@ export default function Users({ transactions, currentPath, navigate }) {
                 </td>
                 <td>{tx.narrative}</td>
                 <td className="action">
-                  {tx.receipt_url ? (
+                  {!tx.is_custom && tx.receipt_url ? (
                     <a href={tx.receipt_url} target="_blank" rel="noopener noreferrer">
                       View
                     </a>
@@ -535,8 +752,88 @@ export default function Users({ transactions, currentPath, navigate }) {
         </table>
       ) : (
         <div className="analytics-card" style={{ textAlign: "center", padding: "40px", color: "#74796e" }}>
-          No transactions registered for this user
+          {dbLoading ? "Loading payments..." : `No ${subTab === "transactions" ? "receipt transactions" : subTab === "parking" ? "parking payments" : "suqe payments"} registered`}
         </div>
+      )}
+
+      {/* Modal for adding parking/suqe payments */}
+      {showAddPaymentModal && (
+        <div className="modal-overlay" style={{ zIndex: 2000 }}>
+          <div className="modal" style={{ maxWidth: "420px" }}>
+            <h2>Add {selectedUser.id === "dawit" ? "Parking" : "Suqe"} Payment</h2>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "20px" }}>
+              <label className="draft-field">
+                <span>Amount (ETB)</span>
+                <input
+                  type="number"
+                  placeholder="0.00"
+                  value={newPayment.amount}
+                  onChange={(e) => setNewPayment({ ...newPayment, amount: e.target.value })}
+                  disabled={dbLoading}
+                  required
+                />
+              </label>
+
+              <label className="draft-field">
+                <span>Date / Time</span>
+                <input
+                  type="text"
+                  value={newPayment.date}
+                  onChange={(e) => setNewPayment({ ...newPayment, date: e.target.value })}
+                  disabled={dbLoading}
+                  required
+                />
+              </label>
+
+              <label className="draft-field">
+                <span>{selectedUser.id === "dawit" ? "Plate Number / Ref" : "Shop / Grocery Name"}</span>
+                <input
+                  type="text"
+                  placeholder={selectedUser.id === "dawit" ? "e.g. Code 3 - AA 12345" : "e.g. Merkato Shop #2"}
+                  value={newPayment.reference}
+                  onChange={(e) => setNewPayment({ ...newPayment, reference: e.target.value })}
+                  disabled={dbLoading}
+                />
+              </label>
+
+              <label className="draft-field">
+                <span>Narrative</span>
+                <input
+                  type="text"
+                  placeholder="Payment description..."
+                  value={newPayment.narrative}
+                  onChange={(e) => setNewPayment({ ...newPayment, narrative: e.target.value })}
+                  disabled={dbLoading}
+                />
+              </label>
+            </div>
+
+            <div className="modal-buttons" style={{ marginTop: "28px" }}>
+              <button
+                className="save-draft-btn"
+                onClick={handleAddPaymentSubmit}
+                disabled={dbLoading}
+              >
+                {dbLoading ? "Saving..." : "Save Payment"}
+              </button>
+              <button
+                className="close-btn"
+                onClick={() => setShowAddPaymentModal(false)}
+                disabled={dbLoading}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Scroll to Top button */}
+      {showScrollTop && (
+        <button className="scroll-top-btn" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label="Scroll to top">
+          &uarr;
+        </button>
       )}
     </div>
   );
