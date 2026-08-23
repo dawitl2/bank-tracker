@@ -8,11 +8,15 @@ Originally developed as a **requested solution** for managing construction expen
 
 ## 📸 Screenshots
 
-![Transactions View](./screenshot1.png)
+### Mobile Version
+| Phone Screen 1 | Phone Screen 2 | Phone Screen 3 |
+| :---: | :---: | :---: |
+| <img src="./Screenshot_phone1.jpg" width="240" /> | <img src="./Screenshot_phone2.jpg" width="240" /> | <img src="./Screenshot_phone3.jpg" width="240" /> |
 
-![Balance & Analytics](./screenshot2.png)
-
-![Balance & Analytic Desktop](./screenshot3.png)
+### Desktop Version
+| Desktop Screen 1 | Desktop Screen 2 |
+| :---: | :---: |
+| <img src="./Screenshot_desktop1.png" width="380" /> | <img src="./Screenshot_desktop2.png" width="380" /> |
 
 ---
 

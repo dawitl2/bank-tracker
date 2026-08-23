@@ -89,8 +89,40 @@ export default function DesktopTransactions({
             View, search, and manage receipt-based transactions in the system.
           </p>
         </div>
-        
-        {/* Search Input */}
+      </div>
+
+      {/* Row containing dropdown filter on left and search box on right */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+        {/* Mobile-style Filter Dropdown */}
+        <div className="filter-dropdown" style={{ margin: 0, display: "block", width: "200px", textAlign: "left" }}>
+          <div
+            className="dropdown-btn"
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            style={{ cursor: "pointer", userSelect: "none" }}
+          >
+            {personFilter || "ALL"}
+            <span className={`dropdown-arrow ${dropdownOpen ? "open" : ""}`} style={{ marginLeft: "10px" }}>
+              ▼
+            </span>
+          </div>
+          
+          <div className={`dropdown-menu ${dropdownOpen ? "open" : ""}`}>
+            {filterOptions.map((opt) => (
+              <div
+                key={opt.key}
+                className={`dropdown-item ${personFilter === opt.key ? "selected" : ""}`}
+                onClick={() => {
+                  setPersonFilter(opt.key);
+                  setDropdownOpen(false);
+                }}
+              >
+                {opt.label}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Search Input aligned right */}
         <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
           <FaSearch style={{ position: "absolute", left: "12px", color: "var(--desktop-dark-muted)" }} size={14} />
           <input
@@ -101,35 +133,6 @@ export default function DesktopTransactions({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-        </div>
-      </div>
-
-      {/* Mobile-style Filter Dropdown */}
-      <div className="filter-dropdown" style={{ marginBottom: "20px", display: "block", maxWidth: "200px", textAlign: "left" }}>
-        <div
-          className="dropdown-btn"
-          onClick={() => setDropdownOpen(!dropdownOpen)}
-          style={{ cursor: "pointer", userSelect: "none" }}
-        >
-          {personFilter || "ALL"}
-          <span className={`dropdown-arrow ${dropdownOpen ? "open" : ""}`} style={{ marginLeft: "10px" }}>
-            ▼
-          </span>
-        </div>
-        
-        <div className={`dropdown-menu ${dropdownOpen ? "open" : ""}`}>
-          {filterOptions.map((opt) => (
-            <div
-              key={opt.key}
-              className={`dropdown-item ${personFilter === opt.key ? "selected" : ""}`}
-              onClick={() => {
-                setPersonFilter(opt.key);
-                setDropdownOpen(false);
-              }}
-            >
-              {opt.label}
-            </div>
-          ))}
         </div>
       </div>
 

@@ -39,6 +39,7 @@ body.desktop-body {
   grid-template-columns: 280px 1fr;
   min-height: 100vh;
   background: var(--desktop-surface);
+  zoom: 0.75;
 }
 
 /* Sidebar */
