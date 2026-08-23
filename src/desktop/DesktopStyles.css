@@ -60,6 +60,11 @@ body.desktop-body {
   margin-bottom: 40px;
   display: flex;
   justify-content: center;
+  background: #ffffff;
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
 }
 
 .desktop-sidebar-logo {
@@ -507,113 +512,34 @@ body.desktop-body {
   flex-direction: column;
 }
 
-/* Floating Actions */
-.desktop-floating-actions {
-  position: fixed;
-  right: 48px;
-  bottom: 48px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  z-index: 100;
+/* Hide scrollbars globally but preserve functionality */
+.desktop-main-content::-webkit-scrollbar,
+.desktop-table-container::-webkit-scrollbar,
+.desktop-construction-checklist::-webkit-scrollbar,
+.construction-checklist-scroll::-webkit-scrollbar,
+.desktop-hide-scrollbar::-webkit-scrollbar {
+  display: none !important;
 }
 
-.desktop-action-btn-main {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: var(--desktop-accent);
-  color: #151510;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  box-shadow: 0 10px 25px rgba(244, 163, 0, 0.4);
-  transition: all 0.25s ease;
+.desktop-main-content,
+.desktop-table-container,
+.desktop-construction-checklist,
+.construction-checklist-scroll,
+.desktop-hide-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
 
-.desktop-action-btn-main:hover {
-  transform: translateY(-2px);
-  background: var(--desktop-accent-hover);
-  box-shadow: 0 12px 30px rgba(244, 163, 0, 0.5);
-}
-
-/* Inline search bar */
-.desktop-search-input {
-  padding: 10px 16px;
-  border-radius: 8px;
-  border: 1px solid var(--desktop-border);
-  background: var(--desktop-surface-card);
-  font-size: 14px;
-  width: 240px;
-  transition: all 0.2s;
-}
-
-.desktop-search-input:focus {
-  outline: none;
-  border-color: var(--desktop-accent);
-  box-shadow: 0 0 0 3px rgba(244, 163, 0, 0.15);
-}
-
-/* Password overlays */
-.desktop-password-box {
-  background: var(--desktop-surface-card);
-  border: 1px solid var(--desktop-border);
-  box-shadow: var(--desktop-shadow-deep);
-  border-radius: 12px;
-  padding: 32px;
-  width: 100%;
-  max-width: 400px;
-  margin: auto;
-  box-sizing: border-box;
-}
-
-.desktop-password-box h2 {
-  font-size: 22px;
-  font-weight: 800;
-  margin-top: 0;
-  margin-bottom: 20px;
-}
-
-.desktop-password-box input[type="password"] {
-  width: 100%;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid var(--desktop-border);
-  box-sizing: border-box;
-  font-size: 15px;
-  margin-bottom: 16px;
-}
-
-.desktop-password-box button {
-  width: 100%;
-  padding: 12px;
-  background: var(--desktop-dark);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.desktop-password-box button:hover {
-  background: #343932;
-}
-
+/* Draggable Inline Calculator */
 .desktop-inline-calculator {
   position: fixed;
-  right: 128px;
-  bottom: 48px;
   width: 320px;
   background: var(--desktop-dark);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 12px;
   box-shadow: var(--desktop-shadow-deep);
   overflow: hidden;
-  z-index: 99;
+  z-index: 9999;
 }
 
 .desktop-inline-calculator-header {
@@ -624,6 +550,8 @@ body.desktop-body {
   background: rgba(0, 0, 0, 0.2);
   color: #fff;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: move;
+  user-select: none;
 }
 
 .desktop-inline-calculator-header h3 {
@@ -637,11 +565,69 @@ body.desktop-body {
 .desktop-inline-calculator-close {
   background: transparent;
   border: none;
-  color: rgba(255,255,255,0.6);
+  color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
   font-size: 16px;
 }
 
 .desktop-inline-calculator-close:hover {
   color: #fff;
+}
+
+/* Sidebar action buttons styling */
+.desktop-sidebar-actions-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+  margin-bottom: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 16px;
+}
+
+.desktop-sidebar-action-btn {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.desktop-sidebar-action-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.desktop-sidebar-action-btn.primary {
+  background: var(--desktop-accent);
+  color: #151510;
+  border-color: var(--desktop-accent);
+}
+
+.desktop-sidebar-action-btn.primary:hover {
+  background: var(--desktop-accent-hover);
+}
+
+/* Image Card Styling */
+.desktop-card-image-display {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  margin-bottom: 16px;
+  display: block;
+}
+
+/* People card highlight */
+.desktop-card.active-person {
+  box-shadow: var(--desktop-shadow-deep);
 }

@@ -31,6 +31,11 @@ export default function DesktopLayout(props) {
   // Active view synced with path
   const [activeTab, setActiveTab] = useState("dashboard");
 
+  // Draggable Calculator State
+  const [calcPos, setCalcPos] = useState({ x: window.innerWidth - 350, y: window.innerHeight - 520 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
   useEffect(() => {
     if (currentPath === "/transactions") {
       setActiveTab("transactions");
@@ -46,6 +51,39 @@ export default function DesktopLayout(props) {
       setActiveTab("dashboard");
     }
   }, [currentPath]);
+
+  // Handle calculator dragging
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isDragging) return;
+      setCalcPos({
+        x: e.clientX - dragOffset.x,
+        y: e.clientY - dragOffset.y
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging, dragOffset]);
+
+  const handleMouseDown = (e) => {
+    // Only allow dragging from header
+    setIsDragging(true);
+    setDragOffset({
+      x: e.clientX - calcPos.x,
+      y: e.clientY - calcPos.y
+    });
+  };
 
   const handleTabClick = (tab) => {
     if (tab === "transactions") {
@@ -82,7 +120,12 @@ export default function DesktopLayout(props) {
     <div className="desktop-app-container">
       {/* Sidebar */}
       <aside className="desktop-sidebar">
-        <div className="desktop-sidebar-logo-wrap">
+        {/* Click logo to go to dashboard */}
+        <div 
+          className="desktop-sidebar-logo-wrap"
+          onClick={() => handleTabClick("dashboard")}
+          title="Go to Dashboard"
+        >
           <img 
             src="/logo.png" 
             alt="Bank of Abyssinia" 
@@ -124,6 +167,24 @@ export default function DesktopLayout(props) {
           </button>
         </nav>
 
+        {/* Sidebar integrated quick action buttons */}
+        <div className="desktop-sidebar-actions-container">
+          {activeTab === "transactions" && (
+            <button 
+              className="desktop-sidebar-action-btn primary"
+              onClick={openReceiptModal}
+            >
+              <FaPlus /> Add Receipt
+            </button>
+          )}
+          <button 
+            className="desktop-sidebar-action-btn"
+            onClick={() => setShowCalculator(!showCalculator)}
+          >
+            <FaCalculator /> Calculator
+          </button>
+        </div>
+
         <div className="desktop-sidebar-footer">
           <span>Bank Tracker Desktop</span>
           <span>v1.3.3</span>
@@ -135,35 +196,26 @@ export default function DesktopLayout(props) {
         {renderContent()}
       </main>
 
-      {/* Floating Action Elements */}
-      <div className="desktop-floating-actions">
-        {activeTab === "transactions" && (
-          <button 
-            className="desktop-action-btn-main"
-            onClick={openReceiptModal}
-            title="Add Receipt"
-          >
-            <FaPlus />
-          </button>
-        )}
-        <button 
-          className="desktop-action-btn-main"
-          style={{ background: "#20231f", color: "#ffffff" }}
-          onClick={() => setShowCalculator(!showCalculator)}
-          title="Calculator"
-        >
-          <FaCalculator />
-        </button>
-      </div>
-
-      {/* Side-pane Calculator */}
+      {/* Draggable side-pane Calculator */}
       {showCalculator && (
-        <div className="desktop-inline-calculator">
-          <div className="desktop-inline-calculator-header">
+        <div 
+          className="desktop-inline-calculator"
+          style={{
+            left: `${calcPos.x}px`,
+            top: `${calcPos.y}px`,
+            position: "fixed"
+          }}
+        >
+          <div 
+            className="desktop-inline-calculator-header"
+            onMouseDown={handleMouseDown}
+            title="Hold and drag to move"
+          >
             <h3>🧮 Calculator</h3>
             <button 
               className="desktop-inline-calculator-close"
               onClick={() => setShowCalculator(false)}
+              onMouseDown={(e) => e.stopPropagation()} // Prevent drag on click close
             >
               <FaTimes />
             </button>

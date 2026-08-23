@@ -17,9 +17,8 @@ import {
   FaPlus, 
   FaEdit, 
   FaTrash, 
-  FaCube 
+  FaLock 
 } from "react-icons/fa";
-import Construction3D from "../Construction3D";
 import "./DesktopStyles.css";
 
 const SUPABASE_URL = "https://ywplzexakisliebyjtyf.supabase.co";
@@ -108,8 +107,6 @@ const CONSTRUCTION_SECTIONS = [
 const ALL_ITEMS = CONSTRUCTION_SECTIONS.flatMap(s => s.items);
 const TOTAL_ITEMS = ALL_ITEMS.length;
 
-const money = (value) => Math.round(value || 0).toLocaleString("en-US");
-
 const formatWithCommas = (raw) => {
   let cleaned = raw.toString().replace(/[^\d.]/g, "");
   const firstDot = cleaned.indexOf(".");
@@ -151,9 +148,9 @@ export default function DesktopConstruction() {
       });
       setCheckedByHouse(map);
       
-      // Auto-select first house if none selected
+      // Keep track of routed house selection locally
       if (houseData.length > 0 && !selectedHouse) {
-        setSelectedHouse(houseData[0]);
+        // default none
       }
     } catch (e) {
       console.error(e);
@@ -212,6 +209,10 @@ export default function DesktopConstruction() {
           method: "PATCH",
           body: JSON.stringify({ name: houseForm.name.trim() })
         });
+        setHouses(prev => prev.map(h => h.id === houseForm.id ? { ...h, name: houseForm.name.trim() } : h));
+        if (selectedHouse?.id === houseForm.id) {
+          setSelectedHouse(prev => ({ ...prev, name: houseForm.name.trim() }));
+        }
       } else {
         // Add House
         const result = await sbFetch("/construction_houses", {
@@ -220,8 +221,8 @@ export default function DesktopConstruction() {
         });
         const newHouse = Array.isArray(result) ? result[0] : result;
         setSelectedHouse(newHouse);
+        await loadHouses();
       }
-      await loadHouses();
       setShowHouseModal(false);
     } catch (e) {
       console.error(e);
@@ -236,9 +237,7 @@ export default function DesktopConstruction() {
     setDbSaving(true);
     try {
       await sbFetch(`/construction_houses?id=eq.${house.id}`, { method: "DELETE" });
-      if (selectedHouse?.id === house.id) {
-        setSelectedHouse(null);
-      }
+      setSelectedHouse(null);
       await loadHouses();
     } catch (e) {
       console.error(e);
@@ -292,7 +291,7 @@ export default function DesktopConstruction() {
         <div>
           <h1>Construction Tracker</h1>
           <p style={{ margin: "4px 0 0", color: "var(--desktop-dark-muted)", fontSize: "14px" }}>
-            Monitor checklist stages and visual blueprints side-by-side.
+            Monitor checklist stages and expenditures.
           </p>
         </div>
         <button 
@@ -308,135 +307,180 @@ export default function DesktopConstruction() {
         </button>
       </div>
 
-      {/* Houses selection ribbon */}
-      <div className="desktop-pills" style={{ marginBottom: "8px" }}>
-        {houses.map((house) => {
-          const isSelected = selectedHouse?.id === house.id;
-          const { pct } = getHouseProgress(house.id);
+      {/* Legacy mobile styling wrapper class for construction layout consistency */}
+      <div className="balance-page" style={{ padding: 0, gap: 0 }}>
+        
+        {/* Houses selection list - visible when no house is selected */}
+        {!selectedHouse && (
+          <article className="construction-card" style={{ margin: 0, width: "100%" }}>
+            <div className="construction-heading">
+              <span>Construction projects</span>
+              <strong>{houses.length} projects active</strong>
+            </div>
+            <div className="construction-houses-grid">
+              {houses.map((house) => {
+                const prog = getHouseProgress(house.id);
+                return (
+                  <button
+                    key={house.id}
+                    type="button"
+                    className="construction-house-card"
+                    onClick={() => setSelectedHouse(house)}
+                  >
+                    <div className="construction-house-icon"><FaHome /></div>
+                    <div className="construction-house-name-row">
+                      <span className="construction-house-name">{house.name}</span>
+                    </div>
+                    <div className="construction-prog-bg">
+                      <div className="construction-prog-fill" style={{ width: `${prog.pct}%` }} />
+                    </div>
+                    <div className="construction-prog-label">{prog.checked}/{prog.total} · {prog.pct}%</div>
+                  </button>
+                );
+              })}
+              <button
+                className="construction-add-house"
+                onClick={() => {
+                  setIsEditingHouse(false);
+                  setHouseForm({ id: null, name: "" });
+                  setShowHouseModal(true);
+                }}
+              >
+                <FaPlus /> Add house
+              </button>
+            </div>
+          </article>
+        )}
 
-          return (
-            <div 
-              key={house.id} 
-              className={`desktop-pill ${isSelected ? "active accent" : ""}`}
-              style={{ display: "inline-flex", alignItems: "center", gap: "10px", padding: "6px 14px" }}
-              onClick={() => setSelectedHouse(house)}
-            >
-              <span style={{ fontWeight: 600 }}>{house.name} ({pct}%)</span>
-              <div style={{ display: "flex", gap: "4px" }} onClick={e => e.stopPropagation()}>
-                <button 
-                  className="desktop-table-action-btn" 
-                  style={{ padding: "2px", color: isSelected ? "var(--desktop-dark)" : "inherit" }}
+        {/* Selected House Detail View: Splits side-by-side on desktop */}
+        {selectedHouse && (
+          <section className="construction-detail-page" style={{ width: "100%", padding: 0 }}>
+            <div className="construction-page-topbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <button
+                className="construction-back-btn"
+                type="button"
+                onClick={() => setSelectedHouse(null)}
+                style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" }}
+              >
+                ← Back to Projects
+              </button>
+            </div>
+
+            <div className="construction-detail-header" style={{ marginBottom: "20px" }}>
+              <div className="construction-detail-title-row">
+                <span className="construction-detail-house-icon"><FaHome /></span>
+                <span className="construction-detail-title">
+                  <small>Construction project</small>
+                  <strong>{selectedHouse.name}</strong>
+                </span>
+              </div>
+              <div className="construction-detail-actions" style={{ display: "flex", gap: "8px" }}>
+                <button
+                  className="construction-detail-edit-btn"
+                  type="button"
                   onClick={() => {
                     setIsEditingHouse(true);
-                    setHouseForm({ id: house.id, name: house.name });
+                    setHouseForm({ id: selectedHouse.id, name: selectedHouse.name });
                     setShowHouseModal(true);
                   }}
+                  title="Rename project"
                 >
-                  <FaEdit size={10} />
+                  <FaEdit />
                 </button>
-                <button 
-                  className="desktop-table-action-btn danger" 
-                  style={{ padding: "2px", color: isSelected ? "#c73939" : "inherit" }}
-                  onClick={() => handleDeleteHouse(house)}
+                <button
+                  className="construction-detail-delete-btn"
+                  type="button"
+                  onClick={() => handleDeleteHouse(selectedHouse)}
+                  title="Delete project"
                 >
-                  <FaTrash size={10} />
+                  <FaTrash />
                 </button>
               </div>
             </div>
-          );
-        })}
-      </div>
 
-      {selectedHouse ? (
-        <div className="desktop-split-pane" style={{ gridTemplateColumns: "1.1fr 1fr" }}>
-          {/* Left Column: House metrics & checklist */}
-          <div className="desktop-split-left">
-            {/* Quick Metrics */}
-            <div className="desktop-card" style={{ padding: "20px 24px" }}>
-              <div className="desktop-grid-2">
-                <div className="desktop-detail-block">
-                  <label>Total Budget Spent</label>
-                  <strong style={{ fontSize: "20px" }}>ETB {money(selectedHouse.money_spent)}</strong>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "8px" }}>
-                    <input 
+            <div className="construction-detail-body">
+              {/* Left Column: Metrics & Budget */}
+              <aside className="construction-project-overview">
+                <div className="construction-overall-prog">
+                  <div className="construction-overall-heading">
+                    <span>Overall progress</span>
+                    <strong>{getHouseProgress(selectedHouse.id).pct}%</strong>
+                  </div>
+                  <div className="construction-overall-bg">
+                    <div className="construction-overall-fill" style={{ width: `${getHouseProgress(selectedHouse.id).pct}%` }} />
+                  </div>
+                  <div className="construction-overall-label">
+                    {getHouseProgress(selectedHouse.id).checked} of {TOTAL_ITEMS} tasks completed
+                  </div>
+                </div>
+
+                <div className="construction-money-spent">
+                  <span className="construction-money-spent-label">Money spent</span>
+                  <div className="construction-money-spent-row">
+                    <span className="construction-money-spent-currency">ETB</span>
+                    <input
+                      className="construction-money-spent-input"
                       type="text"
-                      className="desktop-search-input"
-                      style={{ padding: "6px 10px", width: "130px", fontSize: "12px" }}
+                      inputMode="decimal"
+                      placeholder="0"
                       value={moneySpentInput}
-                      placeholder="Update spent..."
                       onChange={(e) => setMoneySpentInput(formatWithCommas(e.target.value))}
-                    />
-                    <button 
-                      className="desktop-pill active"
-                      style={{ padding: "6px 12px", fontSize: "12px", border: "none" }}
-                      onClick={() => updateMoneySpent(selectedHouse.id, moneySpentInput)}
+                      onBlur={() => updateMoneySpent(selectedHouse.id, moneySpentInput)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") e.currentTarget.blur();
+                      }}
                       disabled={dbSaving}
-                    >
-                      Update
-                    </button>
+                    />
                   </div>
                 </div>
-                <div className="desktop-detail-block" style={{ justifyContent: "center" }}>
-                  <label>Checklist Progress</label>
-                  <strong style={{ fontSize: "22px", color: "var(--desktop-accent)" }}>
-                    {getHouseProgress(selectedHouse.id).pct}%
-                  </strong>
-                  <span style={{ fontSize: "12px" }}>
-                    {getHouseProgress(selectedHouse.id).checked} of {TOTAL_ITEMS} items completed
-                  </span>
+              </aside>
+
+              {/* Right Column: Legible mobile checklist representation */}
+              <main className="construction-checklist-content">
+                <div className="construction-checklist-heading">
+                  <span>Project checklist</span>
+                  <strong>{TOTAL_ITEMS - getHouseProgress(selectedHouse.id).checked} remaining</strong>
                 </div>
-              </div>
-            </div>
 
-            {/* Checklist */}
-            <div className="desktop-construction-checklist">
-              {CONSTRUCTION_SECTIONS.map((sec) => (
-                <div key={sec.label} className="desktop-checklist-section">
-                  <div className="desktop-checklist-section-title">{sec.label}</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 16px" }}>
-                    {sec.items.map((it) => {
-                      const isChecked = checkedByHouse[selectedHouse.id]?.[it.id] ?? false;
-                      const Icon = it.icon;
-
-                      return (
-                        <div 
-                          key={it.id}
-                          className={`desktop-checklist-item ${isChecked ? "checked" : ""}`}
-                          onClick={() => toggleItem(selectedHouse.id, it.id)}
-                        >
-                          <input 
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => {}} // toggling handled on container click
-                          />
-                          <Icon style={{ color: isChecked ? "var(--desktop-dark-muted)" : "var(--desktop-accent)", minWidth: "14px" }} />
-                          <span>{it.label}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+                {CONSTRUCTION_SECTIONS.map((section) => {
+                  const checked = checkedByHouse[selectedHouse.id] || { building_block: true };
+                  
+                  return (
+                    <div key={section.label} className="construction-section">
+                      <div className="construction-section-label">{section.label}</div>
+                      {section.items.map((item) => {
+                        const isChecked = !!checked[item.id];
+                        const isLocked = !!item.locked;
+                        const ItemIcon = item.icon || FaTools;
+                        
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            className={`construction-item-row${isLocked ? " locked" : ""}`}
+                            onClick={() => !isLocked && toggleItem(selectedHouse.id, item.id)}
+                            disabled={isLocked}
+                            style={{ width: "100%", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                          >
+                            <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                              <span className="construction-item-icon"><ItemIcon /></span>
+                              <span className="construction-item-label">{item.label}</span>
+                            </span>
+                            <div className={`construction-checkbox${isChecked ? " checked" : ""}`}>
+                              {isChecked && <FaPlus style={{ transform: "rotate(45deg)", fontSize: "10px" }} />}
+                              {!isChecked && isLocked && <FaLock style={{ fontSize: "10px" }} />}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </main>
             </div>
-          </div>
-
-          {/* Right Column: Inline 3D Blueprint visualizer container */}
-          <div className="desktop-split-right" style={{ height: "100%" }}>
-            <div className="desktop-visualizer-container" style={{ width: "100%", height: "100%" }}>
-              <Construction3D 
-                house={selectedHouse}
-                onClose={() => {}} // dummy inline close
-              />
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="desktop-card" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "450px", color: "var(--desktop-dark-muted)" }}>
-          <FaCube size={52} style={{ color: "var(--desktop-border)", marginBottom: "16px" }} />
-          <h3>No Construction Project Loaded</h3>
-          <p style={{ margin: "4px 0 0", fontSize: "14px" }}>Create a new project using the "Add New Project" button above.</p>
-        </div>
-      )}
+          </section>
+        )}
+      </div>
 
       {/* Add / Edit House Modal */}
       {showHouseModal && (
@@ -444,7 +488,7 @@ export default function DesktopConstruction() {
           <div className="desktop-password-box">
             <h2>{isEditingHouse ? "Rename Project" : "Add Construction Project"}</h2>
             <div style={{ marginBottom: "20px" }}>
-              <label style={{ fontSize: "12px", color: "var(--desktop-dark-muted)", display: "block", marginBottom: "4px" }}>Project / House Name</label>
+              <label style={{ fontSize: "12px", color: "var(--desktop-dark-muted)", display: "block", marginBottom: "4px" }}>Project Name</label>
               <input 
                 type="text"
                 placeholder="e.g. Villa A, House 2..."
@@ -460,32 +504,6 @@ export default function DesktopConstruction() {
           </div>
         </div>
       )}
-
-      {/* Extra styles overriding Construction3D inside .desktop-visualizer-container */}
-      <style>{`
-        .desktop-visualizer-container .construction-3d-overlay {
-          position: relative !important;
-          inset: auto !important;
-          z-index: 1 !important;
-          background: transparent !important;
-          padding: 0 !important;
-          height: calc(100vh - 280px) !important;
-          min-height: 520px !important;
-          width: 100% !important;
-        }
-        .desktop-visualizer-container .construction-3d-panel {
-          width: 100% !important;
-          height: 100% !important;
-          max-height: none !important;
-          border-radius: 12px !important;
-          box-shadow: var(--desktop-shadow-soft) !important;
-          border: 1px solid var(--desktop-border) !important;
-          background: #fbfcf8 !important;
-        }
-        .desktop-visualizer-container .construction-3d-close {
-          display: none !important; /* hide fullscreen modal close */
-        }
-      `}</style>
     </div>
   );
 }

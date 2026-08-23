@@ -77,8 +77,6 @@ const getGroup = (tx) => {
   return groups.find((g) => g.match(person)) || { key: "other" };
 };
 
-
-
 export default function DesktopDashboard({
   transactions = [],
   boaSmsState,
@@ -90,7 +88,10 @@ export default function DesktopDashboard({
 }) {
   const getVisibilityDayKey = () => new Date().toISOString().slice(0, 10);
   
-  const [showValues, setShowValues] = useState(false);
+  // Independent card visibility states
+  const [showRegularBalance, setShowRegularBalance] = useState(false);
+  const [showApolloBalance, setShowApolloBalance] = useState(false);
+
   const [apolloUnlocked, setApolloUnlocked] = useState(
     () => localStorage.getItem("apollo_visibility_day") === getVisibilityDayKey()
   );
@@ -100,7 +101,6 @@ export default function DesktopDashboard({
 
   // Compute calculated bank statistics
   const analytics = useMemo(() => {
-    // combine transactions with custom payments
     const customTxs = [
       ...transactions,
       ...parkingPayments.map(p => ({ ...p, is_withdraw: true, person: "dawit" })),
@@ -125,7 +125,6 @@ export default function DesktopDashboard({
 
     const currentBalance = BASE_BALANCE - (totalWithdraw - totalDeposit);
 
-    // Monthly trends for receipt summary
     const monthMap = new Map();
     enriched.forEach((tx) => {
       const key = monthKey(tx.parsedDate);
@@ -195,102 +194,124 @@ export default function DesktopDashboard({
             Real-time accounts tracking for receipts and SMS states.
           </p>
         </div>
-        <button 
-          className="desktop-pill active accent"
-          onClick={() => setShowValues(!showValues)}
-        >
-          {showValues ? <><FaEyeSlash /> Hide Balances</> : <><FaEye /> Show Balances</>}
-        </button>
       </div>
 
       {/* Cards Grid */}
       <div className="desktop-bank-card-container">
         {/* Regular Receipts-based Card */}
-        <div className="desktop-card" style={{ padding: 0, overflow: "hidden" }}>
-          <div className="desktop-card-visual regular">
-            <div className="desktop-card-visual-header">
-              <div className="desktop-card-chip"></div>
-              <div className="desktop-card-brand">RECEIPT LEDGER</div>
+        <div className="desktop-card" style={{ padding: "28px" }}>
+          <div style={{ display: "flex", gap: "24px" }}>
+            {/* Visual Card Image */}
+            <div style={{ flexShrink: 0 }}>
+              <img 
+                src="/card.png" 
+                alt="Bank Card Front" 
+                className="desktop-card-image-display" 
+              />
             </div>
-            <div className="desktop-card-visual-body">
-              <div className="desktop-card-balance-lbl">Calculated Balance</div>
-              <div className="desktop-card-balance-val">
-                ETB {showValues ? money(analytics.currentBalance) : hiddenMask}
+            {/* Balance Details */}
+            <div style={{ flexGrow: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <div className="desktop-card-balance-lbl" style={{ marginBottom: "2px" }}>Calculated Balance</div>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
+                <strong style={{ fontSize: "28px", fontWeight: 900, fontFamily: "monospace" }}>
+                  ETB {showRegularBalance ? money(analytics.currentBalance) : hiddenMask}
+                </strong>
+                <button
+                  type="button"
+                  onClick={() => setShowRegularBalance(!showRegularBalance)}
+                  style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--desktop-dark-muted)", display: "flex", alignItems: "center" }}
+                >
+                  {showRegularBalance ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                </button>
               </div>
-            </div>
-            <div className="desktop-card-visual-footer">
-              <div>DAWIT & FAMILY</div>
-              <div>MAIN ACCOUNT</div>
+              <div style={{ fontSize: "13px", color: "var(--desktop-dark-muted)" }}>
+                Main Account (Dawit & Family)
+              </div>
             </div>
           </div>
           
-          <div style={{ padding: "20px 24px" }}>
-            <div className="desktop-balance-details-row">
-              <div className="desktop-detail-block deposit">
-                <label>Total Deposits</label>
-                <strong>ETB {showValues ? money(analytics.totalDeposit) : hiddenMask}</strong>
-                <span>Last: {analytics.lastDeposit?.amount ? `ETB ${analytics.lastDeposit.amount}` : "—"}</span>
-              </div>
-              <div className="desktop-detail-block withdraw">
-                <label>Total Withdrawals</label>
-                <strong>ETB {showValues ? money(analytics.totalWithdraw) : hiddenMask}</strong>
-                <span>Last: {analytics.lastWithdraw?.amount ? `ETB ${analytics.lastWithdraw.amount}` : "—"}</span>
-              </div>
+          <div className="desktop-balance-details-row">
+            <div className="desktop-detail-block deposit">
+              <label>Total Deposits</label>
+              <strong>ETB {money(analytics.totalDeposit)}</strong>
+              <span>Last: {analytics.lastDeposit?.amount ? `ETB ${analytics.lastDeposit.amount}` : "—"}</span>
+            </div>
+            <div className="desktop-detail-block withdraw">
+              <label>Total Withdrawals</label>
+              <strong>ETB {money(analytics.totalWithdraw)}</strong>
+              <span>Last: {analytics.lastWithdraw?.amount ? `ETB ${analytics.lastWithdraw.amount}` : "—"}</span>
             </div>
           </div>
         </div>
 
         {/* Apollo SMS-based Card */}
-        <div className="desktop-card" style={{ padding: 0, overflow: "hidden" }}>
-          <div className="desktop-card-visual apollo">
-            <div className="desktop-card-visual-header">
-              <div className="desktop-card-chip"></div>
-              <div className="desktop-card-brand" style={{ color: "#2a9d8f" }}>APOLLO (SMS)</div>
+        <div className="desktop-card" style={{ padding: "28px" }}>
+          <div style={{ display: "flex", gap: "24px" }}>
+            {/* Visual Card Image */}
+            <div style={{ flexShrink: 0 }}>
+              <img 
+                src="/card2.png" 
+                alt="Bank Card Back" 
+                className="desktop-card-image-display" 
+              />
             </div>
-            <div className="desktop-card-visual-body">
-              <div className="desktop-card-balance-lbl">Live Bank State</div>
-              <div className="desktop-card-balance-val">
-                {boaSmsLoading ? (
-                  "..."
-                ) : !apolloUnlocked ? (
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "16px", cursor: "pointer" }} onClick={() => setUnlockModalOpen(true)}>
-                    <FaLock size={12} /> Click to Unlock
-                  </div>
-                ) : (
-                  `ETB ${showValues ? formatSmsMoney(boaSmsState?.current_balance) : hiddenMask}`
-                )}
+            {/* Balance Details */}
+            <div style={{ flexGrow: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <div className="desktop-card-balance-lbl" style={{ marginBottom: "2px" }}>Live Bank State (Apollo)</div>
+              
+              {boaSmsLoading ? (
+                <div>...</div>
+              ) : !apolloUnlocked ? (
+                <button 
+                  className="desktop-pill" 
+                  style={{ display: "flex", alignItems: "center", gap: "8px", width: "fit-content", marginTop: "4px" }}
+                  onClick={() => setUnlockModalOpen(true)}
+                >
+                  <FaLock size={12} /> Unlock Live Balance
+                </button>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
+                  <strong style={{ fontSize: "28px", fontWeight: 900, fontFamily: "monospace" }}>
+                    ETB {showApolloBalance ? formatSmsMoney(boaSmsState?.current_balance) : hiddenMask}
+                  </strong>
+                  <button
+                    type="button"
+                    onClick={() => setShowApolloBalance(!showApolloBalance)}
+                    style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--desktop-dark-muted)", display: "flex", alignItems: "center" }}
+                  >
+                    {showApolloBalance ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                  </button>
+                </div>
+              )}
+              
+              <div style={{ fontSize: "13px", color: "var(--desktop-dark-muted)", marginTop: "4px" }}>
+                {boaSmsState?.last_sms_at ? formatSmsDate(boaSmsState.last_sms_at) : "No SMS parsed"}
               </div>
-            </div>
-            <div className="desktop-card-visual-footer">
-              <div>DAWIT ENKU</div>
-              <div>{boaSmsState?.last_sms_at ? formatSmsDate(boaSmsState.last_sms_at) : "No SMS parsed"}</div>
             </div>
           </div>
           
-          <div style={{ padding: "20px 24px" }}>
-            <div className="desktop-balance-details-row" style={{ border: "1px solid rgba(42, 157, 143, 0.15)", background: "rgba(42, 157, 143, 0.03)" }}>
-              <div className="desktop-detail-block deposit">
-                <label>Latest SMS Deposit</label>
-                <strong>
-                  {!apolloUnlocked ? (
-                    hiddenMask
-                  ) : (
-                    `ETB ${showValues ? formatSmsMoney(boaSmsState?.latest_deposit_amount) : hiddenMask}`
-                  )}
-                </strong>
-                <span>{boaSmsState?.deposit_updated_at ? formatSmsDate(boaSmsState.deposit_updated_at) : "—"}</span>
-              </div>
-              <div className="desktop-detail-block withdraw">
-                <label>Latest SMS Withdrawal</label>
-                <strong>
-                  {!apolloUnlocked ? (
-                    hiddenMask
-                  ) : (
-                    `ETB ${showValues ? formatSmsMoney(boaSmsState?.latest_withdrawal_amount) : hiddenMask}`
-                  )}
-                </strong>
-                <span>{boaSmsState?.withdrawal_updated_at ? formatSmsDate(boaSmsState.withdrawal_updated_at) : "—"}</span>
-              </div>
+          <div className="desktop-balance-details-row" style={{ border: "1px solid rgba(42, 157, 143, 0.15)", background: "rgba(42, 157, 143, 0.03)" }}>
+            <div className="desktop-detail-block deposit">
+              <label>Latest SMS Deposit</label>
+              <strong>
+                {!apolloUnlocked ? (
+                  hiddenMask
+                ) : (
+                  `ETB ${formatSmsMoney(boaSmsState?.latest_deposit_amount)}`
+                )}
+              </strong>
+              <span>{boaSmsState?.deposit_updated_at ? formatSmsDate(boaSmsState.deposit_updated_at) : "—"}</span>
+            </div>
+            <div className="desktop-detail-block withdraw">
+              <label>Latest SMS Withdrawal</label>
+              <strong>
+                {!apolloUnlocked ? (
+                  hiddenMask
+                ) : (
+                  `ETB ${formatSmsMoney(boaSmsState?.latest_withdrawal_amount)}`
+                )}
+              </strong>
+              <span>{boaSmsState?.withdrawal_updated_at ? formatSmsDate(boaSmsState.withdrawal_updated_at) : "—"}</span>
             </div>
           </div>
         </div>

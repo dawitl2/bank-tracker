@@ -22,13 +22,14 @@ export default function DesktopTransactions({
   navigate
 }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const filterOptions = [
-    { key: "ALL", label: "All Transactions" },
-    { key: "Withdraw", label: "Withdrawals" },
-    { key: "Deposit", label: "Deposits" },
-    ...people.map(p => ({ key: p.name.toUpperCase(), label: p.name })),
-    { key: "CONSTRUCTION", label: "Construction" }
+    { key: "ALL", label: "ALL" },
+    { key: "Withdraw", label: "WITHDRAW" },
+    { key: "Deposit", label: "DEPOSIT" },
+    ...people.map(p => ({ key: p.name.toUpperCase(), label: p.name.toUpperCase() })),
+    { key: "CONSTRUCTION", label: "CONSTRUCTION" }
   ];
 
   const filteredTransactions = useMemo(() => {
@@ -69,12 +70,12 @@ export default function DesktopTransactions({
     const isWithdraw = tx.is_withdraw !== false;
     const person = (tx.person || "").toLowerCase();
 
-    if (!isWithdraw) return "deposit-row-style";
+    if (!isWithdraw) return "deposit-row";
     if (person === "mihret" || person === "asnake" || tx.person === null) {
-      return "construction-row-style";
+      return "construction-row";
     }
-    if (person === "dawit") return "dawit-row-style";
-    if (person === "enku") return "enku-row-style";
+    if (person === "dawit") return "dawit-row";
+    if (person === "enku") return "enku-row";
     return "";
   };
 
@@ -103,17 +104,33 @@ export default function DesktopTransactions({
         </div>
       </div>
 
-      {/* Pill Filters Bar */}
-      <div className="desktop-pills">
-        {filterOptions.map((opt) => (
-          <button
-            key={opt.key}
-            className={`desktop-pill ${personFilter === opt.key ? "active accent" : ""}`}
-            onClick={() => setPersonFilter(opt.key)}
-          >
-            {opt.label}
-          </button>
-        ))}
+      {/* Mobile-style Filter Dropdown */}
+      <div className="filter-dropdown" style={{ marginBottom: "20px", display: "inline-block" }}>
+        <div
+          className="dropdown-btn"
+          onClick={() => setDropdownOpen(!dropdownOpen)}
+          style={{ cursor: "pointer", userSelect: "none" }}
+        >
+          {personFilter || "ALL"}
+          <span className={`dropdown-arrow ${dropdownOpen ? "open" : ""}`} style={{ marginLeft: "10px" }}>
+            ▼
+          </span>
+        </div>
+        
+        <div className={`dropdown-menu ${dropdownOpen ? "open" : ""}`}>
+          {filterOptions.map((opt) => (
+            <div
+              key={opt.key}
+              className={`dropdown-item ${personFilter === opt.key ? "selected" : ""}`}
+              onClick={() => {
+                setPersonFilter(opt.key);
+                setDropdownOpen(false);
+              }}
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Transactions Table Card */}
@@ -141,17 +158,6 @@ export default function DesktopTransactions({
                   <tr 
                     key={tx.id}
                     className={getRowStyleClass(tx)}
-                    style={{
-                      backgroundColor: !isWithdraw 
-                        ? "rgba(82, 183, 136, 0.05)" 
-                        : person === "mihret" || person === "asnake" || !person
-                        ? "rgba(244, 163, 0, 0.04)"
-                        : person === "dawit"
-                        ? "rgba(199, 57, 57, 0.03)"
-                        : person === "enku"
-                        ? "rgba(184, 114, 0, 0.04)"
-                        : "transparent"
-                    }}
                   >
                     <td style={{ fontWeight: 600, color: "var(--desktop-dark-muted)" }}>{idx + 1}</td>
                     <td>
