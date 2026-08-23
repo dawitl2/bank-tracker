@@ -945,6 +945,7 @@ function Balance({
       let trendClass = "neutral";
       let trendIcon = "";
       let displayVal = "—";
+      let trendDescription = "No earlier month available for comparison";
 
       if (prevMonth) {
         const currentSpent = m.Withdraw;
@@ -955,18 +956,30 @@ function Balance({
           const pct = Math.abs((diff / prevSpent) * 100).toFixed(0);
 
           if (diff < 0) {
-            trendClass = "up";
-            trendIcon = "▲";
+            trendClass = "decrease";
+            trendIcon = "↓";
             displayVal = `${pct}%`;
+            trendDescription = `Spending decreased ${pct}% compared with ${prevMonth.monthLabel}`;
           } else if (diff > 0) {
-            trendClass = "down";
-            trendIcon = "▼";
+            trendClass = "increase";
+            trendIcon = "↑";
             displayVal = `${pct}%`;
+            trendDescription = `Spending increased ${pct}% compared with ${prevMonth.monthLabel}`;
           } else {
             trendClass = "neutral";
             trendIcon = "•";
             displayVal = "0%";
+            trendDescription = `Spending was unchanged from ${prevMonth.monthLabel}`;
           }
+        } else if (currentSpent > 0) {
+          trendClass = "increase";
+          trendIcon = "↑";
+          displayVal = "new";
+          trendDescription = `Spending started after no withdrawals in ${prevMonth.monthLabel}`;
+        } else {
+          trendIcon = "•";
+          displayVal = "0%";
+          trendDescription = `Spending was unchanged from ${prevMonth.monthLabel}`;
         }
       } else {
         trendClass = "neutral";
@@ -977,7 +990,8 @@ function Balance({
         ...m,
         trendClass,
         trendIcon,
-        displayVal
+        displayVal,
+        trendDescription
       };
     });
   }, [analytics.monthlyTrend]);
@@ -1154,21 +1168,21 @@ function Balance({
                 ))
               ) : (
                 receiptSummaryRows.map((m) => {
-                  const upSparkline = (
+                  const decreaseSparkline = (
                     <svg width="24" height="12" viewBox="0 0 24 12" fill="none" style={{ marginRight: '4px' }}>
-                      <path d="M2 10L6 8L10 9L14 5L18 6L22 2" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M2 2L6 4L10 3L14 7L18 6L22 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   );
 
-                  const downSparkline = (
+                  const increaseSparkline = (
                     <svg width="24" height="12" viewBox="0 0 24 12" fill="none" style={{ marginRight: '4px' }}>
-                      <path d="M2 2L6 4L10 3L14 7L18 6L22 10" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M2 10L6 8L10 9L14 5L18 6L22 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   );
 
                   const neutralSparkline = (
                     <svg width="24" height="12" viewBox="0 0 24 12" fill="none" style={{ marginRight: '4px' }}>
-                      <path d="M2 6H22" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M2 6H22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   );
 
@@ -1177,9 +1191,13 @@ function Balance({
                       <div><strong>{m.monthLabel}</strong><small>{m.meta}</small></div>
                       <div><small>Withdraw</small><strong>{money(m.Withdraw)}</strong></div>
                       <div><small>Deposit</small><strong>{money(m.Deposit)}</strong></div>
-                      <span className={`trend-badge trend-${m.trendClass}`} title="Spending change compared to previous month">
-                        {m.trendClass === "up" && upSparkline}
-                        {m.trendClass === "down" && downSparkline}
+                      <span
+                        className={`trend-badge trend-${m.trendClass}`}
+                        title={m.trendDescription}
+                        aria-label={m.trendDescription}
+                      >
+                        {m.trendClass === "decrease" && decreaseSparkline}
+                        {m.trendClass === "increase" && increaseSparkline}
                         {m.trendClass === "neutral" && neutralSparkline}
                         <span className="trend-arrow">{m.trendIcon}</span>
                         <span className="trend-val">{m.displayVal}</span>
@@ -1233,40 +1251,56 @@ function Balance({
       </section>
 
       {visibilityPromptOpen && (
-        <div className="interest-password-overlay">
-          <div className="interest-password-box">
-            <h3>Unlock Visibility</h3>
-            <input
-              type="password"
-              placeholder="Password"
-              value={visibilityPassword}
-              onChange={(event) => { setVisibilityPassword(event.target.value); setVisibilityError(false); }}
-              onKeyDown={(event) => { if (event.key === "Enter") unlockVisibility(); }}
-            />
-            {visibilityError && <p style={{ color: "red", marginBottom: "12px" }}>Incorrect password</p>}
-            <div className="interest-password-actions">
-              <button type="button" onClick={() => { setVisibilityPromptOpen(false); setVisibilityPassword(""); setVisibilityError(false); }}>Close</button>
-              <button type="button" onClick={unlockVisibility}>Unlock</button>
+        <div className="password-overlay secure-password-overlay" role="dialog" aria-modal="true" aria-labelledby="interest-unlock-title">
+          <div className="password-box">
+            <div className="login-header">
+              <img src="/logo.png" alt="Bank Logo" className="login-logo" />
+              <h2 id="interest-unlock-title">Unlock Credit Interest</h2>
+            </div>
+            <div className="login-field">
+              <label htmlFor="interest-password">Password</label>
+              <input
+                id="interest-password"
+                type="password"
+                placeholder="Password"
+                value={visibilityPassword}
+                onChange={(event) => { setVisibilityPassword(event.target.value); setVisibilityError(false); }}
+                onKeyDown={(event) => { if (event.key === "Enter") unlockVisibility(); }}
+                autoFocus
+              />
+            </div>
+            {visibilityError && <div className="login-error-msg">Incorrect password</div>}
+            <div className="secure-password-actions">
+              <button className="login-cancel-btn" type="button" onClick={() => { setVisibilityPromptOpen(false); setVisibilityPassword(""); setVisibilityError(false); }}>Close</button>
+              <button className="login-submit-btn" type="button" onClick={unlockVisibility}>Unlock</button>
             </div>
           </div>
         </div>
       )}
 
       {apolloPromptOpen && (
-        <div className="interest-password-overlay">
-          <div className="interest-password-box">
-            <h3>Unlock Apollo</h3>
-            <input
-              type="password"
-              placeholder="Password"
-              value={apolloPassword}
-              onChange={(event) => { setApolloPassword(event.target.value); setApolloError(false); }}
-              onKeyDown={(event) => { if (event.key === "Enter") unlockApollo(); }}
-            />
-            {apolloError && <p style={{ color: "red", marginBottom: "12px" }}>Incorrect password</p>}
-            <div className="interest-password-actions">
-              <button type="button" onClick={() => { setIsFlipped(false); setApolloPromptOpen(false); setApolloPassword(""); setApolloError(false); }}>Close</button>
-              <button type="button" onClick={unlockApollo}>Unlock</button>
+        <div className="password-overlay secure-password-overlay" role="dialog" aria-modal="true" aria-labelledby="apollo-unlock-title">
+          <div className="password-box">
+            <div className="login-header">
+              <img src="/logo.png" alt="Bank Logo" className="login-logo" />
+              <h2 id="apollo-unlock-title">Unlock Apollo</h2>
+            </div>
+            <div className="login-field">
+              <label htmlFor="apollo-password">Password</label>
+              <input
+                id="apollo-password"
+                type="password"
+                placeholder="Password"
+                value={apolloPassword}
+                onChange={(event) => { setApolloPassword(event.target.value); setApolloError(false); }}
+                onKeyDown={(event) => { if (event.key === "Enter") unlockApollo(); }}
+                autoFocus
+              />
+            </div>
+            {apolloError && <div className="login-error-msg">Incorrect password</div>}
+            <div className="secure-password-actions">
+              <button className="login-cancel-btn" type="button" onClick={() => { setIsFlipped(false); setApolloPromptOpen(false); setApolloPassword(""); setApolloError(false); }}>Close</button>
+              <button className="login-submit-btn" type="button" onClick={unlockApollo}>Unlock</button>
             </div>
           </div>
         </div>

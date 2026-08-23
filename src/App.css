@@ -1728,52 +1728,6 @@ strong .money-skeleton {
   color: #555;
 }
 
-.interest-password-overlay {
-  position: fixed;
-  inset: 0;
-
-  background: rgba(0,0,0,0.45);
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  z-index: 5000;
-}
-
-.interest-password-box {
-  width: 320px;
-
-  background: white;
-
-  border-radius: 12px;
-
-  padding: 24px;
-}
-
-.interest-password-box h3 {
-  margin-bottom: 16px;
-}
-
-.interest-password-box input {
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 18px;
-}
-
-.interest-password-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.interest-password-actions button {
-  padding: 10px 16px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
 .table-total-panel {
   margin: 22px 0 0;
   padding: 16px 18px;
@@ -3339,13 +3293,13 @@ a {
   user-select: none;
 }
 
-.trend-up {
+.trend-decrease {
   background-color: #ecfdf5 !important;
   color: #059669 !important;
   border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
-.trend-down {
+.trend-increase {
   background-color: #fef2f2 !important;
   color: #dc2626 !important;
   border: 1px solid rgba(248, 113, 113, 0.2);
@@ -3488,6 +3442,38 @@ a {
   font-size: 12px;
   font-weight: 600;
   text-align: center;
+}
+
+.secure-password-overlay {
+  z-index: 10001;
+}
+
+.secure-password-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.secure-password-actions .login-submit-btn {
+  margin-top: 0;
+}
+
+.login-cancel-btn {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid rgba(24, 24, 22, 0.12);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #20231f;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.login-cancel-btn:hover {
+  background: #fafaf7;
+  border-color: rgba(24, 24, 22, 0.2);
 }
 
 

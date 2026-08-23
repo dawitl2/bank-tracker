@@ -804,12 +804,22 @@ export default function Users({
   } = detailsData;
 
   // Filter display transactions based on selected sub-tab toggle
-  const displayTxs = allTransactions.filter((tx) => {
-    if (subTab === "transactions") return !tx.is_custom;
-    if (subTab === "parking") return tx.is_custom && tx.category === "Parking Payments";
-    if (subTab === "suqe") return tx.is_custom && tx.category === "Suqe Payments";
-    return true;
-  });
+  const displayTxs = allTransactions
+    .filter((tx) => {
+      if (subTab === "transactions") return !tx.is_custom;
+      if (subTab === "parking") return tx.is_custom && tx.category === "Parking Payments";
+      if (subTab === "suqe") return tx.is_custom && tx.category === "Suqe Payments";
+      return true;
+    })
+    .map((tx, originalIndex) => ({ tx, originalIndex }))
+    .sort((a, b) => {
+      if (subTab !== "parking") return a.originalIndex - b.originalIndex;
+
+      const aTime = (parseTxDate(a.tx.date) || parseTxDate(a.tx.created_at))?.getTime() || 0;
+      const bTime = (parseTxDate(b.tx.date) || parseTxDate(b.tx.created_at))?.getTime() || 0;
+      return bTime - aTime || a.originalIndex - b.originalIndex;
+    })
+    .map(({ tx }) => tx);
 
   const avatarClass = getAvatarClass(selectedUser.id);
 
