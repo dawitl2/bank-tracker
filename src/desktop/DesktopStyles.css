@@ -1,0 +1,647 @@
+/* 
+=========================================
+DESKTOP SYSTEM REDESIGN STYLESHEET
+=========================================
+*/
+
+:root {
+  --desktop-bg: #eef1ed;
+  --desktop-surface: #fbfcf8;
+  --desktop-surface-card: #ffffff;
+  --desktop-dark: #20231f;
+  --desktop-dark-muted: #74796e;
+  --desktop-accent: #f4a300;
+  --desktop-accent-hover: #d98f00;
+  --desktop-border: rgba(24, 24, 22, 0.08);
+  --desktop-shadow-soft: 0 8px 24px rgba(34, 39, 34, 0.04);
+  --desktop-shadow-deep: 0 16px 45px rgba(24, 24, 22, 0.08);
+  
+  --desktop-color-withdraw: #c73939;
+  --desktop-color-deposit: #2a9d8f;
+  --desktop-color-construction: #b87200;
+}
+
+body.desktop-body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: var(--desktop-bg);
+  background-image: 
+    linear-gradient(90deg, rgba(24, 24, 22, 0.02) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(24, 24, 22, 0.02) 1px, transparent 1px);
+  background-size: 32px 32px;
+  color: var(--desktop-dark);
+}
+
+/* App Container */
+.desktop-app-container {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: 100vh;
+  background: var(--desktop-surface);
+}
+
+/* Sidebar */
+.desktop-sidebar {
+  background: var(--desktop-dark);
+  color: #f5f6ef;
+  display: flex;
+  flex-direction: column;
+  padding: 32px 24px;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  box-sizing: border-box;
+  z-index: 10;
+}
+
+.desktop-sidebar-logo-wrap {
+  margin-bottom: 40px;
+  display: flex;
+  justify-content: center;
+}
+
+.desktop-sidebar-logo {
+  max-width: 190px;
+  height: auto;
+  object-fit: contain;
+}
+
+.desktop-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-grow: 1;
+}
+
+.desktop-sidebar-nav-item {
+  background: transparent;
+  border: none;
+  color: #b0b5a9;
+  padding: 14px 18px;
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+}
+
+.desktop-sidebar-nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+.desktop-sidebar-nav-item.active {
+  background: var(--desktop-accent);
+  color: #151510;
+  font-weight: 600;
+  box-shadow: 0 8px 20px rgba(244, 163, 0, 0.2);
+}
+
+.desktop-sidebar-footer {
+  font-size: 12px;
+  color: var(--desktop-dark-muted);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Main Content Area */
+.desktop-main-content {
+  padding: 40px 48px;
+  overflow-y: auto;
+  height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* Section Header */
+.desktop-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--desktop-border);
+  padding-bottom: 20px;
+  margin-bottom: 8px;
+}
+
+.desktop-section-header h1 {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--desktop-dark);
+  margin: 0;
+}
+
+/* Layout Grid Helpers */
+.desktop-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+}
+
+.desktop-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.desktop-grid-dashboard {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 28px;
+}
+
+/* Elegant Cards */
+.desktop-card {
+  background: var(--desktop-surface-card);
+  border: 1px solid var(--desktop-border);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--desktop-shadow-soft);
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.desktop-card:hover {
+  box-shadow: var(--desktop-shadow-deep);
+}
+
+.desktop-card-title {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--desktop-dark-muted);
+  font-weight: 700;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Visual Bank Card Styles */
+.desktop-bank-card-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.desktop-card-visual {
+  height: 200px;
+  border-radius: 12px;
+  padding: 24px;
+  color: white;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.desktop-card-visual.regular {
+  background: linear-gradient(135deg, #2c3e50, #0f2027);
+  border-left: 5px solid var(--desktop-accent);
+}
+
+.desktop-card-visual.apollo {
+  background: linear-gradient(135deg, #1f2421, #000000);
+  border-left: 5px solid #2a9d8f;
+}
+
+.desktop-card-visual-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.desktop-card-chip {
+  width: 42px;
+  height: 32px;
+  background: #ecc260;
+  border-radius: 6px;
+  position: relative;
+}
+
+.desktop-card-brand {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.desktop-card-visual-body {
+  margin: auto 0;
+}
+
+.desktop-card-balance-lbl {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 1px;
+}
+
+.desktop-card-balance-val {
+  font-size: 28px;
+  font-weight: 800;
+  margin-top: 4px;
+  font-family: monospace;
+}
+
+.desktop-card-visual-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Balance Details Summary Grid */
+.desktop-balance-details-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  background: rgba(244, 163, 0, 0.03);
+  border: 1px solid rgba(244, 163, 0, 0.15);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.desktop-detail-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.desktop-detail-block label {
+  font-size: 12px;
+  color: var(--desktop-dark-muted);
+  text-transform: uppercase;
+}
+
+.desktop-detail-block strong {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.desktop-detail-block.withdraw strong {
+  color: var(--desktop-color-withdraw);
+}
+
+.desktop-detail-block.deposit strong {
+  color: var(--desktop-color-deposit);
+}
+
+.desktop-detail-block span {
+  font-size: 11px;
+  color: var(--desktop-dark-muted);
+}
+
+/* Table styling */
+.desktop-table-container {
+  overflow-x: auto;
+}
+
+.desktop-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 8px;
+}
+
+.desktop-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--desktop-dark-muted);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--desktop-border);
+}
+
+.desktop-table td {
+  padding: 16px;
+  font-size: 14px;
+  color: var(--desktop-dark);
+  border-bottom: 1px solid rgba(24, 24, 22, 0.04);
+  vertical-align: middle;
+}
+
+.desktop-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.desktop-table tbody tr:hover {
+  background: rgba(244, 163, 0, 0.02);
+}
+
+.desktop-table-action-btn {
+  background: transparent;
+  border: none;
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--desktop-dark-muted);
+  transition: all 0.2s;
+}
+
+.desktop-table-action-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--desktop-dark);
+}
+
+.desktop-table-action-btn.danger:hover {
+  background: rgba(199, 57, 57, 0.1);
+  color: var(--desktop-color-withdraw);
+}
+
+/* Action menus and badges */
+.desktop-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.desktop-badge-withdraw {
+  background: rgba(199, 57, 57, 0.08);
+  color: var(--desktop-color-withdraw);
+}
+
+.desktop-badge-deposit {
+  background: rgba(42, 157, 143, 0.08);
+  color: var(--desktop-color-deposit);
+}
+
+.desktop-badge-construction {
+  background: rgba(184, 114, 0, 0.08);
+  color: var(--desktop-color-construction);
+}
+
+/* Split Pane Layouts (for People and Construction) */
+.desktop-split-pane {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 28px;
+  align-items: stretch;
+}
+
+.desktop-split-left {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.desktop-split-right {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Horizontal pill filters */
+.desktop-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.desktop-pill {
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid var(--desktop-border);
+  color: var(--desktop-dark);
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.desktop-pill:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.desktop-pill.active {
+  background: var(--desktop-dark);
+  color: #ffffff;
+  border-color: var(--desktop-dark);
+}
+
+.desktop-pill.active.accent {
+  background: var(--desktop-accent);
+  color: #151510;
+  border-color: var(--desktop-accent);
+}
+
+/* Construction checklist custom layout */
+.desktop-construction-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-height: calc(100vh - 280px);
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.desktop-checklist-section {
+  background: var(--desktop-surface-card);
+  border: 1px solid var(--desktop-border);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.desktop-checklist-section-title {
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--desktop-border);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+  color: var(--desktop-dark-muted);
+}
+
+.desktop-checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  cursor: pointer;
+}
+
+.desktop-checklist-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--desktop-accent);
+  cursor: pointer;
+}
+
+.desktop-checklist-item span {
+  font-size: 14px;
+}
+
+.desktop-checklist-item.checked span {
+  text-decoration: line-through;
+  color: var(--desktop-dark-muted);
+}
+
+/* 3D Visualizer Inline Wrapper */
+.desktop-visualizer-wrapper {
+  background: var(--desktop-dark);
+  border-radius: 12px;
+  height: 100%;
+  min-height: 480px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Floating Actions */
+.desktop-floating-actions {
+  position: fixed;
+  right: 48px;
+  bottom: 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  z-index: 100;
+}
+
+.desktop-action-btn-main {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--desktop-accent);
+  color: #151510;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  box-shadow: 0 10px 25px rgba(244, 163, 0, 0.4);
+  transition: all 0.25s ease;
+}
+
+.desktop-action-btn-main:hover {
+  transform: translateY(-2px);
+  background: var(--desktop-accent-hover);
+  box-shadow: 0 12px 30px rgba(244, 163, 0, 0.5);
+}
+
+/* Inline search bar */
+.desktop-search-input {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--desktop-border);
+  background: var(--desktop-surface-card);
+  font-size: 14px;
+  width: 240px;
+  transition: all 0.2s;
+}
+
+.desktop-search-input:focus {
+  outline: none;
+  border-color: var(--desktop-accent);
+  box-shadow: 0 0 0 3px rgba(244, 163, 0, 0.15);
+}
+
+/* Password overlays */
+.desktop-password-box {
+  background: var(--desktop-surface-card);
+  border: 1px solid var(--desktop-border);
+  box-shadow: var(--desktop-shadow-deep);
+  border-radius: 12px;
+  padding: 32px;
+  width: 100%;
+  max-width: 400px;
+  margin: auto;
+  box-sizing: border-box;
+}
+
+.desktop-password-box h2 {
+  font-size: 22px;
+  font-weight: 800;
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+.desktop-password-box input[type="password"] {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--desktop-border);
+  box-sizing: border-box;
+  font-size: 15px;
+  margin-bottom: 16px;
+}
+
+.desktop-password-box button {
+  width: 100%;
+  padding: 12px;
+  background: var(--desktop-dark);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.desktop-password-box button:hover {
+  background: #343932;
+}
+
+.desktop-inline-calculator {
+  position: fixed;
+  right: 128px;
+  bottom: 48px;
+  width: 320px;
+  background: var(--desktop-dark);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  box-shadow: var(--desktop-shadow-deep);
+  overflow: hidden;
+  z-index: 99;
+}
+
+.desktop-inline-calculator-header {
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.2);
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.desktop-inline-calculator-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.desktop-inline-calculator-close {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.6);
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.desktop-inline-calculator-close:hover {
+  color: #fff;
+}

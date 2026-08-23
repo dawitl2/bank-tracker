@@ -4,6 +4,7 @@ import Content from "./Content";
 import Balance from "./Balance";
 import Calculator from "./Calculator";
 import Users from "./Users";
+import DesktopLayout from "./desktop/DesktopLayout";
 import "./App.css";
 
 const SUPABASE_URL = "https://ywplzexakisliebyjtyf.supabase.co";
@@ -30,6 +31,17 @@ function App() {
 
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [view, setView] = useState("transactions");
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 900);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 900);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   useEffect(() => {
     const handleLocationChange = () => {
@@ -1171,6 +1183,78 @@ function App() {
       fetchPeople={fetchPeople}
     />
   );
+
+  if (authenticated && isDesktop) {
+    return (
+      <DesktopLayout
+        transactions={transactions}
+        boaSmsState={boaSmsState}
+        boaSmsSummary={boaSmsSummary}
+        boaSmsLoading={boaSmsLoading}
+        parkingPayments={parkingPayments}
+        suqePayments={suqePayments}
+        people={people}
+        fetchTransactions={fetchTransactions}
+        fetchBoaSmsState={fetchBoaSmsState}
+        fetchBoaSmsSummary={fetchBoaSmsSummary}
+        fetchDbPayments={fetchDbPayments}
+        fetchPeople={fetchPeople}
+        currentBalance={currentBalance}
+        totalWithdraw={totalWithdraw}
+        lastWithdraw={lastWithdraw}
+        personFilter={personFilter}
+        setPersonFilter={setPersonFilter}
+        filteredTransactions={filteredTransactions}
+        handleEditTransaction={handleEditTransaction}
+        handleDeleteTransaction={handleDeleteTransaction}
+        navigate={navigate}
+        currentPath={currentPath}
+        showModal={showModal}
+        setShowModal={setShowModal}
+        receiptMode={receiptMode}
+        setReceiptMode={setReceiptMode}
+        url={url}
+        setUrl={setUrl}
+        scrapeLoading={scrapeLoading}
+        receiptDraft={receiptDraft}
+        setReceiptDraft={setReceiptDraft}
+        draftSaving={draftSaving}
+        handleSaveDraft={handleSaveDraft}
+        handleCloseModal={handleCloseModal}
+        deleteTarget={deleteTarget}
+        setDeleteTarget={setDeleteTarget}
+        deleteLoading={deleteLoading}
+        confirmDeleteTransaction={confirmDeleteTransaction}
+        showCalculator={showCalculator}
+        setShowCalculator={setShowCalculator}
+        calculatorImportValue={calculatorImportValue}
+        calculatorImportToken={calculatorImportToken}
+        sendTableTotalToCalculator={sendTableTotalToCalculator}
+        loadingMessage={loadingMessage}
+        setLoadingMessage={setLoadingMessage}
+        videoRef={videoRef}
+        qrStatus={qrStatus}
+        setQrStatus={setQrStatus}
+        cameraDevices={cameraDevices}
+        selectedCameraId={selectedCameraId}
+        setSelectedCameraId={setSelectedCameraId}
+        zoomRange={zoomRange}
+        cameraZoom={cameraZoom}
+        applyCameraZoom={applyCameraZoom}
+        startQrScanner={startQrScanner}
+        stopQrScanner={stopQrScanner}
+        handleImageReceipt={handleImageReceipt}
+        imageStatus={imageStatus}
+        imageProgress={imageProgress}
+        parkingDraft={parkingDraft}
+        setParkingDraft={setParkingDraft}
+        handleParkingDraftSubmit={handleParkingDraftSubmit}
+        personOptions={personOptions}
+        handleDraftChange={handleDraftChange}
+        openReceiptModal={openReceiptModal}
+      />
+    );
+  }
 
   return (
     <div className="app">
