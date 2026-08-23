@@ -1143,6 +1143,34 @@ function App() {
   }
 
   const isUserDetailPage = currentPath.startsWith("/balance/people/") && currentPath.split("/").filter(Boolean).length > 2;
+  const isConstructionDetailPage = currentPath.startsWith("/balance/construction/") && currentPath.split("/").filter(Boolean).length > 2;
+  const isBalanceDetailPage = isUserDetailPage || isConstructionDetailPage;
+
+  const renderBalance = () => (
+    <Balance
+      balance={currentBalance}
+      boaSmsState={boaSmsState}
+      boaSmsSummary={boaSmsSummary}
+      boaSmsLoading={boaSmsLoading}
+      onRefreshBoaSmsState={fetchBoaSmsState}
+      lastWithdraw={lastWithdraw}
+      totalWithdraw={totalWithdraw}
+      transactions={[
+        ...transactions,
+        ...parkingPayments.map(p => ({ ...p, is_withdraw: true, person: "dawit" })),
+        ...suqePayments.map(s => ({ ...s, is_withdraw: true, person: "yiss" }))
+      ]}
+      constructionOnly={constructionOnly}
+      setConstructionOnly={setConstructionOnly}
+      currentPath={currentPath}
+      navigate={navigate}
+      parkingPayments={parkingPayments}
+      suqePayments={suqePayments}
+      fetchDbPayments={fetchDbPayments}
+      people={people}
+      fetchPeople={fetchPeople}
+    />
+  );
 
   return (
     <div className="app">
@@ -1175,18 +1203,20 @@ function App() {
         </div>
       )}
 
-      {isUserDetailPage ? (
+      {isBalanceDetailPage ? (
         <div className="content" style={{ padding: "30px 20px" }}>
-          <Users
-            transactions={transactions}
-            currentPath={currentPath}
-            navigate={navigate}
-            parkingPayments={parkingPayments}
-            suqePayments={suqePayments}
-            fetchDbPayments={fetchDbPayments}
-            people={people}
-            fetchPeople={fetchPeople}
-          />
+          {isUserDetailPage ? (
+            <Users
+              transactions={transactions}
+              currentPath={currentPath}
+              navigate={navigate}
+              parkingPayments={parkingPayments}
+              suqePayments={suqePayments}
+              fetchDbPayments={fetchDbPayments}
+              people={people}
+              fetchPeople={fetchPeople}
+            />
+          ) : renderBalance()}
         </div>
       ) : (
         <>
@@ -1250,29 +1280,7 @@ function App() {
             {view === "balance" && (
               <>
 
-                <Balance
-                  balance={currentBalance}
-                  boaSmsState={boaSmsState}
-                  boaSmsSummary={boaSmsSummary}
-                  boaSmsLoading={boaSmsLoading}
-                  onRefreshBoaSmsState={fetchBoaSmsState}
-                  lastWithdraw={lastWithdraw}
-                  totalWithdraw={totalWithdraw}
-                  transactions={[
-                    ...transactions,
-                    ...parkingPayments.map(p => ({ ...p, is_withdraw: true, person: "dawit" })),
-                    ...suqePayments.map(s => ({ ...s, is_withdraw: true, person: "yiss" }))
-                  ]}
-                  constructionOnly={constructionOnly}
-                  setConstructionOnly={setConstructionOnly}
-                  currentPath={currentPath}
-                  navigate={navigate}
-                  parkingPayments={parkingPayments}
-                  suqePayments={suqePayments}
-                  fetchDbPayments={fetchDbPayments}
-                  people={people}
-                  fetchPeople={fetchPeople}
-                />
+                {renderBalance()}
 
                 <button
                   className="calculator-btn"

@@ -1,5 +1,30 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import {
+  FaArrowLeft,
+  FaBolt,
+  FaBorderAll,
+  FaBroom,
+  FaBuilding,
+  FaCheck,
+  FaDoorOpen,
+  FaEye,
+  FaEyeSlash,
+  FaHammer,
+  FaHome,
+  FaLayerGroup,
+  FaLightbulb,
+  FaLock,
+  FaPaintRoller,
+  FaPen,
+  FaPlug,
+  FaPlus,
+  FaShower,
+  FaSink,
+  FaThLarge,
+  FaToilet,
+  FaTools,
+  FaTrashAlt
+} from "react-icons/fa";
 import Construction3D from "./Construction3D";
 import Users from "./Users";
 
@@ -50,59 +75,59 @@ const CONSTRUCTION_SECTIONS = [
   {
     label: "Foundation",
     items: [
-      { id: "building_block", label: "Building block / structure", locked: true }
+      { id: "building_block", label: "Building block / structure", locked: true, icon: FaBuilding }
     ]
   },
   {
     label: "Shell",
     items: [
-      { id: "roofing", label: "Roofing" },
-      { id: "exterior_doors", label: "Exterior doors" },
-      { id: "windows", label: "Windows" }
+      { id: "roofing", label: "Roofing", icon: FaHome },
+      { id: "exterior_doors", label: "Exterior doors", icon: FaDoorOpen },
+      { id: "windows", label: "Windows", icon: FaBorderAll }
     ]
   },
   {
     label: "Electrical",
     items: [
-      { id: "electrical_rough", label: "Electrical wiring & conduits" },
-      { id: "electrical_fixtures", label: "Electrical outlets & switches" },
-      { id: "lighting", label: "Light fixtures & fittings" }
+      { id: "electrical_rough", label: "Electrical wiring & conduits", icon: FaBolt },
+      { id: "electrical_fixtures", label: "Electrical outlets & switches", icon: FaPlug },
+      { id: "lighting", label: "Light fixtures & fittings", icon: FaLightbulb }
     ]
   },
   {
     label: "Interior",
     items: [
-      { id: "gypsum", label: "Gypsum board (drywall)" },
-      { id: "ceiling", label: "Ceiling" },
-      { id: "ceramic_tiles_floor", label: "Ceramic floor tiles" },
-      { id: "interior_doors", label: "Interior doors" },
-      { id: "paint", label: "Paint (interior)" }
+      { id: "gypsum", label: "Gypsum board (drywall)", icon: FaLayerGroup },
+      { id: "ceiling", label: "Ceiling", icon: FaLayerGroup },
+      { id: "ceramic_tiles_floor", label: "Ceramic floor tiles", icon: FaThLarge },
+      { id: "interior_doors", label: "Interior doors", icon: FaDoorOpen },
+      { id: "paint", label: "Paint (interior)", icon: FaPaintRoller }
     ]
   },
   {
     label: "Bathroom",
     items: [
-      { id: "bathroom_sink", label: "Bathroom sink" },
-      { id: "bathroom_wc", label: "WC / toilet" },
-      { id: "bathroom_shower", label: "Shower" },
-      { id: "bathroom_wall_tiles", label: "Bathroom wall tiles" },
-      { id: "bathroom_floor_tiles", label: "Bathroom floor tiles" },
-      { id: "bathroom_accessories", label: "Bathroom accessories" }
+      { id: "bathroom_sink", label: "Bathroom sink", icon: FaSink },
+      { id: "bathroom_wc", label: "WC / toilet", icon: FaToilet },
+      { id: "bathroom_shower", label: "Shower", icon: FaShower },
+      { id: "bathroom_wall_tiles", label: "Bathroom wall tiles", icon: FaThLarge },
+      { id: "bathroom_floor_tiles", label: "Bathroom floor tiles", icon: FaThLarge },
+      { id: "bathroom_accessories", label: "Bathroom accessories", icon: FaTools }
     ]
   },
   {
     label: "Kitchen",
     items: [
-      { id: "kitchen_sink", label: "Kitchen sink" },
-      { id: "kitchen_wall_tiles", label: "Kitchen wall tiles" },
-      { id: "kitchen_floor_tiles", label: "Kitchen floor tiles" },
-      { id: "kitchen_cabinets", label: "Kitchen cabinets & countertops" }
+      { id: "kitchen_sink", label: "Kitchen sink", icon: FaSink },
+      { id: "kitchen_wall_tiles", label: "Kitchen wall tiles", icon: FaThLarge },
+      { id: "kitchen_floor_tiles", label: "Kitchen floor tiles", icon: FaThLarge },
+      { id: "kitchen_cabinets", label: "Kitchen cabinets & countertops", icon: FaHammer }
     ]
   },
   {
     label: "Final",
     items: [
-      { id: "final_clean", label: "Final clean & snag list" }
+      { id: "final_clean", label: "Final clean & snag list", icon: FaBroom }
     ]
   }
 ];
@@ -214,7 +239,7 @@ function getProgress(checkedMap) {
   return { checked, total: TOTAL_ITEMS, pct: Math.round((checked / TOTAL_ITEMS) * 100) };
 }
 
-function ConstructionPanel() {
+function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
   const [houses, setHouses] = useState([]);
   const [checkedByHouse, setCheckedByHouse] = useState({});
   const [loading, setLoading] = useState(true);
@@ -257,6 +282,21 @@ function ConstructionPanel() {
   }, []);
 
   useEffect(() => { loadHouses(); }, [loadHouses]);
+
+  useEffect(() => {
+    const parts = currentPath.split("/").filter(Boolean);
+    const houseId = parts[0] === "balance" && parts[1] === "construction" && parts[2]
+      ? decodeURIComponent(parts[2])
+      : null;
+
+    if (!houseId) {
+      setSelectedHouse(null);
+      return;
+    }
+
+    const routedHouse = houses.find(house => String(house.id) === houseId);
+    if (routedHouse) setSelectedHouse(routedHouse);
+  }, [currentPath, houses]);
 
   useEffect(() => {
     if (!selectedHouse) {
@@ -445,7 +485,7 @@ function ConstructionPanel() {
 
   return (
     <>
-      <article className="analytics-card focus-card construction-card">
+      {!selectedHouse && <article className="analytics-card focus-card construction-card">
         <span>Construction</span>
         <h2 style={{ marginBottom: 16 }}>Houses</h2>
 
@@ -454,12 +494,13 @@ function ConstructionPanel() {
             const checked = checkedByHouse[house.id] || { building_block: true };
             const prog = getProgress(checked);
             return (
-              <div
+              <button
                 key={house.id}
-                className={`construction-house-card${selectedHouse?.id === house.id ? " selected" : ""}`}
-                onClick={() => setSelectedHouse(house)}
+                type="button"
+                className="construction-house-card"
+                onClick={() => navigate(`/balance/construction/${encodeURIComponent(house.id)}`)}
               >
-                <div className="construction-house-icon">🏠</div>
+                <div className="construction-house-icon"><FaHome /></div>
                 <div className="construction-house-name-row">
                   <span className="construction-house-name">{house.name}</span>
                 </div>
@@ -467,28 +508,47 @@ function ConstructionPanel() {
                   <div className="construction-prog-fill" style={{ width: `${prog.pct}%` }} />
                 </div>
                 <div className="construction-prog-label">{prog.checked}/{prog.total} · {prog.pct}%</div>
-              </div>
+              </button>
             );
           })}
           <button
             className="construction-add-house"
             onClick={() => { setNameInput(""); setModal({ type: "add" }); }}
           >
-            + Add house
+            <FaPlus /> Add house
           </button>
         </div>
-      </article>
+      </article>}
 
       {selectedHouse && (
-        <div className="construction-overlay" onClick={() => setSelectedHouse(null)}>
-          <div className="construction-detail-modal" onClick={e => e.stopPropagation()}>
+        <section className="construction-detail-page">
+          <div className="construction-page-topbar">
+            <button
+              className="construction-back-btn"
+              type="button"
+              onClick={() => navigate("/balance/construction")}
+            >
+              <FaArrowLeft /> Back to Houses
+            </button>
+            <img src="/logo.png" alt="Bank Logo" />
+          </div>
 
-            {/* ── Header (never scrolls) ── */}
+          {(() => {
+            const checked = checkedByHouse[selectedHouse.id] || { building_block: true };
+            const prog = getProgress(checked);
+            return <>
             <div className="construction-detail-header">
               <div className="construction-detail-title-row">
-                <span className="construction-detail-title">🏠 {selectedHouse.name}</span>
+                <span className="construction-detail-house-icon"><FaHome /></span>
+                <span className="construction-detail-title">
+                  <small>Construction project</small>
+                  <strong>{selectedHouse.name}</strong>
+                </span>
+              </div>
+              <div className="construction-detail-actions">
                 <button
                   className="construction-detail-edit-btn"
+                  type="button"
                   onClick={() => {
                     setNameInput(selectedHouse.name);
                     setModal({ type: "edit", house: selectedHouse });
@@ -496,28 +556,22 @@ function ConstructionPanel() {
                   title="Edit name"
                   aria-label="Edit name"
                 >
-                  ✏️
+                  <FaPen />
                 </button>
                 <button
                   className="construction-detail-delete-btn"
+                  type="button"
                   onClick={() => handleDeleteHouse(selectedHouse)}
                   title="Delete house"
                   aria-label="Delete house"
                 >
-                  🗑️
+                  <FaTrashAlt />
                 </button>
               </div>
-              <button className="construction-close-btn" onClick={() => setSelectedHouse(null)}>✕</button>
             </div>
 
-            {/* ── Everything below scrolls together ── */}
-            {(() => {
-              const checked = checkedByHouse[selectedHouse.id] || { building_block: true };
-              const prog = getProgress(checked);
-              return (
-                <div className="construction-checklist-scroll">
-
-                  {/* Photo */}
+            <div className="construction-detail-body">
+              <aside className="construction-project-overview">
                   <div className="construction-photo-wrap">
                     {selectedHouse.image_url ? (
                       <img
@@ -566,60 +620,17 @@ function ConstructionPanel() {
                     />
                   </div>
 
-
-                    {/* 3D will be shown when its fully built and ready */}
-                      {/* 
-                    
-                    
-                    <button
-                    className="construction-visualizer-card"
-                    onClick={() => setVisualizingHouse(selectedHouse)}
-                    type="button"
-                  >
-                    <span className="construction-visualizer-mark">3D</span>
-                    <span className="construction-visualizer-copy">
-                      <strong>Plan and visualize</strong>
-                      <small>Draw walls, add texture, then walk inside</small>
-                    </span>
-                    <span className="construction-visualizer-arrow">Open</span>
-                  </button>
-                    
-                       */}
-
-                  
-
-                  {/* Progress bar */}
                   <div className="construction-overall-prog">
+                    <div className="construction-overall-heading">
+                      <span>Overall progress</span>
+                      <strong>{prog.pct}%</strong>
+                    </div>
                     <div className="construction-overall-bg">
                       <div className="construction-overall-fill" style={{ width: `${prog.pct}%` }} />
                     </div>
-                    <div className="construction-overall-label">{prog.pct}% complete · {prog.checked} of {prog.total} done</div>
+                    <div className="construction-overall-label">{prog.checked} of {prog.total} tasks completed</div>
                   </div>
 
-                  {/* Checklist sections */}
-                  {CONSTRUCTION_SECTIONS.map(section => (
-                    <div key={section.label} className="construction-section">
-                      <div className="construction-section-label">{section.label}</div>
-                      {section.items.map(item => {
-                        const isChecked = !!checked[item.id];
-                        const isLocked = !!item.locked;
-                        return (
-                          <div
-                            key={item.id}
-                            className={`construction-item-row${isLocked ? " locked" : ""}`}
-                            onClick={() => !isLocked && toggleItem(selectedHouse.id, item.id)}
-                          >
-                            <div className={`construction-checkbox${isChecked ? " checked" : ""}`}>
-                              {isChecked && "✓"}
-                            </div>
-                            <span className="construction-item-label">{item.label}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ))}
-
-                  {/* Money spent (at the bottom of the scroll) */}
                   <div className="construction-money-spent">
                     <span className="construction-money-spent-label">Money spent</span>
                     <div className="construction-money-spent-row">
@@ -642,13 +653,43 @@ function ConstructionPanel() {
                       />
                     </div>
                   </div>
+              </aside>
 
+              <main className="construction-checklist-content">
+                <div className="construction-checklist-heading">
+                  <span>Project checklist</span>
+                  <strong>{prog.total - prog.checked} remaining</strong>
                 </div>
-              );
-            })()}
-
-          </div>
-        </div>
+                  {CONSTRUCTION_SECTIONS.map(section => (
+                    <div key={section.label} className="construction-section">
+                      <div className="construction-section-label">{section.label}</div>
+                      {section.items.map(item => {
+                        const isChecked = !!checked[item.id];
+                        const isLocked = !!item.locked;
+                        const ItemIcon = item.icon || FaTools;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            className={`construction-item-row${isLocked ? " locked" : ""}`}
+                            onClick={() => !isLocked && toggleItem(selectedHouse.id, item.id)}
+                            disabled={isLocked}
+                          >
+                            <span className="construction-item-icon"><ItemIcon /></span>
+                            <span className="construction-item-label">{item.label}</span>
+                            <div className={`construction-checkbox${isChecked ? " checked" : ""}`}>
+                              {isChecked ? <FaCheck /> : isLocked ? <FaLock /> : null}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))}
+              </main>
+            </div>
+            </>;
+          })()}
+        </section>
       )}
 
       {modal && (
@@ -1088,6 +1129,17 @@ function Balance({
     setVisibilityError(true);
   };
 
+  const isConstructionDetailPage = currentPath.startsWith("/balance/construction/") &&
+    currentPath.split("/").filter(Boolean).length > 2;
+
+  if (isConstructionDetailPage) {
+    return (
+      <div className="construction-route-page">
+        <ConstructionPanel currentPath={currentPath} navigate={navigate} />
+      </div>
+    );
+  }
+
   return (
     <div className="balance-page balance-dashboard">
 
@@ -1248,15 +1300,15 @@ function Balance({
           <article className="analytics-card focus-card interest-card">
             <span>Credit Interest</span>
             <div className="interest-lock-row">
-              <h2>{showInterest ? money(analytics.interest.netMonthEstimate) : hiddenSkeleton}</h2>
+              <h2 className={!showInterest ? "masked-interest-value" : ""}>{showInterest ? money(analytics.interest.netMonthEstimate) : hiddenCardMoney}</h2>
               <button className="interest-lock-btn" onClick={requestInterestVisibility} type="button">
                 {showInterest ? <FaEyeSlash /> : <FaEye />}
               </button>
             </div>
             <p>Based on the lowest balance reached in {analytics.interest.monthLabel} using the whole transaction table.</p>
             <div className="interest-grid">
-              <div><small>Minimum balance</small><strong>{showInterest ? money(analytics.interest.minimumBalance) : hiddenSkeleton}</strong></div>
-              <div><small>Remaining est.</small><strong>{showInterest ? money(analytics.interest.remainingEstimate) : hiddenSkeleton}</strong></div>
+              <div><small>Minimum balance</small><strong className={!showInterest ? "masked-interest-value" : ""}>{showInterest ? money(analytics.interest.minimumBalance) : hiddenCardMoney}</strong></div>
+              <div><small>Remaining est.</small><strong className={!showInterest ? "masked-interest-value" : ""}>{showInterest ? money(analytics.interest.remainingEstimate) : hiddenCardMoney}</strong></div>
               <div><small>Remaining day</small><strong>{analytics.interest.remainingDays}</strong></div>
               <div><small>Interest days</small><strong>{analytics.interest.elapsedDays}/{analytics.interest.monthDays}</strong></div>
               <div><small>Annual rate</small><strong>{(analytics.interest.annualRate * 100).toFixed(1)}%</strong></div>
@@ -1267,7 +1319,7 @@ function Balance({
 
 
 
-        {activePanel === "construction" && <ConstructionPanel />}
+        {activePanel === "construction" && <ConstructionPanel currentPath={currentPath} navigate={navigate} />}
 
       </section>
 
