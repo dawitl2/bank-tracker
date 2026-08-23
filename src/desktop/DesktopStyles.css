@@ -37,7 +37,8 @@ body.desktop-body {
 .desktop-app-container {
   display: grid;
   grid-template-columns: 280px 1fr;
-  min-height: 100vh;
+  min-height: 133.33vh;
+  width: 133.33vw;
   background: var(--desktop-surface);
   zoom: 0.75;
 }
@@ -52,7 +53,7 @@ body.desktop-body {
   border-right: 1px solid rgba(255, 255, 255, 0.05);
   position: sticky;
   top: 0;
-  height: 100vh;
+  height: 133.33vh;
   box-sizing: border-box;
   z-index: 10;
 }
