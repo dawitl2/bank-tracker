@@ -221,7 +221,38 @@ function App() {
   // AUTH
   const [authenticated, setAuthenticated] = useState(false);
   const [inputPassword, setInputPassword] = useState("");
-  const [passwordError, setPasswordError] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [lockedUntil, setLockedUntil] = useState(() => localStorage.getItem("auth_locked_until"));
+  const [attempts, setAttempts] = useState(() => parseInt(localStorage.getItem("auth_attempts") || "0", 10));
+  const [lockoutCountdown, setLockoutCountdown] = useState("");
+
+  useEffect(() => {
+    if (!lockedUntil) {
+      setLockoutCountdown("");
+      return;
+    }
+
+    const updateCountdown = () => {
+      const remaining = new Date(lockedUntil).getTime() - Date.now();
+      if (remaining <= 0) {
+        localStorage.removeItem("auth_locked_until");
+        localStorage.removeItem("auth_attempts");
+        setLockedUntil(null);
+        setAttempts(0);
+        setLockoutCountdown("");
+        setPasswordError("");
+      } else {
+        const hours = Math.floor(remaining / (1000 * 60 * 60));
+        const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+        setLockoutCountdown(`${hours}h ${minutes}m ${seconds}s`);
+      }
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [lockedUntil]);
   const videoRef = useRef(null);
   const qrStreamRef = useRef(null);
   const qrFrameRef = useRef(null);
@@ -986,25 +1017,48 @@ function App() {
     } catch (err) {
       console.error("DELETE ERROR:", err);
       alert(err.message || "Delete failed.");
-
     } finally {
       setDeleteLoading(false);
     }
   };
 
   const handlePasswordSubmit = () => {
+    if (lockedUntil) {
+      const remaining = new Date(lockedUntil).getTime() - Date.now();
+      if (remaining > 0) {
+        const hours = Math.ceil(remaining / (1000 * 60 * 60));
+        setPasswordError(`This device is locked out. Try again in ${hours} hours.`);
+        return;
+      } else {
+        localStorage.removeItem("auth_locked_until");
+        localStorage.removeItem("auth_attempts");
+        setLockedUntil(null);
+        setAttempts(0);
+      }
+    }
 
     if (inputPassword === PASSWORD) {
-
       localStorage.setItem("authenticated", "true");
-
+      localStorage.removeItem("auth_attempts");
+      localStorage.removeItem("auth_locked_until");
+      setAttempts(0);
+      setLockedUntil(null);
       setAuthenticated(true);
-      setPasswordError(false);
-
+      setPasswordError("");
     } else {
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
+      localStorage.setItem("auth_attempts", String(newAttempts));
 
-      setPasswordError(true);
-
+      if (newAttempts >= 5) {
+        const lockDuration = 48 * 60 * 60 * 1000; // 48 hours
+        const lockTime = new Date(Date.now() + lockDuration).toISOString();
+        localStorage.setItem("auth_locked_until", lockTime);
+        setLockedUntil(lockTime);
+        setPasswordError(`Too many failed attempts. This device has been locked for 48 hours.`);
+      } else {
+        setPasswordError(`Incorrect password. Attempt ${newAttempts} of 5. Device will lock after 5 failures.`);
+      }
     }
   };
 
@@ -1015,7 +1069,6 @@ function App() {
   */
 
   const filteredTransactions = transactions.filter((tx) => {
-
     if (personFilter === "ALL") {
       return true;
     }
@@ -1037,7 +1090,6 @@ function App() {
     }
 
     return (tx.person || "").toLowerCase() === personFilter.toLowerCase();
-
   });
 
   /*
@@ -1049,7 +1101,6 @@ function App() {
   let totalWithdraw = 0;
 
   transactions.forEach((tx) => {
-
     // BALANCE TAB CONSTRUCTION FILTER
     if (
       constructionOnly &&
@@ -1092,6 +1143,8 @@ function App() {
     tx => tx.is_withdraw !== false
   );
 
+
+
   /*
   =========================
   PASSWORD SCREEN
@@ -1099,6 +1152,8 @@ function App() {
   */
 
   if (!authenticated) {
+    const isLockoutActive = lockedUntil && new Date(lockedUntil).getTime() > Date.now();
+
     return (
       <div className="password-overlay">
         <div className="password-box">
@@ -1124,31 +1179,56 @@ function App() {
             />
           </div>
 
-          <div className="login-field">
-            <label>Password</label>
-            <input
-              type="password"
-              placeholder="Password"
-              value={inputPassword}
-              onChange={(e) => setInputPassword(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handlePasswordSubmit();
-                }
-              }}
-              autoFocus
-            />
-          </div>
-
-          {passwordError && (
-            <div className="login-error-msg">
-              Incorrect password
+          {isLockoutActive ? (
+            <div className="login-field">
+              <label>Password</label>
+              <input
+                type="password"
+                placeholder="Device Locked Out"
+                value=""
+                disabled
+              />
+            </div>
+          ) : (
+            <div className="login-field">
+              <label>Password</label>
+              <input
+                type="password"
+                placeholder="Password"
+                value={inputPassword}
+                onChange={(e) => setInputPassword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handlePasswordSubmit();
+                  }
+                }}
+                autoFocus
+              />
             </div>
           )}
 
-          <button className="login-submit-btn" onClick={handlePasswordSubmit}>
-            Submit
-          </button>
+          {passwordError && (
+            <div className="login-error-msg" style={{ whiteSpace: "pre-line" }}>
+              {passwordError}
+            </div>
+          )}
+
+          {isLockoutActive && lockoutCountdown && (
+            <div className="login-error-msg" style={{ background: "rgba(199,57,57,0.08)", color: "#c73939", border: "1px solid rgba(199,57,57,0.15)", borderRadius: "6px", padding: "10px", textAlign: "center", fontSize: "13px", margin: "10px 0" }}>
+              Locked out. Remaining time:<br/>
+              <strong style={{ fontSize: "16px", display: "inline-block", marginTop: "4px" }}>{lockoutCountdown}</strong>
+            </div>
+          )}
+
+          {!isLockoutActive ? (
+            <button className="login-submit-btn" onClick={handlePasswordSubmit}>
+              Submit
+            </button>
+          ) : (
+            <button className="login-submit-btn" disabled style={{ background: "#ccc", color: "#666", cursor: "not-allowed" }}>
+              Locked Out
+            </button>
+          )}
         </div>
       </div>
     );
