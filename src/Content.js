@@ -214,11 +214,15 @@ function Content({
       </div>
 
       {/* TABLE */}
+      <div className="transaction-scroll-hint" aria-hidden="true">
+        Swipe to see more <span>→</span>
+      </div>
       <table className="transaction-table">
 
         <thead>
           <tr>
             <th>ID</th>
+            <th>Person</th>
             <th>Amount</th>
             <th>Date / Time</th>
             <th>Reference no</th>
@@ -241,12 +245,12 @@ function Content({
             >
 
               <td>{index + 1}</td>
-              <td className="amount">{tx.amount}</td>
-              <td className="date-cell">{tx.date}</td>
-              <td>{tx.reference}</td>
-              <td>
-                {tx.narrative}
-                {tx.person && (
+              <td className="person-cell">
+                {tx.is_withdraw === false ? (
+                  <span className="user-inline-badge badge-deposit">
+                    Deposit
+                  </span>
+                ) : tx.person ? (
                   <button
                     type="button"
                     className={`user-inline-badge badge-${tx.person.toLowerCase()}`}
@@ -257,8 +261,14 @@ function Content({
                   >
                     {tx.person}
                   </button>
+                ) : (
+                  <span className="transaction-person-empty">—</span>
                 )}
               </td>
+              <td className="amount">{tx.amount}</td>
+              <td className="date-cell">{tx.date}</td>
+              <td>{tx.reference}</td>
+              <td>{tx.narrative}</td>
 
               <td className="action">
                 {tx.receipt_url ? (

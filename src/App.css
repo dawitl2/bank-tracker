@@ -3736,8 +3736,8 @@ a {
 }
 
 .transaction-table td {
-  padding-top: 12px !important;
-  padding-bottom: 12px !important;
+  padding-top: 15px !important;
+  padding-bottom: 15px !important;
   border-bottom: 1px solid rgba(24, 24, 22, 0.065);
   color: #3d423a;
 }
@@ -3755,6 +3755,28 @@ a {
 
 .transaction-table .date-cell {
   color: #777d74 !important;
+}
+
+.transaction-table .person-cell {
+  width: 96px;
+}
+
+.transaction-table .person-cell .user-inline-badge {
+  margin-left: 0;
+}
+
+.user-inline-badge.badge-deposit {
+  background-color: #dcfce7;
+  color: #166534;
+  cursor: default;
+}
+
+.transaction-person-empty {
+  color: #a1a59e;
+}
+
+.transaction-scroll-hint {
+  display: none;
 }
 
 /* Construction: routed full-page project detail */
@@ -4060,13 +4082,36 @@ a {
 }
 
 @media (max-width: 768px) {
+  .transaction-scroll-hint {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 5px;
+    margin: 0 2px 7px;
+    color: #858a82;
+    font-size: 10px;
+    font-weight: 650;
+    letter-spacing: 0.02em;
+  }
+
+  .transaction-scroll-hint span {
+    color: #555b52;
+    font-size: 13px;
+  }
+
   .transaction-table {
     display: block;
     width: 100%;
+    max-width: 100%;
     overflow-x: auto;
     white-space: nowrap;
     border-collapse: collapse;
     border-spacing: 0;
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+    overscroll-behavior-inline: contain;
+    touch-action: pan-x pan-y;
     -webkit-overflow-scrolling: touch;
   }
 
@@ -4096,7 +4141,7 @@ a {
   .transaction-table td {
     display: table-cell;
     width: auto;
-    padding: 11px 12px !important;
+    padding: 14px 12px !important;
     border-bottom: 1px solid rgba(24, 24, 22, 0.065);
     color: #3d423a;
     font-size: 12px;
@@ -4115,6 +4160,10 @@ a {
 
   .transaction-table .action {
     text-align: right;
+  }
+
+  .transaction-table .person-cell {
+    min-width: 92px;
   }
 
   .construction-detail-page {
