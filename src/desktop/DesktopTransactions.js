@@ -105,7 +105,7 @@ export default function DesktopTransactions({
       </div>
 
       {/* Mobile-style Filter Dropdown */}
-      <div className="filter-dropdown" style={{ marginBottom: "20px", display: "inline-block" }}>
+      <div className="filter-dropdown" style={{ marginBottom: "20px", display: "block", maxWidth: "200px", textAlign: "left" }}>
         <div
           className="dropdown-btn"
           onClick={() => setDropdownOpen(!dropdownOpen)}

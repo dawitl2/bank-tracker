@@ -317,37 +317,61 @@ export default function DesktopConstruction() {
               <span>Construction projects</span>
               <strong>{houses.length} projects active</strong>
             </div>
-            <div className="construction-houses-grid">
+            <div className="desktop-large-construction-grid">
               {houses.map((house) => {
                 const prog = getHouseProgress(house.id);
                 return (
-                  <button
+                  <div
                     key={house.id}
-                    type="button"
-                    className="construction-house-card"
+                    className="desktop-large-construction-card"
                     onClick={() => setSelectedHouse(house)}
                   >
-                    <div className="construction-house-icon"><FaHome /></div>
-                    <div className="construction-house-name-row">
-                      <span className="construction-house-name">{house.name}</span>
+                    <div className="desktop-large-construction-card-header">
+                      <div className="desktop-large-construction-card-icon"><FaHome /></div>
+                      <span className="desktop-large-construction-card-prog-lbl">{prog.pct}% Complete</span>
                     </div>
-                    <div className="construction-prog-bg">
-                      <div className="construction-prog-fill" style={{ width: `${prog.pct}%` }} />
+                    
+                    <div style={{ flexGrow: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                      <h3 className="desktop-large-construction-card-title">{house.name}</h3>
+                      <div style={{ fontSize: "13px", color: "var(--desktop-dark-muted)", marginTop: "8px" }}>
+                        Money spent: <strong>ETB {house.money_spent ? formatWithCommas(String(house.money_spent)) : "0"}</strong>
+                      </div>
+                      <div style={{ fontSize: "12px", color: "var(--desktop-dark-muted)", marginTop: "4px" }}>
+                        Tasks: <strong>{prog.checked} / {prog.total} completed</strong>
+                      </div>
                     </div>
-                    <div className="construction-prog-label">{prog.checked}/{prog.total} · {prog.pct}%</div>
-                  </button>
+
+                    {/* Progress Fill Indicator */}
+                    <div style={{ width: "100%", height: "6px", background: "rgba(0,0,0,0.05)", borderRadius: "3px", overflow: "hidden", marginTop: "16px" }}>
+                      <div style={{ width: `${prog.pct}%`, height: "100%", background: "var(--desktop-accent)", transition: "width 0.3s ease" }} />
+                    </div>
+
+                    {/* Hover edit/delete actions */}
+                    <div style={{ position: "absolute", top: "24px", right: "24px", display: "flex", gap: "4px" }} onClick={e => e.stopPropagation()}>
+                      <button 
+                        className="desktop-table-action-btn" 
+                        style={{ padding: "4px" }}
+                        onClick={() => {
+                          setIsEditingHouse(true);
+                          setHouseForm({ id: house.id, name: house.name });
+                          setShowHouseModal(true);
+                        }}
+                        title="Rename Project"
+                      >
+                        <FaEdit size={12} />
+                      </button>
+                      <button 
+                        className="desktop-table-action-btn danger" 
+                        style={{ padding: "4px" }}
+                        onClick={() => handleDeleteHouse(house)}
+                        title="Delete Project"
+                      >
+                        <FaTrash size={12} />
+                      </button>
+                    </div>
+                  </div>
                 );
               })}
-              <button
-                className="construction-add-house"
-                onClick={() => {
-                  setIsEditingHouse(false);
-                  setHouseForm({ id: null, name: "" });
-                  setShowHouseModal(true);
-                }}
-              >
-                <FaPlus /> Add house
-              </button>
             </div>
           </article>
         )}

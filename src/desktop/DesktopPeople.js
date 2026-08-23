@@ -2,8 +2,6 @@ import { useState, useMemo } from "react";
 import { 
   AreaChart,
   Area,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -532,9 +530,9 @@ export default function DesktopPeople({
           ) : (
             /* Selected State: Profile details stacked vertically */
             <>
-              {/* Detailed profile metrics banner */}
-              <div className="desktop-card" style={{ padding: "24px 30px" }}>
-                <div style={{ display: "flex", gap: "20px", alignItems: "center", marginBottom: "20px" }}>
+              {/* Profile Header */}
+              <div className="desktop-card" style={{ padding: "20px 24px" }}>
+                <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
                   <div className={`avatar-placeholder ${getAvatarClass(selectedUser.id)}`} style={{ width: "56px", height: "56px", fontSize: "22px" }}>
                     {selectedUser.name.charAt(0)}
                   </div>
@@ -545,83 +543,37 @@ export default function DesktopPeople({
                     </span>
                   </div>
                 </div>
+              </div>
 
-                <div className="desktop-grid-3">
-                  <div className="desktop-balance-details-row" style={{ marginTop: 0, gridTemplateColumns: "1fr" }}>
-                    <div className="desktop-detail-block withdraw">
-                      <label>Total Cash Spent</label>
-                      <strong style={{ fontSize: "20px" }}>ETB {money(detailsData.totalSpent)}</strong>
+              {/* Monthly Trend AreaChart - Full Width Card */}
+              <div className="desktop-card" style={{ width: "100%", marginBottom: "16px" }}>
+                <div className="desktop-card-title">Monthly Outflow Trend</div>
+                <div style={{ height: "240px", marginTop: "10px" }}>
+                  {detailsData.monthlyTrend.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={detailsData.monthlyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="userSpendGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#f4a300" stopOpacity={0.4} />
+                            <stop offset="95%" stopColor="#f4a300" stopOpacity={0.01} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.04)" />
+                        <XAxis dataKey="name" stroke="#74796e" fontSize={10} tickLine={false} />
+                        <YAxis stroke="#74796e" fontSize={10} tickLine={false} tickFormatter={(val) => money(val)} />
+                        <Tooltip formatter={(value) => [`${money(value)} ETB`, "Spent"]} />
+                        <Area type="monotone" dataKey="Spent" stroke="var(--desktop-accent)" strokeWidth={2} fill="url(#userSpendGradient)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", color: "var(--desktop-dark-muted)", fontSize: "13px" }}>
+                      No historical trend curves
                     </div>
-                  </div>
-                  <div className="desktop-balance-details-row" style={{ marginTop: 0, gridTemplateColumns: "1fr", background: "rgba(42, 157, 143, 0.03)", borderColor: "rgba(42, 157, 143, 0.15)" }}>
-                    <div className="desktop-detail-block deposit">
-                      <label>Total Cash Received</label>
-                      <strong style={{ fontSize: "20px" }}>ETB {money(detailsData.totalReceived)}</strong>
-                    </div>
-                  </div>
-                  <div className="desktop-balance-details-row" style={{ marginTop: 0, gridTemplateColumns: "1fr", background: "transparent", borderColor: "var(--desktop-border)" }}>
-                    <div className="desktop-detail-block">
-                      <label>Averaged Ticket Size</label>
-                      <strong style={{ fontSize: "20px", color: "var(--desktop-dark)" }}>ETB {money(detailsData.avgTransaction)}</strong>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
-              {/* Row 1: Analytics Charts side-by-side */}
-              <div className="desktop-grid-2">
-                {/* Monthly Trend AreaChart */}
-                <div className="desktop-card">
-                  <div className="desktop-card-title">Monthly Outflow Trend</div>
-                  <div style={{ height: "200px", marginTop: "10px" }}>
-                    {detailsData.monthlyTrend.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={detailsData.monthlyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                          <defs>
-                            <linearGradient id="userSpendGradient" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#f4a300" stopOpacity={0.4} />
-                              <stop offset="95%" stopColor="#f4a300" stopOpacity={0.01} />
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.04)" />
-                          <XAxis dataKey="name" stroke="#74796e" fontSize={10} tickLine={false} />
-                          <YAxis stroke="#74796e" fontSize={10} tickLine={false} tickFormatter={(val) => money(val)} />
-                          <Tooltip formatter={(value) => [`${money(value)} ETB`, "Spent"]} />
-                          <Area type="monotone" dataKey="Spent" stroke="var(--desktop-accent)" strokeWidth={2} fill="url(#userSpendGradient)" />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", color: "var(--desktop-dark-muted)", fontSize: "13px" }}>
-                        No historical trend curves
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Category BarChart */}
-                <div className="desktop-card">
-                  <div className="desktop-card-title">Category Outflow Share</div>
-                  <div style={{ height: "200px", marginTop: "10px" }}>
-                    {detailsData.categories.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={detailsData.categories} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.04)" />
-                          <XAxis dataKey="name" stroke="#74796e" fontSize={9} tickLine={false} />
-                          <YAxis stroke="#74796e" fontSize={10} tickLine={false} tickFormatter={(val) => money(val)} />
-                          <Tooltip formatter={(value) => [`${money(value)} ETB`, "Spent"]} />
-                          <Bar dataKey="value" fill="var(--desktop-dark)" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", color: "var(--desktop-dark-muted)", fontSize: "13px" }}>
-                        No categorizations tracked
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Row 2: Full Width Ledger */}
+              {/* Row 2: Full Width Spacious Ledger */}
               <div className="desktop-card" style={{ width: "100%" }}>
                 <div className="desktop-card-title">
                   <span>Account Statement</span>
@@ -640,27 +592,27 @@ export default function DesktopPeople({
                   <table className="desktop-table">
                     <thead>
                       <tr>
-                        <th>Date</th>
-                        <th>Amount</th>
-                        <th>Narrative</th>
-                        {(selectedUser.id === "dawit" || selectedUser.id === "yiss") && <th>Actions</th>}
+                        <th style={{ padding: "16px 20px" }}>Date</th>
+                        <th style={{ padding: "16px 20px" }}>Amount</th>
+                        <th style={{ padding: "16px 20px" }}>Narrative</th>
+                        {(selectedUser.id === "dawit" || selectedUser.id === "yiss") && <th style={{ padding: "16px 20px" }}>Actions</th>}
                       </tr>
                     </thead>
                     <tbody>
                       {detailsData.allTransactions.map((tx) => (
                         <tr key={tx.id} style={{ opacity: tx.is_custom ? 0.95 : 1 }}>
-                          <td style={{ fontSize: "12px", whiteSpace: "nowrap" }}>{tx.date || tx.created_at}</td>
-                          <td style={{ fontWeight: 700, color: tx.is_withdraw === false ? "var(--desktop-color-deposit)" : "inherit" }}>
+                          <td style={{ fontSize: "13px", padding: "16px 20px", whiteSpace: "nowrap" }}>{tx.date || tx.created_at}</td>
+                          <td style={{ fontSize: "13px", padding: "16px 20px", fontWeight: 700, color: tx.is_withdraw === false ? "var(--desktop-color-deposit)" : "inherit" }}>
                             ETB {tx.amount}
                           </td>
-                          <td style={{ fontSize: "12px" }}>
+                          <td style={{ fontSize: "13px", padding: "16px 20px" }}>
                             {tx.is_custom && <span className="desktop-badge" style={{ padding: "2px 6px", fontSize: "9px", background: "rgba(0,0,0,0.06)", marginRight: "6px" }}>DB Custom</span>}
                             {tx.narrative}
                           </td>
                           {(selectedUser.id === "dawit" || selectedUser.id === "yiss") && (
-                            <td>
+                            <td style={{ padding: "16px 20px" }}>
                               {tx.is_custom ? (
-                                <div style={{ display: "flex", gap: "2px" }}>
+                                <div style={{ display: "flex", gap: "4px" }}>
                                   <button className="desktop-table-action-btn" style={{ padding: "4px" }} onClick={() => openEditPayment(tx)}>
                                     <FaEdit size={11} />
                                   </button>

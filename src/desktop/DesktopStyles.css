@@ -631,3 +631,159 @@ body.desktop-body {
 .desktop-card.active-person {
   box-shadow: var(--desktop-shadow-deep);
 }
+
+/* Sleek search input with focus state */
+.desktop-search-input {
+  padding: 10px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--desktop-border);
+  background: var(--desktop-surface-card);
+  font-size: 14px;
+  width: 280px;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.desktop-search-input:focus {
+  outline: none;
+  border-color: var(--desktop-accent);
+  box-shadow: 0 0 0 3px rgba(244, 163, 0, 0.15);
+  background: #ffffff;
+}
+
+/* Premium Frosted Glass Password Overlay */
+.secure-password-overlay {
+  background: rgba(20, 22, 19, 0.6) !important;
+  backdrop-filter: blur(10px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.secure-password-overlay .desktop-password-box {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  padding: 36px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  text-align: center;
+  transform: translateY(0);
+  transition: all 0.3s ease;
+}
+
+.secure-password-overlay .desktop-password-box h2 {
+  font-size: 20px;
+  font-weight: 800;
+  margin-top: 0;
+  color: var(--desktop-dark);
+  margin-bottom: 12px;
+}
+
+.secure-password-overlay .desktop-password-box p {
+  font-size: 13px;
+  color: var(--desktop-dark-muted);
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.secure-password-overlay .desktop-password-box input[type="password"] {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--desktop-border);
+  font-size: 15px;
+  box-sizing: border-box;
+  margin-bottom: 20px;
+  text-align: center;
+  letter-spacing: 4px;
+  transition: all 0.2s;
+  background: #fbfcf8;
+}
+
+.secure-password-overlay .desktop-password-box input[type="password"]:focus {
+  outline: none;
+  border-color: var(--desktop-accent);
+  box-shadow: 0 0 0 3px rgba(244, 163, 0, 0.15);
+  background: #ffffff;
+}
+
+.secure-password-overlay .desktop-password-box button {
+  width: 100%;
+  padding: 12px;
+  background: var(--desktop-dark);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secure-password-overlay .desktop-password-box button:hover {
+  background: #343932;
+}
+
+/* Large Construction Project Cards */
+.desktop-large-construction-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  margin-top: 16px;
+}
+
+.desktop-large-construction-card {
+  background: var(--desktop-surface-card);
+  border: 1px solid var(--desktop-border);
+  border-radius: 16px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 180px;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+}
+
+.desktop-large-construction-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  border-color: var(--desktop-accent);
+}
+
+.desktop-large-construction-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.desktop-large-construction-card-icon {
+  background: rgba(244, 163, 0, 0.08);
+  color: var(--desktop-accent);
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.desktop-large-construction-card-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--desktop-dark);
+  margin: 0;
+}
+
+.desktop-large-construction-card-prog-lbl {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--desktop-dark-muted);
+}
