@@ -3277,20 +3277,27 @@ a {
 
 /* Crypto / Stock trend badge for Balance summary monthly rows */
 .trend-badge {
-  position: absolute;
-  top: 14px;
-  right: 15px;
+  position: static;
+  justify-self: end;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 5px 10px;
-  border-radius: 20px;
+  justify-content: space-between;
+  gap: 8px;
+  width: 142px;
+  min-height: 44px;
+  padding: 5px 9px 5px 7px;
+  border-radius: 12px;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
-  transition: all 0.2s ease;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), 0 3px 8px rgba(0, 0, 0, 0.025);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   user-select: none;
+}
+
+.trend-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 6px 13px rgba(0, 0, 0, 0.06);
 }
 
 .trend-decrease {
@@ -3312,13 +3319,89 @@ a {
 }
 
 .trend-arrow {
-  font-size: 8px;
-  margin-left: 2px;
+  font-size: 13px;
+  line-height: 1;
 }
 
 .trend-val {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  font-size: 11px;
+  font-size: 12px;
+}
+
+.trend-mini-chart {
+  flex: 0 0 68px;
+  width: 68px;
+  height: 32px;
+  overflow: visible;
+}
+
+.trend-chart-guide {
+  stroke: currentColor;
+  stroke-width: 0.7;
+  stroke-dasharray: 2 3;
+  opacity: 0.16;
+}
+
+.trend-chart-line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.trend-chart-point-halo {
+  fill: currentColor;
+  opacity: 0.18;
+}
+
+.trend-chart-point {
+  fill: #ffffff;
+  stroke: currentColor;
+  stroke-width: 1.4;
+}
+
+.trend-badge .trend-copy {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  color: inherit;
+  white-space: nowrap;
+}
+
+.trend-badge .trend-copy > small {
+  color: inherit;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.35px;
+  opacity: 0.62;
+}
+
+.trend-badge .trend-copy > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: inherit;
+}
+
+.trend-copy .trend-arrow,
+.trend-copy .trend-val {
+  color: inherit;
+}
+
+@media (max-width: 600px) {
+  .trend-badge {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    width: 100%;
+    margin-top: 2px;
+    padding: 6px 10px;
+  }
+
+  .trend-mini-chart {
+    flex-basis: 116px;
+    width: 116px;
+  }
 }
 
 /* Secure Login UI Screen */

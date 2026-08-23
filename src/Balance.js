@@ -942,6 +942,23 @@ function Balance({
 
     return rawRows.map((m, idx) => {
       const prevMonth = rawRows[idx + 1];
+      const chartWindowStart = Math.max(0, idx - 2);
+      const chartWindowEnd = Math.min(rawRows.length, idx + 3);
+      const chartRows = rawRows.slice(chartWindowStart, chartWindowEnd).reverse();
+      const chartValues = chartRows.map((row) => row.Withdraw);
+      const chartMin = Math.min(...chartValues);
+      const chartMax = Math.max(...chartValues);
+      const chartRange = chartMax - chartMin;
+      const chartPoints = chartRows.map((row, pointIndex) => {
+        const x = chartRows.length === 1 ? 34 : 4 + (pointIndex * 60) / (chartRows.length - 1);
+        const y = chartRange === 0 ? 16 : 27 - ((row.Withdraw - chartMin) / chartRange) * 22;
+        return { x, y, key: row.key, isCurrent: row.key === m.key };
+      });
+      const linePoints = chartPoints.length === 1
+        ? `4,${chartPoints[0].y} 64,${chartPoints[0].y}`
+        : chartPoints.map(({ x, y }) => `${x},${y}`).join(" ");
+      const areaPoints = `4,29 ${linePoints} 64,29`;
+      const currentPoint = chartPoints.find((point) => point.isCurrent) || chartPoints[chartPoints.length - 1];
       let trendClass = "neutral";
       let trendIcon = "";
       let displayVal = "—";
@@ -991,7 +1008,11 @@ function Balance({
         trendClass,
         trendIcon,
         displayVal,
-        trendDescription
+        trendDescription,
+        linePoints,
+        areaPoints,
+        currentPoint,
+        chartMonthCount: chartRows.length
       };
     });
   }, [analytics.monthlyTrend]);
@@ -1168,23 +1189,7 @@ function Balance({
                 ))
               ) : (
                 receiptSummaryRows.map((m) => {
-                  const decreaseSparkline = (
-                    <svg width="24" height="12" viewBox="0 0 24 12" fill="none" style={{ marginRight: '4px' }}>
-                      <path d="M2 2L6 4L10 3L14 7L18 6L22 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  );
-
-                  const increaseSparkline = (
-                    <svg width="24" height="12" viewBox="0 0 24 12" fill="none" style={{ marginRight: '4px' }}>
-                      <path d="M2 10L6 8L10 9L14 5L18 6L22 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  );
-
-                  const neutralSparkline = (
-                    <svg width="24" height="12" viewBox="0 0 24 12" fill="none" style={{ marginRight: '4px' }}>
-                      <path d="M2 6H22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  );
+                  const gradientId = `trend-fill-${m.key.replace(/[^a-z0-9]/gi, "-")}`;
 
                   return (
                     <div className="summary-row" key={m.key}>
@@ -1196,11 +1201,27 @@ function Balance({
                         title={m.trendDescription}
                         aria-label={m.trendDescription}
                       >
-                        {m.trendClass === "decrease" && decreaseSparkline}
-                        {m.trendClass === "increase" && increaseSparkline}
-                        {m.trendClass === "neutral" && neutralSparkline}
-                        <span className="trend-arrow">{m.trendIcon}</span>
-                        <span className="trend-val">{m.displayVal}</span>
+                        <svg className="trend-mini-chart" viewBox="0 0 68 32" role="img" aria-hidden="true">
+                          <defs>
+                            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="currentColor" stopOpacity="0.28" />
+                              <stop offset="100%" stopColor="currentColor" stopOpacity="0.02" />
+                            </linearGradient>
+                          </defs>
+                          <line className="trend-chart-guide" x1="3" y1="9" x2="65" y2="9" />
+                          <line className="trend-chart-guide" x1="3" y1="23" x2="65" y2="23" />
+                          <polygon points={m.areaPoints} fill={`url(#${gradientId})`} />
+                          <polyline className="trend-chart-line" points={m.linePoints} />
+                          <circle className="trend-chart-point-halo" cx={m.currentPoint.x} cy={m.currentPoint.y} r="3.6" />
+                          <circle className="trend-chart-point" cx={m.currentPoint.x} cy={m.currentPoint.y} r="1.8" />
+                        </svg>
+                        <span className="trend-copy">
+                          <small>{m.chartMonthCount}-month view</small>
+                          <span>
+                            <span className="trend-arrow">{m.trendIcon}</span>
+                            <span className="trend-val">{m.displayVal}</span>
+                          </span>
+                        </span>
                       </span>
                     </div>
                   );
