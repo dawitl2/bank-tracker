@@ -1176,23 +1176,36 @@ function App() {
     <div className="app">
 
       {loadingMessage && (
-        <div className="loading-overlay">
-
+        <div className="loading-overlay" role="status" aria-live="polite">
           <div className="loading-box">
-
             <button
               className="loading-close"
               onClick={() => setLoadingMessage(false)}
+              type="button"
+              aria-label="Dismiss data update notification"
             >
               ✕
             </button>
 
-            <p>
-              ከባንኩ መረጃ ለመውሰድ ጥቂት ሰከንዶች ሊወስድ ይችላል።
-            </p>
+            <div className="loading-brand-mark">
+              <img src="/logo.png" alt="Bank of Abyssinia" />
+            </div>
 
+            <div className="loading-copy">
+              <span>Account update</span>
+              <h2>Getting your latest bank data</h2>
+              <p>
+                This may take a few seconds. This message will close automatically when your transactions arrive.
+              </p>
+              <p className="loading-copy-amharic">
+                ከባንኩ መረጃ ለመውሰድ ጥቂት ሰከንዶች ሊወስድ ይችላል።
+              </p>
+            </div>
+
+            <div className="loading-progress" aria-hidden="true">
+              <span></span><span></span><span></span>
+            </div>
           </div>
-
         </div>
       )}
 
