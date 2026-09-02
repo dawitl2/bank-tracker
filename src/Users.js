@@ -10,7 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer
 } from "recharts";
-import { FaArrowLeft, FaChevronRight } from "react-icons/fa";
+import { FaArrowLeft, FaCamera, FaChevronRight } from "react-icons/fa";
 import "./Users.css";
 
 const SUPABASE_URL = "https://ywplzexakisliebyjtyf.supabase.co";
@@ -83,7 +83,8 @@ export default function Users({
   suqePayments = [],
   fetchDbPayments,
   people = [],
-  fetchPeople
+  fetchPeople,
+  openParkingModal
 }) {
   const [dbSaving, setDbSaving] = useState(false);
   const [subTab, setSubTab] = useState("transactions");
@@ -1025,8 +1026,12 @@ export default function Users({
           {subTab === "transactions" ? "Transactions History" : selectedUser.id === "dawit" ? "Parking Payments" : "Suqe Payments"}
         </h2>
         {subTab !== "transactions" && (
-          <button className="back-btn" onClick={() => setShowAddPaymentModal(true)} style={{ background: "#eeb833", borderColor: "#eeb833", color: "#000" }}>
-            + Add Payment
+          <button
+            className="back-btn parking-add-entry"
+            onClick={() => selectedUser.id === "dawit" ? openParkingModal() : setShowAddPaymentModal(true)}
+            style={{ background: "#eeb833", borderColor: "#eeb833", color: "#000" }}
+          >
+            {selectedUser.id === "dawit" ? <><FaCamera /> Add Parking</> : "+ Add Payment"}
           </button>
         )}
       </div>

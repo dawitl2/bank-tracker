@@ -13,6 +13,7 @@ import {
   FaEdit, 
   FaTrash, 
   FaPlus, 
+  FaCamera,
   FaChartPie, 
   FaChevronRight 
 } from "react-icons/fa";
@@ -85,7 +86,8 @@ export default function DesktopPeople({
   suqePayments = [],
   fetchDbPayments,
   people = [],
-  fetchPeople
+  fetchPeople,
+  openParkingModal
 }) {
   const [dbSaving, setDbSaving] = useState(false);
   const [selectedPersonId, setSelectedPersonId] = useState(null);
@@ -349,6 +351,10 @@ export default function DesktopPeople({
 
   // Add/Edit Custom payments (Dawit Parking / Yiss Suqe)
   const openAddPayment = () => {
+    if (selectedUser?.id === "dawit") {
+      openParkingModal();
+      return;
+    }
     setIsEditingPayment(false);
     setPaymentForm({ id: null, amount: "", date: getCurrentDateTimeString(), reference: "", narrative: "" });
     setShowPaymentModal(true);
@@ -583,7 +589,7 @@ export default function DesktopPeople({
                       style={{ padding: "4px 10px", fontSize: "12px", border: "none" }}
                       onClick={openAddPayment}
                     >
-                      <FaPlus size={10} /> Add Custom
+                      {selectedUser.id === "dawit" ? <><FaCamera size={11} /> Add Parking</> : <><FaPlus size={10} /> Add Custom</>}
                     </button>
                   )}
                 </div>

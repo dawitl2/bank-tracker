@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { FaLink, FaQrcode, FaImage, FaCar } from "react-icons/fa";
 import Content from "./Content";
 import Balance from "./Balance";
 import Calculator from "./Calculator";
 import Users from "./Users";
+import ReceiptModal from "./ReceiptModal";
 import DesktopLayout from "./desktop/DesktopLayout";
 import "./App.css";
 
@@ -18,15 +18,6 @@ const API_URL =
 const BANK_RECEIPT_URL = "https://cs.bankofabyssinia.com/slip/";
 const GENERATED_TRANSACTION_FIELDS = ["id", "created_at"];
 
-const getCurrentDateTimeString = () => {
-  const now = new Date();
-  const day = String(now.getDate()).padStart(2, "0");
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const year = now.getFullYear();
-  const hours = String(now.getHours()).padStart(2, "0");
-  const minutes = String(now.getMinutes()).padStart(2, "0");
-  return `${day}/${month}/${year} ${hours}:${minutes}`;
-};
 function App() {
 
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
@@ -87,10 +78,11 @@ function App() {
 
   const [parkingDraft, setParkingDraft] = useState({
     amount: "",
-    date: getCurrentDateTimeString(),
+    date: "",
     reference: "",
-    narrative: ""
+    narrative: "Abrihot"
   });
+  const [parkingSaveSuccess, setParkingSaveSuccess] = useState(false);
 
   const fetchPeople = useCallback(async () => {
     try {
@@ -141,7 +133,7 @@ function App() {
         amount: parseFloat(parkingDraft.amount) || 0,
         date: parkingDraft.date,
         reference: parkingDraft.reference || "",
-        narrative: parkingDraft.narrative || "",
+        narrative: "Abrihot",
         person: "dawit"
       };
 
@@ -158,14 +150,13 @@ function App() {
 
       if (res.ok) {
         await fetchDbPayments();
-        setShowModal(false);
-        setReceiptMode(null);
-        setParkingDraft({
-          amount: "",
-          date: getCurrentDateTimeString(),
-          reference: "",
-          narrative: ""
-        });
+        setParkingSaveSuccess(true);
+        window.setTimeout(() => {
+          setShowModal(false);
+          setReceiptMode(null);
+          setParkingSaveSuccess(false);
+          setParkingDraft({ amount: "", date: "", reference: "", narrative: "Abrihot" });
+        }, 1900);
       } else {
         alert("Failed to save parking payment to Supabase.");
       }
@@ -950,6 +941,7 @@ function App() {
     setQrStatus("");
     setImageStatus("");
     setImageProgress(0);
+    setParkingSaveSuccess(false);
   };
 
   const openReceiptModal = () => {
@@ -959,6 +951,20 @@ function App() {
     setQrStatus("");
     setImageStatus("");
     setImageProgress(0);
+    setParkingSaveSuccess(false);
+    setShowModal(true);
+  };
+
+  const openParkingModal = () => {
+    stopQrScanner();
+    setReceiptDraft(null);
+    setUrl("");
+    setQrStatus("");
+    setImageStatus("");
+    setImageProgress(0);
+    setParkingDraft({ amount: "", date: "", reference: "", narrative: "Abrihot" });
+    setParkingSaveSuccess(false);
+    setReceiptMode("parking");
     setShowModal(true);
   };
 
@@ -1261,78 +1267,121 @@ function App() {
       fetchDbPayments={fetchDbPayments}
       people={people}
       fetchPeople={fetchPeople}
+      openParkingModal={openParkingModal}
+    />
+  );
+
+  const renderReceiptModal = () => (
+    <ReceiptModal
+      showModal={showModal}
+      receiptDraft={receiptDraft}
+      receiptMode={receiptMode}
+      setReceiptMode={setReceiptMode}
+      openParkingModal={openParkingModal}
+      url={url}
+      setUrl={setUrl}
+      scrapeLoading={scrapeLoading}
+      draftSaving={draftSaving}
+      handleScrape={handleScrape}
+      cameraDevices={cameraDevices}
+      selectedCameraId={selectedCameraId}
+      setSelectedCameraId={setSelectedCameraId}
+      startQrScanner={startQrScanner}
+      videoRef={videoRef}
+      zoomRange={zoomRange}
+      cameraZoom={cameraZoom}
+      applyCameraZoom={applyCameraZoom}
+      qrStatus={qrStatus}
+      imageStatus={imageStatus}
+      imageProgress={imageProgress}
+      handleImageReceipt={handleImageReceipt}
+      parkingDraft={parkingDraft}
+      setParkingDraft={setParkingDraft}
+      handleParkingDraftSubmit={handleParkingDraftSubmit}
+      parkingSaveSuccess={parkingSaveSuccess}
+      personOptions={personOptions}
+      handleDraftChange={handleDraftChange}
+      handleSaveDraft={handleSaveDraft}
+      stopQrScanner={stopQrScanner}
+      setQrStatus={setQrStatus}
+      handleCloseModal={handleCloseModal}
     />
   );
 
   if (authenticated && isDesktop) {
     return (
-      <DesktopLayout
-        transactions={transactions}
-        boaSmsState={boaSmsState}
-        boaSmsSummary={boaSmsSummary}
-        boaSmsLoading={boaSmsLoading}
-        parkingPayments={parkingPayments}
-        suqePayments={suqePayments}
-        people={people}
-        fetchTransactions={fetchTransactions}
-        fetchBoaSmsState={fetchBoaSmsState}
-        fetchBoaSmsSummary={fetchBoaSmsSummary}
-        fetchDbPayments={fetchDbPayments}
-        fetchPeople={fetchPeople}
-        currentBalance={currentBalance}
-        totalWithdraw={totalWithdraw}
-        lastWithdraw={lastWithdraw}
-        personFilter={personFilter}
-        setPersonFilter={setPersonFilter}
-        filteredTransactions={filteredTransactions}
-        handleEditTransaction={handleEditTransaction}
-        handleDeleteTransaction={handleDeleteTransaction}
-        navigate={navigate}
-        currentPath={currentPath}
-        showModal={showModal}
-        setShowModal={setShowModal}
-        receiptMode={receiptMode}
-        setReceiptMode={setReceiptMode}
-        url={url}
-        setUrl={setUrl}
-        scrapeLoading={scrapeLoading}
-        receiptDraft={receiptDraft}
-        setReceiptDraft={setReceiptDraft}
-        draftSaving={draftSaving}
-        handleSaveDraft={handleSaveDraft}
-        handleCloseModal={handleCloseModal}
-        deleteTarget={deleteTarget}
-        setDeleteTarget={setDeleteTarget}
-        deleteLoading={deleteLoading}
-        confirmDeleteTransaction={confirmDeleteTransaction}
-        showCalculator={showCalculator}
-        setShowCalculator={setShowCalculator}
-        calculatorImportValue={calculatorImportValue}
-        calculatorImportToken={calculatorImportToken}
-        sendTableTotalToCalculator={sendTableTotalToCalculator}
-        loadingMessage={loadingMessage}
-        setLoadingMessage={setLoadingMessage}
-        videoRef={videoRef}
-        qrStatus={qrStatus}
-        setQrStatus={setQrStatus}
-        cameraDevices={cameraDevices}
-        selectedCameraId={selectedCameraId}
-        setSelectedCameraId={setSelectedCameraId}
-        zoomRange={zoomRange}
-        cameraZoom={cameraZoom}
-        applyCameraZoom={applyCameraZoom}
-        startQrScanner={startQrScanner}
-        stopQrScanner={stopQrScanner}
-        handleImageReceipt={handleImageReceipt}
-        imageStatus={imageStatus}
-        imageProgress={imageProgress}
-        parkingDraft={parkingDraft}
-        setParkingDraft={setParkingDraft}
-        handleParkingDraftSubmit={handleParkingDraftSubmit}
-        personOptions={personOptions}
-        handleDraftChange={handleDraftChange}
-        openReceiptModal={openReceiptModal}
-      />
+      <>
+        <DesktopLayout
+          transactions={transactions}
+          boaSmsState={boaSmsState}
+          boaSmsSummary={boaSmsSummary}
+          boaSmsLoading={boaSmsLoading}
+          parkingPayments={parkingPayments}
+          suqePayments={suqePayments}
+          people={people}
+          fetchTransactions={fetchTransactions}
+          fetchBoaSmsState={fetchBoaSmsState}
+          fetchBoaSmsSummary={fetchBoaSmsSummary}
+          fetchDbPayments={fetchDbPayments}
+          fetchPeople={fetchPeople}
+          currentBalance={currentBalance}
+          totalWithdraw={totalWithdraw}
+          lastWithdraw={lastWithdraw}
+          personFilter={personFilter}
+          setPersonFilter={setPersonFilter}
+          filteredTransactions={filteredTransactions}
+          handleEditTransaction={handleEditTransaction}
+          handleDeleteTransaction={handleDeleteTransaction}
+          navigate={navigate}
+          currentPath={currentPath}
+          showModal={showModal}
+          setShowModal={setShowModal}
+          receiptMode={receiptMode}
+          setReceiptMode={setReceiptMode}
+          url={url}
+          setUrl={setUrl}
+          scrapeLoading={scrapeLoading}
+          receiptDraft={receiptDraft}
+          setReceiptDraft={setReceiptDraft}
+          draftSaving={draftSaving}
+          handleSaveDraft={handleSaveDraft}
+          handleCloseModal={handleCloseModal}
+          deleteTarget={deleteTarget}
+          setDeleteTarget={setDeleteTarget}
+          deleteLoading={deleteLoading}
+          confirmDeleteTransaction={confirmDeleteTransaction}
+          showCalculator={showCalculator}
+          setShowCalculator={setShowCalculator}
+          calculatorImportValue={calculatorImportValue}
+          calculatorImportToken={calculatorImportToken}
+          sendTableTotalToCalculator={sendTableTotalToCalculator}
+          loadingMessage={loadingMessage}
+          setLoadingMessage={setLoadingMessage}
+          videoRef={videoRef}
+          qrStatus={qrStatus}
+          setQrStatus={setQrStatus}
+          cameraDevices={cameraDevices}
+          selectedCameraId={selectedCameraId}
+          setSelectedCameraId={setSelectedCameraId}
+          zoomRange={zoomRange}
+          cameraZoom={cameraZoom}
+          applyCameraZoom={applyCameraZoom}
+          startQrScanner={startQrScanner}
+          stopQrScanner={stopQrScanner}
+          handleImageReceipt={handleImageReceipt}
+          imageStatus={imageStatus}
+          imageProgress={imageProgress}
+          parkingDraft={parkingDraft}
+          setParkingDraft={setParkingDraft}
+          handleParkingDraftSubmit={handleParkingDraftSubmit}
+          parkingSaveSuccess={parkingSaveSuccess}
+          personOptions={personOptions}
+          handleDraftChange={handleDraftChange}
+          openReceiptModal={openReceiptModal}
+          openParkingModal={openParkingModal}
+        />
+        {renderReceiptModal()}
+      </>
     );
   }
 
@@ -1392,6 +1441,7 @@ function App() {
               fetchDbPayments={fetchDbPayments}
               people={people}
               fetchPeople={fetchPeople}
+              openParkingModal={openParkingModal}
             />
           ) : renderBalance()}
         </div>
@@ -1484,331 +1534,7 @@ function App() {
         Version {VERSION}
       </footer>
 
-      {showModal && (
-        <div className="modal-overlay">
-
-          <div className="modal">
-
-            <h2>{receiptDraft?.id ? "Edit Transaction" : "Add Receipt"}</h2>
-
-              {!receiptDraft && receiptMode === "parking" && (
-                  <button
-                    className="save-draft-btn"
-                    onClick={handleParkingDraftSubmit}
-                    disabled={draftSaving}
-                  >
-                    {draftSaving ? "Saving..." : "Save Parking"}
-                  </button>
-                )}
-
-                {!receiptDraft && receiptMode && (
-                  <button
-                    className="close-btn"
-                    onClick={() => {
-                      stopQrScanner();
-                      setReceiptMode(null);
-                      setQrStatus("");
-                    }}
-                    disabled={scrapeLoading || draftSaving}
-                  >
-                    Back
-                  </button>
-                )}
-
-              {!receiptDraft && !receiptMode && (
-                <div className="receipt-choice-grid">
-                  <button
-                    className="receipt-choice-card"
-                    onClick={() => setReceiptMode("link")}
-                  >
-                    <div className="receipt-choice-details">
-                      <span>Link</span>
-                      <small>Paste a receipt link</small>
-                    </div>
-                    <FaLink className="receipt-choice-icon" />
-                  </button>
-
-                  <button
-                    className="receipt-choice-card"
-                    onClick={() => setReceiptMode("qr")}
-                  >
-                    <div className="receipt-choice-details">
-                      <span>QR</span>
-                      <small>Scan from camera</small>
-                    </div>
-                    <FaQrcode className="receipt-choice-icon" />
-                  </button>
-
-                  <button
-                    className="receipt-choice-card"
-                    onClick={() => setReceiptMode("image")}
-                  >
-                    <div className="receipt-choice-details">
-                      <span>Image</span>
-                      <small>Read a screenshot</small>
-                    </div>
-                    <FaImage className="receipt-choice-icon" />
-                  </button>
-
-                  <button
-                    className="receipt-choice-card"
-                    onClick={() => setReceiptMode("parking")}
-                  >
-                    <div className="receipt-choice-details">
-                      <span>Parking</span>
-                      <small>Add parking payment (<span className="parking-dave-label">Dave</span>)</small>
-                    </div>
-                    <FaCar className="receipt-choice-icon" />
-                  </button>
-                </div>
-              )}
-
-              {!receiptDraft?.id && receiptMode === "link" && (
-                <input
-                  type="text"
-                  placeholder="Paste receipt link..."
-                  value={url}
-                  disabled={scrapeLoading || draftSaving}
-                  onChange={(e) => setUrl(e.target.value)}
-                />
-              )}
-
-              {!receiptDraft && receiptMode === "qr" && (
-                <div className="qr-scanner-panel">
-                  {cameraDevices.length > 1 && (
-                    <label className="qr-control-field">
-                      <span>Camera</span>
-                      <select
-                        value={selectedCameraId}
-                        onChange={(e) => {
-                          setSelectedCameraId(e.target.value);
-                          startQrScanner(e.target.value, false);
-                        }}
-                      >
-                        {cameraDevices.map((device, index) => (
-                          <option
-                            key={device.deviceId || index}
-                            value={device.deviceId}
-                          >
-                            {device.label || `Camera ${index + 1}`}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  )}
-
-                  <video
-                    ref={videoRef}
-                    className="qr-video"
-                    playsInline
-                    muted
-                  ></video>
-
-                  {zoomRange && (
-                    <label className="qr-control-field">
-                      <span>Zoom {cameraZoom.toFixed(1)}x</span>
-                      <input
-                        type="range"
-                        min={zoomRange.min}
-                        max={zoomRange.max}
-                        step={zoomRange.step}
-                        value={cameraZoom}
-                        onChange={(e) => applyCameraZoom(e.target.value)}
-                      />
-                    </label>
-                  )}
-
-                  <p>{qrStatus || "Preparing camera..."}</p>
-                </div>
-              )}
-
-              {!receiptDraft && receiptMode === "image" && (
-                <div className="image-receipt-panel">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageReceipt}
-                    disabled={scrapeLoading || draftSaving}
-                  />
-
-                  <p>
-                    {imageStatus
-                      ? `${imageStatus}${imageProgress ? ` ${imageProgress}%` : ""}`
-                      : "Choose a clear receipt screenshot."}
-                  </p>
-                </div>
-              )}
-
-              {!receiptDraft && receiptMode === "parking" && (
-                <div className="receipt-draft-box" style={{ marginTop: "15px" }}>
-                  <h3 style={{ textTransform: "uppercase", fontSize: "12px", color: "#555", fontWeight: "800", marginBottom: "12px" }}>
-                    Dave's Parking Payment
-                  </h3>
-                  <div className="receipt-draft-grid">
-                    <label className="draft-field">
-                      <span>Amount (ETB)</span>
-                      <input
-                        type="number"
-                        placeholder="0.00"
-                        value={parkingDraft.amount}
-                        onChange={(e) => setParkingDraft({ ...parkingDraft, amount: e.target.value })}
-                        disabled={draftSaving}
-                        required
-                      />
-                    </label>
-
-                    <label className="draft-field">
-                      <span>Date / Time</span>
-                      <input
-                        type="text"
-                        value={parkingDraft.date}
-                        onChange={(e) => setParkingDraft({ ...parkingDraft, date: e.target.value })}
-                        disabled={draftSaving}
-                        required
-                      />
-                    </label>
-
-                    <label className="draft-field">
-                      <span>Plate Number / Ref</span>
-                      <input
-                        type="text"
-                        placeholder="e.g. Code 3 - AA 12345"
-                        value={parkingDraft.reference}
-                        onChange={(e) => setParkingDraft({ ...parkingDraft, reference: e.target.value })}
-                        disabled={draftSaving}
-                      />
-                    </label>
-
-                    <label className="draft-field">
-                      <span>Narrative</span>
-                      <input
-                        type="text"
-                        placeholder="Payment description..."
-                        value={parkingDraft.narrative}
-                        onChange={(e) => setParkingDraft({ ...parkingDraft, narrative: e.target.value })}
-                        disabled={draftSaving}
-                      />
-                    </label>
-                  </div>
-                </div>
-              )}
-
-              {receiptDraft && (
-                <div className="receipt-draft-box">
-                  <h3>Review Receipt</h3>
-
-                  <div className="receipt-draft-grid">
-                    {Object.entries(receiptDraft)
-                      .filter(([field]) =>
-                        !GENERATED_TRANSACTION_FIELDS.includes(field)
-                      )
-                      .map(([field, value]) => (
-                        <label key={field} className="draft-field">
-                          <span>{field}</span>
-
-                          {field === "person" ? (
-                            <select
-                              value={value ?? "null"}
-                              onChange={(e) =>
-                                handleDraftChange(field, e.target.value)
-                              }
-                            >
-                              {personOptions.map((option) => (
-                                <option
-                                  key={option.value}
-                                  value={option.value}
-                                >
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                          ) : typeof value === "boolean" ? (
-                            <select
-                              value={String(value)}
-                              onChange={(e) =>
-                                handleDraftChange(field, e.target.value)
-                              }
-                            >
-                              <option value="true">true</option>
-                              <option value="false">false</option>
-                            </select>
-                          ) : value === null ? (
-                            <input
-                              type="text"
-                              value="null"
-                              onChange={(e) =>
-                                handleDraftChange(field, e.target.value)
-                              }
-                            />
-                          ) : (
-                            <input
-                              type="text"
-                              value={value ?? ""}
-                              onChange={(e) =>
-                                handleDraftChange(field, e.target.value)
-                              }
-                            />
-                          )}
-                        </label>
-                      ))}
-                  </div>
-                </div>
-              )}
-
-            <div className="modal-buttons">
-
-              {!receiptDraft?.id && receiptMode === "link" && (
-                <button
-                  className="scrape-btn"
-                  onClick={() => handleScrape()}
-                  disabled={scrapeLoading || draftSaving}
-                >
-                  {receiptDraft ? "Scrape Again" : "Scrape"}
-                </button>
-              )}
-
-              {!receiptDraft && receiptMode && (
-                <button
-                  className="close-btn"
-                  onClick={() => {
-                    stopQrScanner();
-                    setReceiptMode(null);
-                    setQrStatus("");
-                  }}
-                  disabled={scrapeLoading || draftSaving}
-                >
-                  Back
-                </button>
-              )}
-
-              {receiptDraft && (
-                <button
-                  className="save-draft-btn"
-                  onClick={handleSaveDraft}
-                  disabled={draftSaving}
-                >
-                  {draftSaving
-                    ? "Saving..."
-                    : receiptDraft.id
-                      ? "Save Changes"
-                      : "Approve & Save"}
-                </button>
-              )}
-
-              <button
-                className="close-btn"
-                onClick={handleCloseModal}
-                disabled={scrapeLoading || draftSaving}
-              >
-                Close
-              </button>
-
-            </div>
-
-          </div>
-
-        </div>
-      )}
+      {renderReceiptModal()}
 
       {deleteTarget && (
         <div className="confirm-overlay">

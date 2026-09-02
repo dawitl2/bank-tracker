@@ -822,7 +822,8 @@ function Balance({
   suqePayments = [],
   fetchDbPayments,
   people = [],
-  fetchPeople
+  fetchPeople,
+  openParkingModal
 }) {
   const [activePanel, setActivePanel] = useState("summary");
 
@@ -1293,6 +1294,7 @@ function Balance({
             fetchDbPayments={fetchDbPayments}
             people={people}
             fetchPeople={fetchPeople}
+            openParkingModal={openParkingModal}
           />
         )}
 
