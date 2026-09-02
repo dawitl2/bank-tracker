@@ -29,22 +29,33 @@ describe("Abrihot parking scanner flow", () => {
 
     expect(screen.getByRole("button", { name: /camera take a photo/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /gallery choose a photo/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /enter duration/i })).toBeInTheDocument();
     expect(screen.queryByLabelText(/live parking receipt camera/i)).not.toBeInTheDocument();
     expect(screen.queryByPlaceholderText("DD/MM/YYYY HH:MM:SS")).not.toBeInTheDocument();
+    expect(screen.queryByText(/we only read/i)).not.toBeInTheDocument();
   });
 
   test("calculates the payment and offers to add it directly", () => {
     const onSave = jest.fn();
     render(<ParkingHarness onSave={onSave} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /enter the time manually/i }));
-    fireEvent.change(screen.getByPlaceholderText("DD/MM/YYYY HH:MM:SS"), {
-      target: { value: "02/09/2026 08:00:00" }
-    });
+    fireEvent.click(screen.getByRole("button", { name: /enter duration/i }));
+    fireEvent.change(screen.getByLabelText("Hours"), { target: { value: "2" } });
 
     const saveButton = screen.getByRole("button", { name: /save 60\.00 etb/i });
     expect(saveButton).toBeEnabled();
     fireEvent.click(saveButton);
     expect(onSave).toHaveBeenCalledTimes(1);
+  });
+
+  test("prices hours and minutes at the 30 ETB hourly rate", () => {
+    render(<ParkingHarness />);
+
+    fireEvent.click(screen.getByRole("button", { name: /enter duration/i }));
+    fireEvent.change(screen.getByLabelText("Hours"), { target: { value: "6" } });
+    fireEvent.change(screen.getByLabelText("Minutes"), { target: { value: "5" } });
+
+    expect(screen.getByText("6 hrs 5 min")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /save 182\.50 etb/i })).toBeEnabled();
   });
 });

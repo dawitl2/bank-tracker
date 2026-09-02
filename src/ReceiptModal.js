@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { FaArrowLeft, FaCar, FaImage, FaLink, FaQrcode, FaTimes } from "react-icons/fa";
 import ParkingReceiptFlow from "./ParkingReceiptFlow";
 
@@ -37,6 +38,12 @@ export default function ReceiptModal({
   setQrStatus,
   handleCloseModal
 }) {
+  const [imageFileName, setImageFileName] = useState("");
+
+  useEffect(() => {
+    if (receiptMode !== "image") setImageFileName("");
+  }, [receiptMode]);
+
   if (!showModal) return null;
 
   const goBack = () => {
@@ -50,16 +57,16 @@ export default function ReceiptModal({
       <div className={`modal receipt-modal ${receiptMode === "parking" ? "parking-modal" : ""}`}>
         <div className="receipt-modal-title-row">
           <div className="receipt-modal-title-copy">
-            <span>{receiptMode === "parking" ? "Abrihot Library · Dave" : "Bank tracker"}</span>
+            <span>{receiptMode === "parking" ? "Abrihot Library" : "Bank tracker"}</span>
             <h2>{receiptDraft?.id ? "Edit transaction" : receiptMode === "parking" ? "Add parking payment" : "Add receipt"}</h2>
           </div>
           <div className="receipt-modal-header-actions">
             {!receiptDraft && receiptMode === "parking" && (
-              <button type="button" className="receipt-modal-icon-button" onClick={goBack} aria-label="Back to receipt options">
+              <button type="button" className="receipt-modal-icon-button" onClick={goBack} aria-label="Back to receipt options" disabled={scrapeLoading || draftSaving}>
                 <FaArrowLeft />
               </button>
             )}
-            <button type="button" className="receipt-modal-icon-button" onClick={handleCloseModal} aria-label="Close">
+            <button type="button" className="receipt-modal-icon-button" onClick={handleCloseModal} aria-label="Close" disabled={scrapeLoading || draftSaving}>
               <FaTimes />
             </button>
           </div>
@@ -82,7 +89,7 @@ export default function ReceiptModal({
             <button className="receipt-choice-card parking-choice-card" onClick={openParkingModal}>
               <div className="receipt-choice-details">
                 <span>Parking</span>
-                <small>Scan an Abrihot ticket (<span className="parking-dave-label">Dave</span>)</small>
+                <small>Scan an Abrihot ticket</small>
               </div>
               <FaCar className="receipt-choice-icon" />
             </button>
@@ -102,7 +109,7 @@ export default function ReceiptModal({
         {!receiptDraft && receiptMode === "qr" && (
           <div className="qr-scanner-panel">
             {cameraDevices.length > 1 && (
-              <label className="qr-control-field">
+              <label className="qr-control-field qr-zoom-field">
                 <span>Camera</span>
                 <select
                   value={selectedCameraId}
@@ -139,8 +146,27 @@ export default function ReceiptModal({
 
         {!receiptDraft && receiptMode === "image" && (
           <div className="image-receipt-panel">
-            <input type="file" accept="image/*" onChange={handleImageReceipt} disabled={scrapeLoading || draftSaving} />
-            <p>{imageStatus ? `${imageStatus}${imageProgress ? ` ${imageProgress}%` : ""}` : "Choose a clear receipt screenshot."}</p>
+            <label className="image-receipt-upload">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(event) => {
+                  setImageFileName(event.target.files?.[0]?.name || "");
+                  handleImageReceipt(event);
+                }}
+                disabled={scrapeLoading || draftSaving}
+              />
+              <span className="image-upload-icon"><FaImage /></span>
+              <span className="image-upload-copy">
+                <strong>{imageFileName || "Choose receipt image"}</strong>
+                <small>JPG, PNG or a screenshot</small>
+              </span>
+              <span className="image-upload-action">Browse</span>
+            </label>
+            <div className={`image-receipt-status ${scrapeLoading ? "is-reading" : ""}`}>
+              <span>{imageStatus ? `${imageStatus}${imageProgress ? ` ${imageProgress}%` : ""}` : "Use a clear image with the full receipt visible."}</span>
+              {scrapeLoading && <div className="image-receipt-progress"><i style={{ width: `${imageProgress}%` }}></i></div>}
+            </div>
           </div>
         )}
 

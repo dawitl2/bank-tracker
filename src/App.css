@@ -346,11 +346,6 @@ h1 {
   color: #555 !important;
 }
 
-.parking-dave-label {
-  color: #f05a5a;
-  font-weight: 800;
-}
-
 .receipt-choice-card:hover {
   border-color: rgba(244, 163, 0, 0.55);
   box-shadow: 0 8px 18px rgba(0,0,0,0.06);
@@ -3376,6 +3371,11 @@ a {
   background: #fffaf0;
 }
 
+.receipt-modal-icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .parking-flow {
   display: grid;
   gap: 12px;
@@ -3393,6 +3393,34 @@ a {
 
 .parking-context-row span:last-child {
   color: #9a6a09;
+}
+
+.parking-mode-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid rgba(24, 24, 22, 0.09);
+  border-radius: 7px;
+  background: #f1f2ed;
+}
+
+.parking-mode-toggle button {
+  min-height: 36px;
+  border: 0;
+  border-radius: 5px;
+  color: #747970;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+}
+
+.parking-mode-toggle button.active {
+  color: #2f322d;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(20, 22, 19, 0.08);
 }
 
 .parking-source-panel,
@@ -3446,7 +3474,7 @@ a {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-  margin-top: 16px;
+  margin-top: 0;
 }
 
 .parking-source-actions > button {
@@ -3585,6 +3613,24 @@ a {
   background: #ffffff;
 }
 
+.parking-ticket-preview.has-success {
+  border-color: rgba(55, 130, 81, 0.2);
+  background: #f5fbf6;
+}
+
+.parking-ticket-preview.has-success .parking-ticket-status small {
+  color: #4f785d;
+}
+
+.parking-ticket-preview.has-error {
+  border-color: rgba(181, 70, 70, 0.2);
+  background: #fff7f7;
+}
+
+.parking-ticket-preview.has-error .parking-ticket-status small {
+  color: #9a5555;
+}
+
 .parking-ticket-status {
   min-width: 0;
   display: grid;
@@ -3635,6 +3681,31 @@ a {
   display: grid;
   gap: 14px;
   animation: parkingReveal 0.2s ease-out both;
+}
+
+.parking-review-heading {
+  display: grid;
+  gap: 2px;
+}
+
+.parking-review-heading strong {
+  color: #2b2e29;
+  font-size: 14px;
+}
+
+.parking-review-heading small {
+  color: #858a81;
+  font-size: 11px;
+}
+
+.parking-duration-inputs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.parking-duration-inputs input {
+  font-size: 16px;
 }
 
 .parking-entry-field {
@@ -3713,7 +3784,11 @@ a {
 
 .parking-inline-error {
   margin: 0;
-  color: #7b5f26;
+  padding: 8px 10px;
+  border: 1px solid rgba(181, 70, 70, 0.16);
+  border-radius: 5px;
+  color: #955050;
+  background: #fff7f7;
   font-size: 10px;
   line-height: 1.4;
 }
@@ -3747,9 +3822,9 @@ a {
   align-items: center;
   gap: 13px;
   padding: 18px;
-  border: 1px solid rgba(244, 163, 0, 0.22);
+  border: 1px solid rgba(55, 130, 81, 0.18);
   border-radius: 8px;
-  background: #fffaf0;
+  background: #f5fbf6;
   animation: parkingReveal 0.18s ease-out both;
 }
 
@@ -3760,8 +3835,8 @@ a {
   display: grid;
   place-items: center;
   border-radius: 50%;
-  color: #6f4b08;
-  background: #f4c454;
+  color: #ffffff;
+  background: #4f8f63;
   font-size: 14px;
 }
 
@@ -3783,6 +3858,160 @@ a {
 .receipt-modal-actions {
   justify-content: flex-end;
   margin-top: 18px;
+}
+
+/* Image receipt picker */
+.image-receipt-panel {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(24, 24, 22, 0.09);
+  border-radius: 8px;
+  background: #fbfcf8;
+}
+
+.image-receipt-upload {
+  min-height: 82px;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  gap: 11px;
+  align-items: center;
+  padding: 13px;
+  border: 1px dashed rgba(24, 24, 22, 0.18);
+  border-radius: 7px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+
+.image-receipt-upload:hover {
+  border-color: rgba(244, 163, 0, 0.55);
+  background: #fffdf8;
+}
+
+.image-receipt-upload input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  margin: 0;
+  padding: 0;
+  pointer-events: none;
+}
+
+.image-upload-icon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  color: #9c6903;
+  background: #fff2d5;
+  font-size: 16px;
+}
+
+.image-upload-copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.image-upload-copy strong {
+  overflow: hidden;
+  color: #30332e;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.image-upload-copy small,
+.image-receipt-status {
+  color: #858a81;
+  font-size: 10px;
+}
+
+.image-upload-action {
+  padding: 7px 10px;
+  border: 1px solid rgba(24, 24, 22, 0.1);
+  border-radius: 5px;
+  color: #555a52;
+  background: #f7f8f4;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.image-receipt-status {
+  display: grid;
+  gap: 7px;
+  padding: 0 2px;
+}
+
+.image-receipt-status.is-reading {
+  color: #745a25;
+}
+
+.image-receipt-progress {
+  height: 3px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: #e7e9e2;
+}
+
+.image-receipt-progress i {
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  background: #eeb833;
+  transition: width 0.2s ease;
+}
+
+/* Visible QR zoom control */
+.qr-zoom-field input[type="range"] {
+  width: 100%;
+  height: 20px;
+  margin: 2px 0 4px;
+  padding: 8px 0;
+  border: 0;
+  border-radius: 0;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.qr-zoom-field input[type="range"]::-webkit-slider-runnable-track {
+  height: 5px;
+  border-radius: 5px;
+  background: #d8dbd3;
+}
+
+.qr-zoom-field input[type="range"]::-webkit-slider-thumb {
+  width: 18px;
+  height: 18px;
+  margin-top: -6.5px;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  appearance: none;
+  -webkit-appearance: none;
+  background: #eeb833;
+  box-shadow: 0 1px 5px rgba(24, 24, 22, 0.25);
+}
+
+.qr-zoom-field input[type="range"]::-moz-range-track {
+  height: 5px;
+  border-radius: 5px;
+  background: #d8dbd3;
+}
+
+.qr-zoom-field input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  background: #eeb833;
+  box-shadow: 0 1px 5px rgba(24, 24, 22, 0.25);
 }
 
 @keyframes parkingReveal {
