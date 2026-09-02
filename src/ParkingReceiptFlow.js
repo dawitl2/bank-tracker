@@ -1,24 +1,67 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  FaCamera,
-  FaCheck,
-  FaClock,
-  FaMapMarkerAlt,
-  FaReceipt,
-  FaRedo,
-  FaStopwatch,
-  FaUpload
-} from "react-icons/fa";
+import { FaCamera, FaCheck, FaClock, FaRedo, FaUpload } from "react-icons/fa";
 import {
   calculateParkingCharge,
-  extractParkingDateTime,
-  formatParkingDateTime,
+  extractParkingTimestamp,
   formatParkingDuration,
   PARKING_RATE_PER_HOUR,
   parseParkingDateTime
 } from "./parkingReceipt";
 
-const SUCCESS_SPARKS = Array.from({ length: 12 });
+const createImageElement = (file) => new Promise((resolve, reject) => {
+  const objectUrl = URL.createObjectURL(file);
+  const image = new Image();
+  image.onload = () => {
+    URL.revokeObjectURL(objectUrl);
+    resolve(image);
+  };
+  image.onerror = () => {
+    URL.revokeObjectURL(objectUrl);
+    reject(new Error("Could not open receipt image."));
+  };
+  image.src = objectUrl;
+});
+
+const prepareReceiptForOcr = async (file) => {
+  const source = typeof createImageBitmap === "function"
+    ? await createImageBitmap(file)
+    : await createImageElement(file);
+  const sourceWidth = source.width || source.naturalWidth;
+  const sourceHeight = source.height || source.naturalHeight;
+  const cropX = Math.round(sourceWidth * 0.08);
+  const cropY = Math.round(sourceHeight * 0.5);
+  const cropWidth = Math.round(sourceWidth * 0.84);
+  const cropHeight = Math.round(sourceHeight * 0.34);
+  const scale = Math.min(2.25, 1600 / cropWidth);
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(cropWidth * scale);
+  canvas.height = Math.round(cropHeight * scale);
+  const context = canvas.getContext("2d");
+
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.filter = "grayscale(1) contrast(1.8) brightness(1.08)";
+  context.drawImage(
+    source,
+    cropX,
+    cropY,
+    cropWidth,
+    cropHeight,
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+  if (typeof source.close === "function") source.close();
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => blob ? resolve(blob) : reject(new Error("Could not prepare receipt image.")),
+      "image/jpeg",
+      0.96
+    );
+  });
+};
 
 export default function ParkingReceiptFlow({
   parkingDraft,
@@ -28,16 +71,17 @@ export default function ParkingReceiptFlow({
   saveSuccess
 }) {
   const videoRef = useRef(null);
-  const canvasRef = useRef(null);
+  const captureCanvasRef = useRef(null);
   const streamRef = useRef(null);
   const fileInputRef = useRef(null);
   const previewUrlRef = useRef("");
   const mountedRef = useRef(true);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
-  const [scanStatus, setScanStatus] = useState("Aim at the printed date and time on the ticket.");
+  const [scanState, setScanState] = useState("idle");
+  const [scanMessage, setScanMessage] = useState("");
   const [scanProgress, setScanProgress] = useState(0);
-  const [scanning, setScanning] = useState(false);
+  const [manualEntryOpen, setManualEntryOpen] = useState(false);
   const [now, setNow] = useState(() => new Date());
 
   const stopCamera = useCallback(() => {
@@ -56,31 +100,18 @@ export default function ParkingReceiptFlow({
 
   useEffect(() => () => {
     mountedRef.current = false;
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) videoRef.current.srcObject = null;
+    if (streamRef.current) streamRef.current.getTracks().forEach((track) => track.stop());
     if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
   }, []);
 
-  const entryDate = useMemo(
-    () => parseParkingDateTime(parkingDraft.date),
-    [parkingDraft.date]
-  );
-  const charge = useMemo(
-    () => calculateParkingCharge(entryDate, now),
-    [entryDate, now]
-  );
+  const entryDate = useMemo(() => parseParkingDateTime(parkingDraft.date), [parkingDraft.date]);
+  const charge = useMemo(() => calculateParkingCharge(entryDate, now), [entryDate, now]);
   const amountText = charge.amount.toFixed(2);
+  const showReview = manualEntryOpen || Boolean(parkingDraft.date);
 
   useEffect(() => {
     if (charge.error || parkingDraft.amount === amountText) return;
-    setParkingDraft((current) => ({
-      ...current,
-      amount: amountText,
-      narrative: "Abrihot"
-    }));
+    setParkingDraft((current) => ({ ...current, amount: amountText, narrative: "Abrihot" }));
   }, [amountText, charge.error, parkingDraft.amount, setParkingDraft]);
 
   const replacePreview = (file) => {
@@ -92,75 +123,74 @@ export default function ParkingReceiptFlow({
 
   const scanReceipt = async (file) => {
     if (!file) return;
-
     replacePreview(file);
-    setScanning(true);
+    setManualEntryOpen(false);
+    setScanState("reading");
+    setScanMessage("Reading the entry time...");
     setScanProgress(0);
-    setScanStatus("Reading only the ticket date and time...");
 
+    let worker;
     try {
-      const { recognize } = await import("tesseract.js");
-      const result = await recognize(file, "eng", {
+      const [preparedImage, tesseract] = await Promise.all([
+        prepareReceiptForOcr(file).catch(() => file),
+        import("tesseract.js")
+      ]);
+      worker = await tesseract.createWorker("eng", 1, {
         logger: (message) => {
-          if (mountedRef.current && message.status === "recognizing text" && typeof message.progress === "number") {
-            setScanProgress(Math.round(message.progress * 100));
+          if (mountedRef.current && message.status === "recognizing text") {
+            setScanProgress(Math.round((message.progress || 0) * 100));
           }
         }
       });
-      if (!mountedRef.current) return;
-      const detectedDate = extractParkingDateTime(result.data.text || "");
+      await worker.setParameters({
+        tessedit_pageseg_mode: "6",
+        preserve_interword_spaces: "1"
+      });
 
-      if (!detectedDate) {
-        setScanStatus("I couldn't find the date line. Retake the photo or type it below.");
+      let result = await worker.recognize(preparedImage);
+      let detected = extractParkingTimestamp(result.data.text || "", new Date());
+
+      // A wider second pass handles photos where the ticket is not centered.
+      if (!detected.date) {
+        result = await worker.recognize(file);
+        detected = extractParkingTimestamp(result.data.text || "", new Date());
+      }
+      if (!mountedRef.current) return;
+
+      if (!detected.date) {
+        setScanState("error");
+        setScanMessage("Time not found. Enter it below or try another photo.");
+        setManualEntryOpen(true);
         return;
       }
 
-      const scannedEntry = parseParkingDateTime(detectedDate);
-      const scanTime = new Date();
-      const looksLikeMisreadDay =
-        scannedEntry > scanTime &&
-        scannedEntry.getMonth() === scanTime.getMonth() &&
-        scannedEntry.getFullYear() === scanTime.getFullYear();
-      const verifiedDate = looksLikeMisreadDay
-        ? formatParkingDateTime(new Date(
-            scanTime.getFullYear(),
-            scanTime.getMonth(),
-            scanTime.getDate(),
-            scannedEntry.getHours(),
-            scannedEntry.getMinutes(),
-            scannedEntry.getSeconds()
-          ))
-        : detectedDate;
-
       setParkingDraft((current) => ({
         ...current,
-        date: verifiedDate,
+        date: detected.date,
         narrative: "Abrihot"
       }));
-      setScanStatus(looksLikeMisreadDay
-        ? "The day was unclear, so I used today. Please check it against the ticket."
-        : "Entry time found. Please check it before saving.");
+      setScanState("success");
+      setScanMessage(detected.usedTodayFallback
+        ? "Time found. Date set to today—please check it."
+        : "Entry time found.");
     } catch (error) {
       console.error("PARKING RECEIPT OCR ERROR:", error);
       if (mountedRef.current) {
-        setScanStatus("The receipt could not be read. Retake the photo or enter the time manually.");
+        setScanState("error");
+        setScanMessage("The photo could not be read. Enter the time below or try again.");
+        setManualEntryOpen(true);
       }
     } finally {
-      if (mountedRef.current) setScanning(false);
+      if (worker) await worker.terminate();
     }
   };
 
   const startCamera = async () => {
     stopCamera();
-    setScanStatus("Opening camera...");
-
     try {
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error("Camera API unavailable");
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: "environment" },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
-        },
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
         audio: false
       });
       if (!mountedRef.current) {
@@ -173,19 +203,18 @@ export default function ParkingReceiptFlow({
         if (!videoRef.current) return;
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
-        setScanStatus("Keep the date line inside the frame, then capture.");
       });
     } catch (error) {
       console.error("PARKING CAMERA ERROR:", error);
-      setScanStatus("Camera is unavailable. Use the photo button instead.");
+      setScanState("error");
+      setScanMessage("Camera unavailable. Choose a photo from the gallery instead.");
     }
   };
 
   const captureReceipt = () => {
     const video = videoRef.current;
-    const canvas = canvasRef.current;
+    const canvas = captureCanvasRef.current;
     if (!video?.videoWidth || !canvas) return;
-
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -193,7 +222,7 @@ export default function ParkingReceiptFlow({
       if (!blob) return;
       stopCamera();
       scanReceipt(new File([blob], "abrihot-parking.jpg", { type: "image/jpeg" }));
-    }, "image/jpeg", 0.92);
+    }, "image/jpeg", 0.94);
   };
 
   const resetScan = () => {
@@ -201,147 +230,124 @@ export default function ParkingReceiptFlow({
     if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
     previewUrlRef.current = "";
     setPreviewUrl("");
+    setScanState("idle");
+    setScanMessage("");
     setScanProgress(0);
-    setScanStatus("Aim at the printed date and time on the ticket.");
+    setManualEntryOpen(false);
     setParkingDraft({ amount: "", date: "", reference: "", narrative: "Abrihot" });
   };
 
-  const canSave = !scanning && !saving && !charge.error && charge.amount > 0;
+  if (saveSuccess) {
+    return (
+      <div className="parking-success" role="status" aria-live="polite">
+        <span className="parking-success-check"><FaCheck /></span>
+        <div><strong>Parking saved</strong><small>{amountText} ETB added · Abrihot</small></div>
+      </div>
+    );
+  }
+
+  const canSave = scanState !== "reading" && !saving && !charge.error && charge.amount > 0;
 
   return (
     <div className="parking-flow">
-      <section className="parking-camera-card" aria-label="Parking receipt camera">
-        <div className="parking-section-heading">
-          <div className="parking-heading-icon"><FaCamera /></div>
-          <div>
-            <span className="parking-eyebrow">Receipt camera</span>
-            <h3>Scan your entry time</h3>
-          </div>
-          <span className="parking-location-chip"><FaMapMarkerAlt /> Abrihot</span>
-        </div>
+      <div className="parking-context-row">
+        <span>Abrihot Library</span>
+        <span>{PARKING_RATE_PER_HOUR} ETB / hour</span>
+      </div>
 
-        <div className={`parking-camera-stage ${cameraOpen ? "is-live" : ""}`}>
-          {cameraOpen ? (
-            <video ref={videoRef} playsInline muted aria-label="Live parking receipt camera" />
-          ) : previewUrl ? (
-            <img src={previewUrl} alt="Captured Abrihot parking receipt" />
-          ) : (
-            <div className="parking-camera-placeholder">
-              <FaReceipt />
-              <strong>Place the receipt in view</strong>
-              <span>Only the printed date and time are read.</span>
+      {!cameraOpen && !previewUrl && !manualEntryOpen && (
+        <section className="parking-source-panel" aria-label="Choose parking receipt source">
+          <div className="parking-step-copy">
+            <span>1</span>
+            <div><strong>Add the ticket</strong><small>We only read the printed entry time.</small></div>
+          </div>
+          <div className="parking-source-actions">
+            <button type="button" onClick={startCamera}>
+              <FaCamera /><span><strong>Camera</strong><small>Take a photo</small></span>
+            </button>
+            <button type="button" onClick={() => fileInputRef.current?.click()}>
+              <FaUpload /><span><strong>Gallery</strong><small>Choose a photo</small></span>
+            </button>
+          </div>
+          <button type="button" className="parking-manual-link" onClick={() => setManualEntryOpen(true)}>
+            Enter the time manually
+          </button>
+        </section>
+      )}
+
+      {cameraOpen && (
+        <section className="parking-live-camera">
+          <video ref={videoRef} playsInline muted aria-label="Live parking receipt camera" />
+          <div className="parking-camera-hint">Keep the whole ticket visible</div>
+          <div className="parking-live-actions">
+            <button type="button" className="close-btn" onClick={stopCamera}>Cancel</button>
+            <button type="button" className="parking-primary-button" onClick={captureReceipt}><FaCamera /> Take photo</button>
+          </div>
+        </section>
+      )}
+
+      {previewUrl && (
+        <section className="parking-ticket-preview">
+          <img src={previewUrl} alt="Selected Abrihot parking ticket" />
+          <div className="parking-ticket-status">
+            <strong>{scanState === "reading" ? "Reading ticket" : "Ticket added"}</strong>
+            <small>{scanMessage}</small>
+            {scanState === "reading" && (
+              <div className="parking-progress"><i style={{ width: `${scanProgress}%` }}></i></div>
+            )}
+          </div>
+          {scanState !== "reading" && (
+            <button type="button" className="parking-icon-button" onClick={resetScan} aria-label="Choose another ticket"><FaRedo /></button>
+          )}
+        </section>
+      )}
+
+      <input
+        ref={fileInputRef}
+        className="parking-file-input"
+        type="file"
+        accept="image/*"
+        onChange={(event) => {
+          scanReceipt(event.target.files?.[0]);
+          event.target.value = "";
+        }}
+      />
+      <canvas ref={captureCanvasRef} hidden></canvas>
+
+      {scanState === "error" && !previewUrl && <p className="parking-inline-error">{scanMessage}</p>}
+
+      {showReview && (
+        <section className="parking-review-panel">
+          <div className="parking-step-copy">
+            <span>2</span>
+            <div><strong>Check the entry time</strong><small>Edit it if the ticket was read incorrectly.</small></div>
+          </div>
+          <label className="parking-entry-field">
+            <span><FaClock /> Date and time</span>
+            <input
+              type="text"
+              value={parkingDraft.date}
+              onChange={(event) => setParkingDraft((current) => ({ ...current, date: event.target.value }))}
+              placeholder="DD/MM/YYYY HH:MM:SS"
+              disabled={saving}
+            />
+          </label>
+          {!previewUrl && (
+            <button type="button" className="parking-manual-link" onClick={resetScan}>Scan a ticket instead</button>
+          )}
+
+          {!charge.error && (
+            <div className="parking-payment-row">
+              <div><small>{formatParkingDuration(charge.elapsedMinutes)}</small><span>Parking total</span></div>
+              <strong>{amountText} <small>ETB</small></strong>
             </div>
           )}
-          <div className="parking-scan-line" aria-hidden="true"></div>
-          <div className="parking-date-guide" aria-hidden="true"><span>Date / time line</span></div>
-          {scanning && (
-            <div className="parking-reading-overlay">
-              <div className="parking-reading-ring"></div>
-              <strong>Reading receipt</strong>
-              <span>{scanProgress}%</span>
-            </div>
-          )}
-        </div>
+          {parkingDraft.date && charge.error && <p className="parking-inline-error">{charge.error}</p>}
 
-        <canvas ref={canvasRef} hidden></canvas>
-        <input
-          ref={fileInputRef}
-          className="parking-file-input"
-          type="file"
-          accept="image/*"
-          onChange={(event) => {
-            scanReceipt(event.target.files?.[0]);
-            event.target.value = "";
-          }}
-          disabled={scanning || saving}
-        />
-
-        <div className="parking-camera-actions">
-          {cameraOpen ? (
-            <button type="button" className="parking-capture-btn" onClick={captureReceipt}>
-              <span></span> Capture receipt
-            </button>
-          ) : (
-            <>
-              <button type="button" className="parking-camera-btn" onClick={startCamera} disabled={scanning || saving}>
-                <FaCamera /> Open camera
-              </button>
-              <button type="button" className="parking-upload-btn" onClick={() => fileInputRef.current?.click()} disabled={scanning || saving}>
-                <FaUpload /> Choose from gallery
-              </button>
-            </>
-          )}
-          {previewUrl && !scanning && (
-            <button type="button" className="parking-reset-btn" onClick={resetScan} disabled={saving}>
-              <FaRedo /> Retake
-            </button>
-          )}
-        </div>
-
-        <p className={`parking-scan-status ${parkingDraft.date ? "is-found" : ""}`} aria-live="polite">
-          {parkingDraft.date && <FaCheck />} {scanStatus}
-        </p>
-      </section>
-
-      <section className="parking-calculation-card">
-        <div className="parking-section-heading compact">
-          <div className="parking-heading-icon warm"><FaStopwatch /></div>
-          <div>
-            <span className="parking-eyebrow">Live calculation</span>
-            <h3>{PARKING_RATE_PER_HOUR} ETB per hour</h3>
-          </div>
-          <span className="parking-rate-note">Prorated by minute</span>
-        </div>
-
-        <label className="parking-entry-field">
-          <span><FaClock /> Entry date & time</span>
-          <input
-            type="text"
-            value={parkingDraft.date}
-            onChange={(event) => setParkingDraft((current) => ({ ...current, date: event.target.value }))}
-            placeholder="DD/MM/YYYY HH:MM:SS"
-            disabled={saving}
-          />
-          <small>Check the scan against the ticket before saving.</small>
-        </label>
-
-        <div className="parking-price-summary">
-          <div>
-            <span>Time parked</span>
-            <strong>{charge.error ? "—" : formatParkingDuration(charge.elapsedMinutes)}</strong>
-          </div>
-          <div className="parking-price-divider" aria-hidden="true"></div>
-          <div className="parking-total">
-            <span>Amount to pay</span>
-            <strong><b>{charge.error ? "0.00" : amountText}</b> ETB</strong>
-          </div>
-        </div>
-
-        {charge.error ? (
-          <p className="parking-calculation-error" role="alert">{charge.error}</p>
-        ) : (
-          <p className="parking-formula">{formatParkingDuration(charge.elapsedMinutes)} × {PARKING_RATE_PER_HOUR} ETB/hour</p>
-        )}
-
-        <button type="button" className="parking-save-btn" onClick={onSave} disabled={!canSave}>
-          {saving ? (
-            <><span className="parking-button-spinner"></span> Saving parking...</>
-          ) : (
-            <><FaCheck /> Save & add {amountText} ETB</>
-          )}
-        </button>
-      </section>
-
-      {saveSuccess && (
-        <div className="parking-success" role="status" aria-live="polite">
-          <div className="parking-success-sparks" aria-hidden="true">
-            {SUCCESS_SPARKS.map((_, index) => <i key={index}></i>)}
-          </div>
-          <div className="parking-success-check"><FaCheck /></div>
-          <span>Parking saved</span>
-          <h3>{amountText} ETB added</h3>
-          <p>Abrihot · {formatParkingDuration(charge.elapsedMinutes)}</p>
-        </div>
+          <button type="button" className="parking-save-btn" onClick={onSave} disabled={!canSave}>
+            {saving ? "Saving..." : `Save ${charge.error ? "payment" : `${amountText} ETB`}`}
+          </button>
+        </section>
       )}
     </div>
   );

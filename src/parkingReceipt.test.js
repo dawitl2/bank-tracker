@@ -1,6 +1,7 @@
 import {
   calculateParkingCharge,
   extractParkingDateTime,
+  extractParkingTimestamp,
   formatParkingDuration,
   parseParkingDateTime
 } from "./parkingReceipt";
@@ -25,5 +26,22 @@ describe("Abrihot parking receipt helpers", () => {
     const entry = parseParkingDateTime("03/09/2026 07:48:09");
     const now = new Date(2026, 8, 2, 10, 18, 9);
     expect(calculateParkingCharge(entry, now).error).toMatch(/future/i);
+  });
+
+  test("recovers the sample ticket when OCR damages the printed date", () => {
+    const ocrText = "$95111704576/8111704250\nUAT: 15%\n5241-26 09620748696\n/769/726 07:48:09 LE: 01";
+    const scanTime = new Date(2026, 8, 2, 10, 18, 9);
+
+    expect(extractParkingTimestamp(ocrText, scanTime)).toEqual({
+      date: "02/09/2026 07:48:09",
+      usedTodayFallback: true
+    });
+  });
+
+  test("corrects the future day produced by OCR while preserving the time", () => {
+    const ocrText = "9/09/26 07:48:09 LE: 01";
+    const scanTime = new Date(2026, 8, 2, 10, 18, 9);
+
+    expect(extractParkingTimestamp(ocrText, scanTime).date).toBe("02/09/2026 07:48:09");
   });
 });

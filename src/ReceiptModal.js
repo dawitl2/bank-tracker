@@ -1,4 +1,4 @@
-import { FaCar, FaImage, FaLink, FaQrcode } from "react-icons/fa";
+import { FaArrowLeft, FaCar, FaImage, FaLink, FaQrcode, FaTimes } from "react-icons/fa";
 import ParkingReceiptFlow from "./ParkingReceiptFlow";
 
 const GENERATED_TRANSACTION_FIELDS = ["id", "created_at"];
@@ -49,11 +49,20 @@ export default function ReceiptModal({
     <div className="modal-overlay receipt-modal-overlay">
       <div className={`modal receipt-modal ${receiptMode === "parking" ? "parking-modal" : ""}`}>
         <div className="receipt-modal-title-row">
-          <div>
-            <span>{receiptMode === "parking" ? "Abrihot" : "Bank tracker"}</span>
-            <h2>{receiptDraft?.id ? "Edit Transaction" : receiptMode === "parking" ? "Add Parking Payment" : "Add Receipt"}</h2>
+          <div className="receipt-modal-title-copy">
+            <span>{receiptMode === "parking" ? "Abrihot Library · Dave" : "Bank tracker"}</span>
+            <h2>{receiptDraft?.id ? "Edit transaction" : receiptMode === "parking" ? "Add parking payment" : "Add receipt"}</h2>
           </div>
-          {receiptMode === "parking" && <span className="parking-owner-badge">Dave</span>}
+          <div className="receipt-modal-header-actions">
+            {!receiptDraft && receiptMode === "parking" && (
+              <button type="button" className="receipt-modal-icon-button" onClick={goBack} aria-label="Back to receipt options">
+                <FaArrowLeft />
+              </button>
+            )}
+            <button type="button" className="receipt-modal-icon-button" onClick={handleCloseModal} aria-label="Close">
+              <FaTimes />
+            </button>
+          </div>
         </div>
 
         {!receiptDraft && !receiptMode && (
@@ -173,7 +182,7 @@ export default function ReceiptModal({
           </div>
         )}
 
-        {!parkingSaveSuccess && (
+        {!parkingSaveSuccess && receiptMode !== "parking" && (receiptDraft || receiptMode) && (
           <div className="modal-buttons receipt-modal-actions">
             {!receiptDraft?.id && receiptMode === "link" && (
               <button className="scrape-btn" onClick={() => handleScrape()} disabled={scrapeLoading || draftSaving}>
@@ -188,7 +197,6 @@ export default function ReceiptModal({
                 {draftSaving ? "Saving..." : receiptDraft.id ? "Save Changes" : "Approve & Save"}
               </button>
             )}
-            <button className="close-btn" onClick={handleCloseModal} disabled={scrapeLoading || draftSaving}>Close</button>
           </div>
         )}
       </div>

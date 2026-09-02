@@ -2,6 +2,8 @@ export const PARKING_RATE_PER_HOUR = 30;
 
 const RECEIPT_DATE_PATTERN =
   /(\d{1,2})\s*[/-]\s*(\d{1,2})\s*[/-]\s*(\d{2,4})[,\s]+(\d{1,2})\s*[:.]\s*(\d{2})(?:\s*[:.]\s*(\d{2}))?/;
+const RECEIPT_TIME_PATTERN =
+  /(?:^|[^\d])([0-2OQDGg]?\d)\s*[:.]\s*([0-5S]\d)\s*[:.]\s*([0-5S]\d)(?!\d)/;
 
 const expandYear = (year) => {
   const value = Number(year);
@@ -57,6 +59,43 @@ export const parseParkingDateTime = (value = "") => {
     Number(minute),
     Number(second)
   );
+};
+
+const normalizeOcrNumber = (value) =>
+  Number(String(value).replace(/[OQDGg]/g, "0").replace(/S/g, "5"));
+
+export const extractParkingTimestamp = (rawText = "", referenceDate = new Date()) => {
+  const exactDateText = extractParkingDateTime(rawText);
+  const exactDate = exactDateText ? parseParkingDateTime(exactDateText) : null;
+  const maximumFutureTime = referenceDate.getTime() + 5 * 60 * 1000;
+  const oldestLikelyTicket = referenceDate.getTime() - 7 * 24 * 60 * 60 * 1000;
+
+  if (
+    exactDate &&
+    exactDate.getTime() <= maximumFutureTime &&
+    exactDate.getTime() >= oldestLikelyTicket
+  ) {
+    return { date: exactDateText, usedTodayFallback: false };
+  }
+
+  const timeMatch = rawText.match(RECEIPT_TIME_PATTERN);
+  if (!timeMatch) return { date: "", usedTodayFallback: false };
+
+  const detectedTime = new Date(
+    referenceDate.getFullYear(),
+    referenceDate.getMonth(),
+    referenceDate.getDate(),
+    normalizeOcrNumber(timeMatch[1]),
+    normalizeOcrNumber(timeMatch[2]),
+    normalizeOcrNumber(timeMatch[3])
+  );
+
+  // A late-night ticket scanned shortly after midnight belongs to yesterday.
+  if (detectedTime.getTime() - referenceDate.getTime() > 12 * 60 * 60 * 1000) {
+    detectedTime.setDate(detectedTime.getDate() - 1);
+  }
+
+  return { date: formatParkingDateTime(detectedTime), usedTodayFallback: true };
 };
 
 export const calculateParkingCharge = (entryDate, currentDate = new Date()) => {
