@@ -5,6 +5,7 @@ import Calculator from "./Calculator";
 import Users from "./Users";
 import ReceiptModal from "./ReceiptModal";
 import DesktopLayout from "./desktop/DesktopLayout";
+import { FaCalculator } from "react-icons/fa";
 import "./App.css";
 
 const SUPABASE_URL = "https://ywplzexakisliebyjtyf.supabase.co";
@@ -202,6 +203,8 @@ function App() {
   const [showCalculator, setShowCalculator] = useState(false);
   const [calculatorImportValue, setCalculatorImportValue] = useState(null);
   const [calculatorImportToken, setCalculatorImportToken] = useState(0);
+  const [calculatorCurrentValue, setCalculatorCurrentValue] = useState("0");
+  const [calculatorButtonExpanded, setCalculatorButtonExpanded] = useState(true);
 
   // ONLY KEEP THIS FOR BALANCE TAB
   const [constructionOnly, setConstructionOnly] = useState(false);
@@ -216,6 +219,14 @@ function App() {
   const [lockedUntil, setLockedUntil] = useState(() => localStorage.getItem("auth_locked_until"));
   const [attempts, setAttempts] = useState(() => parseInt(localStorage.getItem("auth_attempts") || "0", 10));
   const [lockoutCountdown, setLockoutCountdown] = useState("");
+
+  useEffect(() => {
+    if (!authenticated) return undefined;
+
+    setCalculatorButtonExpanded(true);
+    const timer = window.setTimeout(() => setCalculatorButtonExpanded(false), 3200);
+    return () => window.clearTimeout(timer);
+  }, [authenticated, view]);
 
   useEffect(() => {
     if (!lockedUntil) {
@@ -474,10 +485,24 @@ function App() {
   }, [view]);
 
   const sendTableTotalToCalculator = (tableTotal) => {
-    setCalculatorImportValue(String(tableTotal));
+    const nextValue = String(tableTotal);
+    const currentNumber = Number(String(calculatorCurrentValue).replace(/,/g, ""));
+    const totalNumber = Number(nextValue.replace(/,/g, ""));
+
+    if (showCalculator && Number.isFinite(currentNumber) && currentNumber === totalNumber) {
+      setShowCalculator(false);
+      return;
+    }
+
+    setCalculatorImportValue(nextValue);
+    setCalculatorCurrentValue(nextValue);
     setCalculatorImportToken((current) => current + 1);
     setShowCalculator(true);
   };
+
+  const handleCalculatorStateChange = useCallback((calculatorState) => {
+    setCalculatorCurrentValue(calculatorState.current);
+  }, []);
 
   const stopQrScanner = () => {
     if (qrFrameRef.current) {
@@ -1354,6 +1379,7 @@ function App() {
           setShowCalculator={setShowCalculator}
           calculatorImportValue={calculatorImportValue}
           calculatorImportToken={calculatorImportToken}
+          onCalculatorStateChange={handleCalculatorStateChange}
           sendTableTotalToCalculator={sendTableTotalToCalculator}
           loadingMessage={loadingMessage}
           setLoadingMessage={setLoadingMessage}
@@ -1495,10 +1521,13 @@ function App() {
                 </button>
 
                 <button
-                  className="calculator-btn"
-                  onClick={() => setShowCalculator(!showCalculator)}
+                  className={`calculator-btn calculator-fab ${calculatorButtonExpanded ? "is-expanded" : "is-compact"}${showCalculator ? " is-active" : ""}`}
+                  onClick={() => setShowCalculator((current) => !current)}
+                  aria-label={showCalculator ? "Close calculator" : "Open calculator"}
+                  title={showCalculator ? "Close calculator" : "Open calculator"}
                 >
-                  🧮 Calculator
+                  <FaCalculator aria-hidden="true" />
+                  <span>Calculator</span>
                 </button>
 
               </>
@@ -1510,10 +1539,13 @@ function App() {
                 {renderBalance()}
 
                 <button
-                  className="calculator-btn"
-                  onClick={() => setShowCalculator(!showCalculator)}
+                  className={`calculator-btn calculator-fab ${calculatorButtonExpanded ? "is-expanded" : "is-compact"}${showCalculator ? " is-active" : ""}`}
+                  onClick={() => setShowCalculator((current) => !current)}
+                  aria-label={showCalculator ? "Close calculator" : "Open calculator"}
+                  title={showCalculator ? "Close calculator" : "Open calculator"}
                 >
-                  🧮 Calculator
+                  <FaCalculator aria-hidden="true" />
+                  <span>Calculator</span>
                 </button>
 
               </>
@@ -1523,6 +1555,7 @@ function App() {
               <Calculator
                 importValue={calculatorImportValue}
                 importToken={calculatorImportToken}
+                onStateChange={handleCalculatorStateChange}
               />
             )}
 

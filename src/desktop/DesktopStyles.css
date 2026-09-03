@@ -558,6 +558,9 @@ body.desktop-body {
 
 .desktop-inline-calculator-header h3 {
   margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   font-size: 14px;
   font-weight: 700;
   text-transform: uppercase;

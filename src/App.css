@@ -4498,6 +4498,198 @@ a {
   font-variant-numeric: tabular-nums;
 }
 
+/* Mobile calculator launcher: briefly introduces itself, then settles into an icon. */
+@media (max-width: 899px) {
+  .calculator-btn.calculator-fab {
+    width: 142px;
+    min-width: 52px;
+    min-height: 52px;
+    padding: 0 17px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    background: #20231f;
+    color: #f7f7f2;
+    box-shadow: 0 14px 30px rgba(32, 35, 31, 0.2);
+    transition:
+      width 0.42s cubic-bezier(0.2, 0.8, 0.2, 1),
+      padding 0.42s cubic-bezier(0.2, 0.8, 0.2, 1),
+      transform 0.18s ease,
+      box-shadow 0.18s ease;
+  }
+
+  .calculator-btn.calculator-fab svg {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+  }
+
+  .calculator-btn.calculator-fab span {
+    max-width: 82px;
+    overflow: hidden;
+    opacity: 1;
+    white-space: nowrap;
+    transition:
+      max-width 0.34s ease,
+      opacity 0.2s ease,
+      transform 0.34s ease;
+  }
+
+  .calculator-btn.calculator-fab.is-compact {
+    width: 52px;
+    padding-inline: 0;
+    gap: 0;
+  }
+
+  .calculator-btn.calculator-fab.is-compact span {
+    max-width: 0;
+    opacity: 0;
+    transform: translateX(-5px);
+  }
+
+  .calculator-btn.calculator-fab.is-active {
+    box-shadow: 0 0 0 3px rgba(244, 163, 0, 0.2), 0 14px 30px rgba(32, 35, 31, 0.2);
+  }
+
+  .balance-card-rail {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    padding: 4px 20px 18px 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-left: 0;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .balance-card-rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .balance-card-slide {
+    flex: 0 0 calc(100% - 42px);
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  .balance-card-slide .card {
+    display: block;
+    width: 100%;
+    margin: 0 !important;
+    border-radius: 18px;
+    box-shadow: 0 12px 25px rgba(34, 39, 34, 0.12);
+  }
+
+  .balance-stat {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .account-lock-overlay,
+  .interest-locked-overlay {
+    border: 1px solid rgba(185, 65, 65, 0.14);
+    background: rgba(255, 246, 246, 0.96);
+    color: #8d3c3c;
+    cursor: pointer;
+    font: inherit;
+    animation: secureSurfaceIn 0.24s ease-out;
+  }
+
+  .account-lock-overlay {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 4px;
+    border-radius: inherit;
+  }
+
+  .account-lock-overlay svg,
+  .interest-locked-overlay svg {
+    margin-bottom: 2px;
+    color: #b35a5a;
+    font-size: 15px;
+  }
+
+  .account-lock-overlay strong,
+  .interest-locked-overlay strong {
+    color: #843838;
+    font-size: 12px;
+    font-weight: 850;
+    letter-spacing: 0.01em;
+  }
+
+  .account-lock-overlay small,
+  .interest-locked-overlay small {
+    color: #a76b6b;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .interest-card.is-locked {
+    position: relative;
+    overflow: hidden;
+    min-height: 275px;
+  }
+
+  .interest-locked-overlay {
+    position: absolute;
+    inset: 42px 12px 12px;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 5px;
+    border-radius: 12px;
+  }
+}
+
+.secure-password-overlay .password-box {
+  position: relative;
+}
+
+.secure-password-close {
+  position: absolute;
+  top: 11px;
+  right: 11px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(24, 24, 22, 0.08);
+  border-radius: 9px;
+  background: #fafaf7;
+  color: #74796e;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.secure-password-close:hover {
+  background: #f2f2ed;
+  color: #20231f;
+}
+
+@keyframes secureSurfaceIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .calculator-btn.calculator-fab,
+  .calculator-btn.calculator-fab span,
+  .account-lock-overlay,
+  .interest-locked-overlay {
+    animation: none;
+    transition: none;
+  }
+}
+
 /* Transactions: compact neutral table; identity badges/actions keep their native theme */
 .transaction-table {
   border-collapse: separate;

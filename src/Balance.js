@@ -21,6 +21,7 @@ import {
   FaShower,
   FaSink,
   FaThLarge,
+  FaTimes,
   FaToilet,
   FaTools,
   FaTrashAlt
@@ -852,6 +853,8 @@ function Balance({
   const [apolloPassword, setApolloPassword] = useState("");
   const [apolloError, setApolloError] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
+  const cardRailRef = useRef(null);
+  const apolloPromptTimerRef = useRef(null);
   const [apolloUnlocked, setApolloUnlocked] = useState(
     () => localStorage.getItem("apollo_visibility_day") === getVisibilityDayKey()
   );
@@ -860,6 +863,8 @@ function Balance({
     if (isFlipped) onRefreshBoaSmsState?.();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFlipped]);
+
+  useEffect(() => () => window.clearTimeout(apolloPromptTimerRef.current), []);
 
   const analytics = useMemo(() => {
     const enriched = transactions.map((tx) => ({
@@ -1093,11 +1098,24 @@ function Balance({
 
   const requestVisibility = () => { setShowBalance(current => !current); };
 
-  const requestApolloFlip = () => {
-    if (isFlipped) { setIsFlipped(false); return; }
-    setIsFlipped(true);
-    if (localStorage.getItem("apollo_visibility_day") === getVisibilityDayKey()) return;
-    setTimeout(() => { setApolloPromptOpen(true); }, 400);
+  const requestApolloUnlock = () => {
+    if (apolloUnlocked) return;
+    setApolloPromptOpen(true);
+  };
+
+  const handleCardRailScroll = () => {
+    const rail = cardRailRef.current;
+    const firstCard = rail?.firstElementChild;
+    if (!rail || !firstCard) return;
+
+    const nextIsApollo = rail.scrollLeft > firstCard.clientWidth * 0.55;
+    if (nextIsApollo === isFlipped) return;
+
+    setIsFlipped(nextIsApollo);
+    window.clearTimeout(apolloPromptTimerRef.current);
+    if (nextIsApollo && !apolloUnlocked) {
+      apolloPromptTimerRef.current = window.setTimeout(() => setApolloPromptOpen(true), 320);
+    }
   };
 
   const unlockApollo = () => {
@@ -1145,14 +1163,17 @@ function Balance({
     <div className="balance-page balance-dashboard">
 
       <section className="balance-hero">
-        <div className={`card-3d-scene${isFlipped ? " is-flipped" : ""}`} onClick={requestApolloFlip}>
-          <div className="card-3d-inner">
-            <div className="card-3d-face card-3d-front">
-              <img src="/card.png" className="card" alt="bank card front" />
-            </div>
-            <div className="card-3d-face card-3d-back">
-              <img src="/card2.png" className="card" alt="bank card back" />
-            </div>
+        <div
+          className="balance-card-rail"
+          ref={cardRailRef}
+          onScroll={handleCardRailScroll}
+          aria-label="Bank accounts"
+        >
+          <div className="balance-card-slide">
+            <img src="/card.png" className="card" alt="Main bank card" />
+          </div>
+          <div className="balance-card-slide">
+            <img src="/card2.png" className="card" alt="Apollo bank card" />
           </div>
         </div>
 
@@ -1173,6 +1194,13 @@ function Balance({
               </button>
             </div>
             <p>{balanceDetail}</p>
+            {apolloLocked && (
+              <button className="account-lock-overlay" type="button" onClick={requestApolloUnlock}>
+                <FaLock aria-hidden="true" />
+                <strong>Apollo locked</strong>
+                <small>Tap to unlock</small>
+              </button>
+            )}
           </div>
 
           <div className="divider"></div>
@@ -1193,6 +1221,13 @@ function Balance({
               </button>
             </div>
             <p>{withdrawDetail}</p>
+            {apolloLocked && (
+              <button className="account-lock-overlay" type="button" onClick={requestApolloUnlock}>
+                <FaLock aria-hidden="true" />
+                <strong>Apollo locked</strong>
+                <small>Tap to unlock</small>
+              </button>
+            )}
           </div>
         </div>
       </section>
@@ -1299,7 +1334,7 @@ function Balance({
         )}
 
         {activePanel === "interest" && (
-          <article className="analytics-card focus-card interest-card">
+          <article className={`analytics-card focus-card interest-card${showInterest ? "" : " is-locked"}`}>
             <span>Credit Interest</span>
             <div className="interest-lock-row">
               <h2 className={!showInterest ? "masked-interest-value" : ""}>{showInterest ? money(analytics.interest.netMonthEstimate) : hiddenCardMoney}</h2>
@@ -1316,6 +1351,13 @@ function Balance({
               <div><small>Annual rate</small><strong>{(analytics.interest.annualRate * 100).toFixed(1)}%</strong></div>
               <div><small>Deduction</small><strong>{(analytics.interest.taxRate * 100).toFixed(0)}%</strong></div>
             </div>
+            {!showInterest && (
+              <button className="interest-locked-overlay" type="button" onClick={requestInterestVisibility}>
+                <FaLock aria-hidden="true" />
+                <strong>Credit interest locked</strong>
+                <small>Tap to unlock</small>
+              </button>
+            )}
           </article>
         )}
 
@@ -1328,6 +1370,9 @@ function Balance({
       {visibilityPromptOpen && (
         <div className="password-overlay secure-password-overlay" role="dialog" aria-modal="true" aria-labelledby="interest-unlock-title">
           <div className="password-box">
+            <button className="secure-password-close" type="button" aria-label="Close interest unlock" onClick={() => { setVisibilityPromptOpen(false); setVisibilityPassword(""); setVisibilityError(false); }}>
+              <FaTimes aria-hidden="true" />
+            </button>
             <div className="login-header">
               <img src="/logo.png" alt="Bank Logo" className="login-logo" />
               <h2 id="interest-unlock-title">Unlock Credit Interest</h2>
@@ -1356,6 +1401,9 @@ function Balance({
       {apolloPromptOpen && (
         <div className="password-overlay secure-password-overlay" role="dialog" aria-modal="true" aria-labelledby="apollo-unlock-title">
           <div className="password-box">
+            <button className="secure-password-close" type="button" aria-label="Close Apollo unlock" onClick={() => { setApolloPromptOpen(false); setApolloPassword(""); setApolloError(false); }}>
+              <FaTimes aria-hidden="true" />
+            </button>
             <div className="login-header">
               <img src="/logo.png" alt="Bank Logo" className="login-logo" />
               <h2 id="apollo-unlock-title">Unlock Apollo</h2>
@@ -1374,7 +1422,7 @@ function Balance({
             </div>
             {apolloError && <div className="login-error-msg">Incorrect password</div>}
             <div className="secure-password-actions">
-              <button className="login-cancel-btn" type="button" onClick={() => { setIsFlipped(false); setApolloPromptOpen(false); setApolloPassword(""); setApolloError(false); }}>Close</button>
+              <button className="login-cancel-btn" type="button" onClick={() => { setApolloPromptOpen(false); setApolloPassword(""); setApolloError(false); }}>Close</button>
               <button className="login-submit-btn" type="button" onClick={unlockApollo}>Unlock</button>
             </div>
           </div>

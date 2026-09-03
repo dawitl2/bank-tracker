@@ -178,13 +178,13 @@ export default function Calculator({ importValue, importToken, onStateChange }) 
   };
 
   return (
-    <div style={{ display: "flex", justifyContent: "center", padding: "34px 0", background: "transparent", borderRadius: 24 }}>
+    <div className="calculator-shell" style={{ display: "flex", justifyContent: "center", padding: "34px 0", background: "transparent", borderRadius: 24 }}>
       <div style={{ background: "#000", borderRadius: 36, padding: "24px 18px 26px", width: "min(340px, calc(100vw - 32px))", userSelect: "none", boxShadow: "0 24px 60px rgba(0,0,0,0.24)" }}>
         <div style={{ padding: "0 8px 16px", textAlign: "right", minHeight: 90, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
           <div style={{ fontSize: 17, color: "#8e8e93", minHeight: 24, wordBreak: "break-all", fontFamily: "-apple-system, sans-serif" }}>
             {expr}
           </div>
-          <div style={{ fontSize, color: "#fff", lineHeight: 1.05, fontWeight: 300, fontFamily: "-apple-system, sans-serif", wordBreak: "break-all", transition: "font-size 0.1s" }}>
+          <div className="calculator-display" style={{ fontSize, color: "#fff", lineHeight: 1.05, fontWeight: 300, fontFamily: "-apple-system, sans-serif", wordBreak: "break-all", transition: "font-size 0.1s" }}>
             {formatDisplay(current)}
           </div>
         </div>

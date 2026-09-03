@@ -26,6 +26,7 @@ export default function DesktopLayout(props) {
     setShowCalculator,
     calculatorImportValue,
     calculatorImportToken,
+    onCalculatorStateChange,
   } = props;
 
   // Active view synced with path
@@ -211,7 +212,7 @@ export default function DesktopLayout(props) {
             onMouseDown={handleMouseDown}
             title="Hold and drag to move"
           >
-            <h3>🧮 Calculator</h3>
+            <h3><FaCalculator aria-hidden="true" /> Calculator</h3>
             <button 
               className="desktop-inline-calculator-close"
               onClick={() => setShowCalculator(false)}
@@ -223,6 +224,7 @@ export default function DesktopLayout(props) {
           <Calculator 
             importValue={calculatorImportValue}
             importToken={calculatorImportToken}
+            onStateChange={onCalculatorStateChange}
           />
         </div>
       )}
