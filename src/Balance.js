@@ -1219,70 +1219,55 @@ function Balance({
           </div>
         </div>
 
-        <div className="balance-grid">
-          <div className={`balance-stat deposit${apolloLocked ? " is-locked" : ""}`}>
-            <div className="balance-stat-head">
-              <span className="balance-stat-label">{isFlipped ? "Apollo balance" : "Balance"}</span>
+        <div className="balance-grid balance-account-grid">
+          <section className={`balance-account-overview${apolloLocked ? " is-locked" : ""}`}>
+            <div className="account-overview-head">
+              <div>
+                <span>{isFlipped ? "Apollo account" : "Primary account"}</span>
+                <strong>Account overview</strong>
+              </div>
               <button
                 className="balance-visibility-btn"
                 onClick={apolloLocked ? undefined : requestVisibility}
                 type="button"
-                aria-label={showBalance ? "Hide balance" : "Show balance"}
+                aria-label={showBalance ? "Hide account values" : "Show account values"}
                 style={apolloLocked ? { opacity: 0, pointerEvents: "none" } : {}}
               >
                 {showBalance ? <FaEyeSlash /> : <FaEye />}
               </button>
             </div>
-            <div className="balance-value-wrap">
+
+            <div className="account-balance-block">
+              <span>{isFlipped ? "Apollo balance" : "Available balance"}</span>
               <h1 className={isSmsNumberLoading || apolloLocked ? "money-updating" : ""}>
                 {isSmsNumberLoading ? "..." : apolloLocked || showBalance ? displayedBalance : hiddenCardMoney}
               </h1>
+              <div className="account-activity-row">
+                <span>{balanceMeta.label}</span>
+                <strong>{balanceMeta.amount}</strong>
+                <time>{balanceMeta.date}</time>
+              </div>
             </div>
-            <div className="balance-stat-meta">
-              <span>{balanceMeta.label}</span>
-              <strong>{balanceMeta.amount}</strong>
-              <time>{balanceMeta.date}</time>
+
+            <div className="account-withdraw-block">
+              <div className="account-withdraw-total">
+                <span>{isFlipped ? "Apollo withdrawal" : "Total withdrawal"}</span>
+                <strong>{isSmsNumberLoading ? "..." : apolloLocked || showBalance ? displayedWithdraw : hiddenCardMoney}</strong>
+              </div>
+              <div className="account-withdraw-meta">
+                <span>{withdrawMeta.label}</span>
+                <strong>{withdrawMeta.amount}</strong>
+                <time>{withdrawMeta.date}</time>
+              </div>
             </div>
+
             {apolloLocked && (
               <button className="account-lock-overlay" type="button" onClick={requestApolloUnlock}>
                 <FaLock aria-hidden="true" />
                 <strong>Apollo locked</strong>
               </button>
             )}
-          </div>
-
-          <div className="divider"></div>
-
-          <div className={`balance-stat withdraw${apolloLocked ? " is-locked" : ""}`}>
-            <div className="balance-stat-head">
-              <span className="balance-stat-label">{isFlipped ? "Apollo withdraw" : "Withdraw"}</span>
-              <button
-                className="balance-visibility-btn"
-                onClick={apolloLocked ? undefined : requestVisibility}
-                type="button"
-                aria-label={showBalance ? "Hide withdrawals" : "Show withdrawals"}
-                style={apolloLocked ? { opacity: 0, pointerEvents: "none" } : {}}
-              >
-                {showBalance ? <FaEyeSlash /> : <FaEye />}
-              </button>
-            </div>
-            <div className="balance-value-wrap">
-              <h1 className={isSmsNumberLoading || apolloLocked ? "money-updating" : ""}>
-                {isSmsNumberLoading ? "..." : apolloLocked || showBalance ? displayedWithdraw : hiddenCardMoney}
-              </h1>
-            </div>
-            <div className="balance-stat-meta">
-              <span>{withdrawMeta.label}</span>
-              <strong>{withdrawMeta.amount}</strong>
-              <time>{withdrawMeta.date}</time>
-            </div>
-            {apolloLocked && (
-              <button className="account-lock-overlay" type="button" onClick={requestApolloUnlock}>
-                <FaLock aria-hidden="true" />
-                <strong>Apollo locked</strong>
-              </button>
-            )}
-          </div>
+          </section>
         </div>
       </section>
 

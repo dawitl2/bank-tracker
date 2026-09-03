@@ -205,6 +205,7 @@ function App() {
   const [calculatorImportToken, setCalculatorImportToken] = useState(0);
   const [calculatorCurrentValue, setCalculatorCurrentValue] = useState("0");
   const [calculatorButtonExpanded, setCalculatorButtonExpanded] = useState(true);
+  const [calculatorAnimationToken, setCalculatorAnimationToken] = useState(0);
   const calculatorButtonTimerRef = useRef(null);
 
   // ONLY KEEP THIS FOR BALANCE TAB
@@ -224,6 +225,7 @@ function App() {
   const replayCalculatorButtonAnimation = useCallback(() => {
     window.clearTimeout(calculatorButtonTimerRef.current);
     setCalculatorButtonExpanded(true);
+    setCalculatorAnimationToken((current) => current + 1);
     calculatorButtonTimerRef.current = window.setTimeout(
       () => setCalculatorButtonExpanded(false),
       3200
@@ -1535,7 +1537,8 @@ function App() {
                 </button>
 
                 <button
-                  className={`calculator-btn calculator-fab ${calculatorButtonExpanded ? "is-expanded" : "is-compact"}${showCalculator ? " is-active" : ""}`}
+                  key={`calculator-transactions-${calculatorAnimationToken}`}
+                  className={`calculator-btn calculator-fab ${calculatorButtonExpanded ? "is-expanded" : "is-compact"} is-replaying${showCalculator ? " is-active" : ""}`}
                   onClick={toggleCalculator}
                   aria-label={showCalculator ? "Close calculator" : "Open calculator"}
                   title={showCalculator ? "Close calculator" : "Open calculator"}
@@ -1553,7 +1556,8 @@ function App() {
                 {renderBalance()}
 
                 <button
-                  className={`calculator-btn calculator-fab ${calculatorButtonExpanded ? "is-expanded" : "is-compact"}${showCalculator ? " is-active" : ""}`}
+                  key={`calculator-balance-${calculatorAnimationToken}`}
+                  className={`calculator-btn calculator-fab ${calculatorButtonExpanded ? "is-expanded" : "is-compact"} is-replaying${showCalculator ? " is-active" : ""}`}
                   onClick={toggleCalculator}
                   aria-label={showCalculator ? "Close calculator" : "Open calculator"}
                   title={showCalculator ? "Close calculator" : "Open calculator"}
