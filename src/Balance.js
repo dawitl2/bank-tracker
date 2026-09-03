@@ -973,13 +973,55 @@ function Balance({
     { key: "interest", label: "Interest" },
     { key: "construction", label: "Construction" }
   ];
-  const smsRecentRows = boaSmsSummary.map((event, index) => ({
-    key: `${event.sms_received_at || "sms"}-${index}`,
-    label: event.transaction_type === "deposit" ? "Deposit" : "Withdraw",
-    date: formatSmsDate(event.sms_received_at),
-    amount: parseAmount(event.amount),
-    balanceAfter: parseAmount(event.balance_after)
-  }));
+  const smsRecentRows = useMemo(() => {
+    const rows = boaSmsSummary.map((event, index) => ({
+      key: `${event.sms_received_at || "sms"}-${index}`,
+      label: event.transaction_type === "deposit" ? "Deposit" : "Withdraw",
+      date: formatSmsDate(event.sms_received_at),
+      amount: parseAmount(event.amount),
+      balanceAfter: parseAmount(event.balance_after)
+    }));
+
+    return rows.map((event, index) => {
+      const previous = rows[index + 1];
+      const chartRows = rows
+        .slice(Math.max(0, index - 2), Math.min(rows.length, index + 3))
+        .reverse();
+      const chartValues = chartRows.map((row) => row.balanceAfter);
+      const chartMin = Math.min(...chartValues);
+      const chartMax = Math.max(...chartValues);
+      const chartRange = chartMax - chartMin;
+      const chartPoints = chartRows.map((row, pointIndex) => ({
+        x: chartRows.length === 1 ? 34 : 4 + (pointIndex * 60) / (chartRows.length - 1),
+        y: chartRange === 0 ? 16 : 27 - ((row.balanceAfter - chartMin) / chartRange) * 22,
+        key: row.key
+      }));
+      const linePoints = chartPoints.length === 1
+        ? `4,${chartPoints[0].y} 64,${chartPoints[0].y}`
+        : chartPoints.map(({ x, y }) => `${x},${y}`).join(" ");
+      const currentPoint = chartPoints.find((point) => point.key === event.key) || chartPoints[chartPoints.length - 1];
+      const balanceChange = previous ? event.balanceAfter - previous.balanceAfter : 0;
+      const trendClass = !previous || balanceChange === 0
+        ? "neutral"
+        : balanceChange > 0 ? "decrease" : "increase";
+      const trendIcon = !previous || balanceChange === 0 ? "•" : balanceChange > 0 ? "↑" : "↓";
+      const displayVal = previous ? money(Math.abs(balanceChange)) : "new";
+      const trendDescription = !previous
+        ? "First available Apollo balance point"
+        : `Apollo balance ${balanceChange >= 0 ? "increased" : "decreased"} by ${money(Math.abs(balanceChange))}`;
+
+      return {
+        ...event,
+        linePoints,
+        areaPoints: `4,29 ${linePoints} 64,29`,
+        currentPoint,
+        trendClass,
+        trendIcon,
+        displayVal,
+        trendDescription
+      };
+    });
+  }, [boaSmsSummary]);
   const receiptSummaryRows = useMemo(() => {
     const rawRows = analytics.monthlyTrend.map((month) => ({
       ...month,
@@ -1068,33 +1110,33 @@ function Balance({
   const isSmsNumberLoading = isFlipped && (boaSmsLoading || !boaSmsState);
   const apolloLocked = isFlipped && !apolloUnlocked;
   const displayedBalance = isFlipped
-    ? (apolloLocked ? hiddenSkeleton : formatSmsMoney(boaSmsState?.current_balance))
+    ? formatSmsMoney(boaSmsState?.current_balance)
     : money(balance);
   const displayedWithdraw = isFlipped
-    ? (apolloLocked ? hiddenSkeleton : formatSmsMoney(boaSmsState?.latest_withdrawal_amount))
+    ? formatSmsMoney(boaSmsState?.latest_withdrawal_amount)
     : money(analytics.totalWithdraw);
-  const balanceDetail = isFlipped ? (
-    <>
-      Latest deposit: {formatSmsMoney(boaSmsState?.latest_deposit_amount)}
-      <br />{formatSmsDate(boaSmsState?.deposit_updated_at || boaSmsState?.updated_at)}
-    </>
-  ) : (
-    <>
-      Last deposit: {analytics.lastDeposit?.amount || "-"}
-      <br />{analytics.lastDeposit?.date || "No deposit yet"}
-    </>
-  );
-  const withdrawDetail = isFlipped ? (
-    <>
-      Source: BOA SMS
-      <br />{formatSmsDate(boaSmsState?.withdrawal_updated_at || boaSmsState?.updated_at)}
-    </>
-  ) : (
-    <>
-      Last withdraw: {analytics.lastWithdraw?.amount || "-"}
-      <br />{analytics.lastWithdraw?.date || "No withdraw yet"}
-    </>
-  );
+  const balanceMeta = isFlipped
+    ? {
+        label: "Latest deposit",
+        amount: formatSmsMoney(boaSmsState?.latest_deposit_amount),
+        date: formatSmsDate(boaSmsState?.deposit_updated_at || boaSmsState?.updated_at)
+      }
+    : {
+        label: "Last deposit",
+        amount: analytics.lastDeposit?.amount || "-",
+        date: analytics.lastDeposit?.date || "No deposit yet"
+      };
+  const withdrawMeta = isFlipped
+    ? {
+        label: "Latest withdraw",
+        amount: formatSmsMoney(boaSmsState?.latest_withdrawal_amount),
+        date: formatSmsDate(boaSmsState?.withdrawal_updated_at || boaSmsState?.updated_at)
+      }
+    : {
+        label: "Last withdraw",
+        amount: analytics.lastWithdraw?.amount || "-",
+        date: analytics.lastWithdraw?.date || "No withdraw yet"
+      };
 
   const requestVisibility = () => { setShowBalance(current => !current); };
 
@@ -1178,54 +1220,66 @@ function Balance({
         </div>
 
         <div className="balance-grid">
-          <div className="balance-stat deposit">
-            <span className="balance-stat-label">{isFlipped ? "Apollo balance" : "Balance"}</span>
-            <div className="balance-value-wrap">
-              <h1 className={isSmsNumberLoading || apolloLocked ? "money-updating" : ""}>
-                {isSmsNumberLoading ? "..." : apolloLocked ? hiddenSkeleton : showBalance ? displayedBalance : hiddenCardMoney}
-              </h1>
+          <div className={`balance-stat deposit${apolloLocked ? " is-locked" : ""}`}>
+            <div className="balance-stat-head">
+              <span className="balance-stat-label">{isFlipped ? "Apollo balance" : "Balance"}</span>
               <button
                 className="balance-visibility-btn"
                 onClick={apolloLocked ? undefined : requestVisibility}
                 type="button"
-                style={apolloLocked ? { opacity: 0.3, pointerEvents: "none" } : {}}
+                aria-label={showBalance ? "Hide balance" : "Show balance"}
+                style={apolloLocked ? { opacity: 0, pointerEvents: "none" } : {}}
               >
                 {showBalance ? <FaEyeSlash /> : <FaEye />}
               </button>
             </div>
-            <p>{balanceDetail}</p>
+            <div className="balance-value-wrap">
+              <h1 className={isSmsNumberLoading || apolloLocked ? "money-updating" : ""}>
+                {isSmsNumberLoading ? "..." : apolloLocked || showBalance ? displayedBalance : hiddenCardMoney}
+              </h1>
+            </div>
+            <div className="balance-stat-meta">
+              <span>{balanceMeta.label}</span>
+              <strong>{balanceMeta.amount}</strong>
+              <time>{balanceMeta.date}</time>
+            </div>
             {apolloLocked && (
               <button className="account-lock-overlay" type="button" onClick={requestApolloUnlock}>
                 <FaLock aria-hidden="true" />
                 <strong>Apollo locked</strong>
-                <small>Tap to unlock</small>
               </button>
             )}
           </div>
 
           <div className="divider"></div>
 
-          <div className="balance-stat withdraw">
-            <span className="balance-stat-label">{isFlipped ? "Apollo withdraw" : "Withdraw"}</span>
-            <div className="balance-value-wrap">
-              <h1 className={isSmsNumberLoading || apolloLocked ? "money-updating" : ""}>
-                {isSmsNumberLoading ? "..." : apolloLocked ? hiddenSkeleton : showBalance ? displayedWithdraw : hiddenCardMoney}
-              </h1>
+          <div className={`balance-stat withdraw${apolloLocked ? " is-locked" : ""}`}>
+            <div className="balance-stat-head">
+              <span className="balance-stat-label">{isFlipped ? "Apollo withdraw" : "Withdraw"}</span>
               <button
                 className="balance-visibility-btn"
                 onClick={apolloLocked ? undefined : requestVisibility}
                 type="button"
-                style={apolloLocked ? { opacity: 0.3, pointerEvents: "none" } : {}}
+                aria-label={showBalance ? "Hide withdrawals" : "Show withdrawals"}
+                style={apolloLocked ? { opacity: 0, pointerEvents: "none" } : {}}
               >
                 {showBalance ? <FaEyeSlash /> : <FaEye />}
               </button>
             </div>
-            <p>{withdrawDetail}</p>
+            <div className="balance-value-wrap">
+              <h1 className={isSmsNumberLoading || apolloLocked ? "money-updating" : ""}>
+                {isSmsNumberLoading ? "..." : apolloLocked || showBalance ? displayedWithdraw : hiddenCardMoney}
+              </h1>
+            </div>
+            <div className="balance-stat-meta">
+              <span>{withdrawMeta.label}</span>
+              <strong>{withdrawMeta.amount}</strong>
+              <time>{withdrawMeta.date}</time>
+            </div>
             {apolloLocked && (
               <button className="account-lock-overlay" type="button" onClick={requestApolloUnlock}>
                 <FaLock aria-hidden="true" />
                 <strong>Apollo locked</strong>
-                <small>Tap to unlock</small>
               </button>
             )}
           </div>
@@ -1259,22 +1313,46 @@ function Balance({
                   <div><small>Balance</small><strong>{hiddenSkeleton}</strong></div>
                 </div>
               )}
-              {isFlipped && apolloLocked ? (
-                [1, 2, 3].map((i) => (
-                  <div className="summary-row" key={i}>
-                    <div><strong>{hiddenSkeleton}</strong><small>{hiddenSkeleton}</small></div>
-                    <div><small>Amount</small><strong>{hiddenSkeleton}</strong></div>
-                    <div><small>Balance</small><strong>{hiddenSkeleton}</strong></div>
-                  </div>
-                ))
-              ) : isFlipped ? (
-                smsRecentRows.map((event) => (
-                  <div className="summary-row" key={event.key}>
-                    <div><strong>{event.label}</strong><small>{event.date}</small></div>
-                    <div><small>Amount</small><strong>{money(event.amount)}</strong></div>
-                    <div><small>Balance</small><strong>{event.balanceAfter ? money(event.balanceAfter) : "0.0"}</strong></div>
-                  </div>
-                ))
+              {isFlipped ? (
+                smsRecentRows.map((event) => {
+                  const gradientId = `apollo-trend-${event.key.replace(/[^a-z0-9]/gi, "-")}`;
+                  const trendLabel = apolloLocked ? "Apollo balance trend locked" : event.trendDescription;
+
+                  return (
+                    <div className={`summary-row apollo-summary-row${apolloLocked ? " is-locked" : ""}`} key={event.key}>
+                      <div><strong>{event.label}</strong><small>{event.date}</small></div>
+                      <div><small>Amount</small><strong>{apolloLocked ? hiddenCardMoney : money(event.amount)}</strong></div>
+                      <div><small>Balance</small><strong>{apolloLocked ? hiddenCardMoney : event.balanceAfter ? money(event.balanceAfter) : "0.0"}</strong></div>
+                      <span
+                        className={`trend-badge trend-${event.trendClass}`}
+                        title={trendLabel}
+                        aria-label={trendLabel}
+                      >
+                        <svg className="trend-mini-chart" viewBox="0 0 68 32" role="img" aria-hidden="true">
+                          <defs>
+                            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="currentColor" stopOpacity="0.28" />
+                              <stop offset="100%" stopColor="currentColor" stopOpacity="0.02" />
+                            </linearGradient>
+                          </defs>
+                          <line className="trend-chart-guide" x1="3" y1="9" x2="65" y2="9" />
+                          <line className="trend-chart-guide" x1="3" y1="23" x2="65" y2="23" />
+                          <polygon points={event.areaPoints} fill={`url(#${gradientId})`} />
+                          <polyline className="trend-chart-line" points={event.linePoints} />
+                          <circle className="trend-chart-point-halo" cx={event.currentPoint.x} cy={event.currentPoint.y} r="3.6" />
+                          <circle className="trend-chart-point" cx={event.currentPoint.x} cy={event.currentPoint.y} r="1.8" />
+                        </svg>
+                        <span className="trend-copy">
+                          <small>Balance path</small>
+                          <span>
+                            <span className="trend-arrow">{event.trendIcon}</span>
+                            <span className="trend-val">{apolloLocked ? "Locked" : event.displayVal}</span>
+                          </span>
+                        </span>
+                      </span>
+                    </div>
+                  );
+                })
               ) : (
                 receiptSummaryRows.map((m) => {
                   const gradientId = `trend-fill-${m.key.replace(/[^a-z0-9]/gi, "-")}`;
@@ -1399,14 +1477,17 @@ function Balance({
       )}
 
       {apolloPromptOpen && (
-        <div className="password-overlay secure-password-overlay" role="dialog" aria-modal="true" aria-labelledby="apollo-unlock-title">
-          <div className="password-box">
+        <div className="password-overlay secure-password-overlay apollo-password-overlay" role="dialog" aria-modal="true" aria-labelledby="apollo-unlock-title">
+          <div className="password-box apollo-password-box">
             <button className="secure-password-close" type="button" aria-label="Close Apollo unlock" onClick={() => { setApolloPromptOpen(false); setApolloPassword(""); setApolloError(false); }}>
               <FaTimes aria-hidden="true" />
             </button>
-            <div className="login-header">
-              <img src="/logo.png" alt="Bank Logo" className="login-logo" />
+            <div className="login-header apollo-login-header">
+              <div className="apollo-logo-frame">
+                <img src="/apollo-logo.webp" alt="Apollo" className="apollo-unlock-logo" />
+              </div>
               <h2 id="apollo-unlock-title">Unlock Apollo</h2>
+              <p>Enter your password to reveal the protected account details.</p>
             </div>
             <div className="login-field">
               <label htmlFor="apollo-password">Password</label>

@@ -205,6 +205,7 @@ function App() {
   const [calculatorImportToken, setCalculatorImportToken] = useState(0);
   const [calculatorCurrentValue, setCalculatorCurrentValue] = useState("0");
   const [calculatorButtonExpanded, setCalculatorButtonExpanded] = useState(true);
+  const calculatorButtonTimerRef = useRef(null);
 
   // ONLY KEEP THIS FOR BALANCE TAB
   const [constructionOnly, setConstructionOnly] = useState(false);
@@ -220,13 +221,26 @@ function App() {
   const [attempts, setAttempts] = useState(() => parseInt(localStorage.getItem("auth_attempts") || "0", 10));
   const [lockoutCountdown, setLockoutCountdown] = useState("");
 
+  const replayCalculatorButtonAnimation = useCallback(() => {
+    window.clearTimeout(calculatorButtonTimerRef.current);
+    setCalculatorButtonExpanded(true);
+    calculatorButtonTimerRef.current = window.setTimeout(
+      () => setCalculatorButtonExpanded(false),
+      3200
+    );
+  }, []);
+
   useEffect(() => {
     if (!authenticated) return undefined;
 
-    setCalculatorButtonExpanded(true);
-    const timer = window.setTimeout(() => setCalculatorButtonExpanded(false), 3200);
-    return () => window.clearTimeout(timer);
-  }, [authenticated, view]);
+    replayCalculatorButtonAnimation();
+    return () => window.clearTimeout(calculatorButtonTimerRef.current);
+  }, [authenticated, view, replayCalculatorButtonAnimation]);
+
+  const toggleCalculator = () => {
+    replayCalculatorButtonAnimation();
+    setShowCalculator((current) => !current);
+  };
 
   useEffect(() => {
     if (!lockedUntil) {
@@ -1522,7 +1536,7 @@ function App() {
 
                 <button
                   className={`calculator-btn calculator-fab ${calculatorButtonExpanded ? "is-expanded" : "is-compact"}${showCalculator ? " is-active" : ""}`}
-                  onClick={() => setShowCalculator((current) => !current)}
+                  onClick={toggleCalculator}
                   aria-label={showCalculator ? "Close calculator" : "Open calculator"}
                   title={showCalculator ? "Close calculator" : "Open calculator"}
                 >
@@ -1540,7 +1554,7 @@ function App() {
 
                 <button
                   className={`calculator-btn calculator-fab ${calculatorButtonExpanded ? "is-expanded" : "is-compact"}${showCalculator ? " is-active" : ""}`}
-                  onClick={() => setShowCalculator((current) => !current)}
+                  onClick={toggleCalculator}
                   aria-label={showCalculator ? "Close calculator" : "Open calculator"}
                   title={showCalculator ? "Close calculator" : "Open calculator"}
                 >

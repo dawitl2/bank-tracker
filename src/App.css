@@ -4557,15 +4557,17 @@ a {
 
   .balance-card-rail {
     display: flex;
-    gap: 12px;
-    width: 100%;
-    padding: 4px 20px 18px 0;
+    gap: 10px;
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    padding: 4px 14px 18px;
     overflow-x: auto;
     overscroll-behavior-x: contain;
     scroll-snap-type: x mandatory;
-    scroll-padding-left: 0;
+    scroll-padding-inline: 14px;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
   }
 
   .balance-card-rail::-webkit-scrollbar {
@@ -4573,7 +4575,7 @@ a {
   }
 
   .balance-card-slide {
-    flex: 0 0 calc(100% - 42px);
+    flex: 0 0 calc(100% - 16px);
     scroll-snap-align: start;
     scroll-snap-stop: always;
   }
@@ -4586,9 +4588,114 @@ a {
     box-shadow: 0 12px 25px rgba(34, 39, 34, 0.12);
   }
 
+  .balance-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 9px;
+    margin: 0 0 8px;
+  }
+
+  .balance-grid .divider {
+    display: none;
+  }
+
   .balance-stat {
     position: relative;
+    min-width: 0;
+    min-height: 154px;
+    padding: 12px;
     overflow: hidden;
+    border: 1px solid rgba(32, 35, 31, 0.08);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.76);
+    box-shadow: 0 8px 20px rgba(34, 39, 34, 0.045);
+  }
+
+  .balance-stat-head {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 5px;
+  }
+
+  .balance-stat .balance-stat-label {
+    min-width: 0;
+    overflow: hidden;
+    color: #6f756b;
+    font-size: clamp(10px, 2.9vw, 12px);
+    letter-spacing: 0.025em;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .balance-stat .balance-visibility-btn {
+    flex: 0 0 27px;
+    width: 27px;
+    height: 27px;
+    background: rgba(32, 35, 31, 0.055);
+    color: #686e65;
+    font-size: 11px;
+  }
+
+  .balance-stat .balance-value-wrap {
+    display: block;
+    min-width: 0;
+    margin: 9px 0 13px;
+  }
+
+  .balance-grid .balance-stat .balance-value-wrap h1 {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    overflow: hidden;
+    color: #20231f;
+    font-size: clamp(17px, 5.2vw, 24px);
+    font-weight: 860;
+    line-height: 1.05;
+    letter-spacing: -0.045em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .balance-stat-meta {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 3px 5px;
+    padding-top: 9px;
+    border-top: 1px solid rgba(32, 35, 31, 0.07);
+  }
+
+  .balance-stat-meta span {
+    min-width: 0;
+    overflow: hidden;
+    color: #8a8f86;
+    font-size: 9px;
+    line-height: 1.2;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    text-transform: none;
+  }
+
+  .balance-stat-meta strong {
+    min-width: 0;
+    color: #3b4039;
+    font-size: 11px;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  .balance-stat-meta time {
+    grid-column: 1 / -1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: #959a92;
+    font-size: 9px;
+    line-height: 1.3;
   }
 
   .account-lock-overlay,
@@ -4604,25 +4711,41 @@ a {
   .account-lock-overlay {
     position: absolute;
     inset: 0;
-    display: grid;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     place-content: center;
-    justify-items: center;
-    gap: 4px;
+    gap: 6px;
     border-radius: inherit;
+    border-color: rgba(166, 81, 81, 0.09);
+    background: rgba(255, 248, 248, 0.68);
+    backdrop-filter: blur(1px);
+    -webkit-backdrop-filter: blur(1px);
+  }
+
+  .balance-stat.is-locked > :not(.account-lock-overlay) {
+    opacity: 0.38;
+    filter: blur(0.65px);
+  }
+
+  .balance-stat.is-locked .money-updating {
+    animation: none;
+    background: none;
+    color: #20231f !important;
   }
 
   .account-lock-overlay svg,
   .interest-locked-overlay svg {
-    margin-bottom: 2px;
+    margin-bottom: 0;
     color: #b35a5a;
-    font-size: 15px;
+    font-size: 13px;
   }
 
   .account-lock-overlay strong,
   .interest-locked-overlay strong {
-    color: #843838;
-    font-size: 12px;
-    font-weight: 850;
+    color: #8a4646;
+    font-size: 11px;
+    font-weight: 800;
     letter-spacing: 0.01em;
   }
 
@@ -4647,6 +4770,39 @@ a {
     justify-items: center;
     gap: 5px;
     border-radius: 12px;
+  }
+
+  .apollo-summary-row.is-locked > div {
+    opacity: 0.42;
+  }
+
+  .apollo-summary-row.is-locked .trend-badge {
+    opacity: 0.62;
+    filter: saturate(0.55);
+  }
+}
+
+@media (max-width: 360px) {
+  .balance-grid {
+    gap: 6px;
+  }
+
+  .balance-stat {
+    min-height: 146px;
+    padding: 10px;
+  }
+
+  .balance-grid .balance-stat .balance-value-wrap h1 {
+    font-size: clamp(16px, 5vw, 19px);
+  }
+
+  .balance-stat-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .balance-stat-meta strong,
+  .balance-stat-meta time {
+    grid-column: 1;
   }
 }
 
@@ -4673,6 +4829,79 @@ a {
 .secure-password-close:hover {
   background: #f2f2ed;
   color: #20231f;
+}
+
+.apollo-password-overlay {
+  background:
+    radial-gradient(circle at 16% 12%, rgba(166, 54, 26, 0.18), transparent 34%),
+    rgba(43, 8, 20, 0.62);
+  background-size: auto;
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+}
+
+.apollo-password-box {
+  max-width: 350px;
+  padding: 30px 28px 27px;
+  border: 1px solid rgba(107, 8, 41, 0.18);
+  border-radius: 20px;
+  background: linear-gradient(165deg, #ffffff 0%, #fffafa 58%, #fff4f1 100%);
+  box-shadow: 0 26px 70px rgba(38, 4, 16, 0.32);
+}
+
+.apollo-logo-frame {
+  width: min(218px, calc(100% - 34px));
+  margin: 0 auto 17px;
+  overflow: hidden;
+  border-radius: 13px;
+  background: #5b001f;
+  box-shadow: 0 10px 24px rgba(83, 8, 33, 0.17);
+}
+
+.apollo-unlock-logo {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.apollo-login-header {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.apollo-login-header h2 {
+  color: #4d1025;
+  font-size: 21px;
+}
+
+.apollo-login-header p {
+  width: min(260px, 100%);
+  margin: 0 auto;
+  color: #846b73;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.apollo-password-box .login-field input:focus {
+  border-color: #76163a;
+  box-shadow: 0 0 0 3px rgba(118, 22, 58, 0.11);
+}
+
+.apollo-password-box .login-submit-btn {
+  background: linear-gradient(135deg, #8f2d18, #5d0024);
+  color: #ffffff;
+}
+
+.apollo-password-box .login-submit-btn:hover {
+  background: linear-gradient(135deg, #9c3821, #6b092c);
+  box-shadow: 0 5px 16px rgba(93, 0, 36, 0.2);
+}
+
+.apollo-password-box .secure-password-close {
+  border-color: rgba(93, 0, 36, 0.08);
+  background: rgba(93, 0, 36, 0.045);
+  color: #815566;
 }
 
 @keyframes secureSurfaceIn {
