@@ -843,7 +843,8 @@ function Balance({
   }, [currentPath]);
   const getVisibilityDayKey = () => new Date().toISOString().slice(0, 10);
   const [showBalance, setShowBalance] = useState(false);
-  const [showInterest, setShowInterest] = useState(
+  const [showInterest, setShowInterest] = useState(false);
+  const [interestUnlocked, setInterestUnlocked] = useState(
     () => localStorage.getItem("interest_visibility_day") === getVisibilityDayKey()
   );
   const [visibilityPromptOpen, setVisibilityPromptOpen] = useState(false);
@@ -1166,14 +1167,17 @@ function Balance({
   };
 
   const requestInterestVisibility = () => {
-    if (showInterest) { setShowInterest(false); return; }
-    if (localStorage.getItem("interest_visibility_day") === getVisibilityDayKey()) { setShowInterest(true); return; }
-    setVisibilityPromptOpen(true);
+    if (!interestUnlocked) {
+      setVisibilityPromptOpen(true);
+      return;
+    }
+    setShowInterest((current) => !current);
   };
 
   const unlockVisibility = () => {
     if (visibilityPassword === VISIBILITY_PASSWORD) {
       localStorage.setItem("interest_visibility_day", getVisibilityDayKey());
+      setInterestUnlocked(true);
       setShowInterest(true);
       setVisibilityPromptOpen(false);
       setVisibilityPassword("");
@@ -1389,11 +1393,16 @@ function Balance({
         )}
 
         {activePanel === "interest" && (
-          <article className={`analytics-card focus-card interest-card${showInterest ? "" : " is-locked"}`}>
+          <article className={`analytics-card focus-card interest-card${interestUnlocked ? "" : " is-locked"}`}>
             <span>Credit Interest</span>
             <div className="interest-lock-row">
               <h2 className={!showInterest ? "masked-interest-value" : ""}>{showInterest ? money(analytics.interest.netMonthEstimate) : hiddenCardMoney}</h2>
-              <button className="interest-lock-btn" onClick={requestInterestVisibility} type="button">
+              <button
+                className="interest-lock-btn"
+                onClick={requestInterestVisibility}
+                type="button"
+                aria-label={showInterest ? "Hide credit interest values" : "Show credit interest values"}
+              >
                 {showInterest ? <FaEye /> : <FaEyeSlash />}
               </button>
             </div>
@@ -1406,7 +1415,7 @@ function Balance({
               <div><small>Annual rate</small><strong>{(analytics.interest.annualRate * 100).toFixed(1)}%</strong></div>
               <div><small>Deduction</small><strong>{(analytics.interest.taxRate * 100).toFixed(0)}%</strong></div>
             </div>
-            {!showInterest && (
+            {!interestUnlocked && (
               <button className="interest-locked-overlay" type="button" onClick={requestInterestVisibility}>
                 <span className="account-lock-mark"><FaLock aria-hidden="true" /></span>
                 <span className="account-lock-copy">

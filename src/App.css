@@ -4629,7 +4629,7 @@ a {
     position: relative;
     min-width: 0;
     overflow: hidden;
-    padding: 16px;
+    padding: 13px;
     border: 1px solid rgba(41, 45, 39, 0.07);
     border-radius: 21px;
     background:
@@ -4723,8 +4723,8 @@ a {
 
   .account-balance-block {
     min-width: 0;
-    margin-top: 15px;
-    padding: 16px;
+    margin-top: 11px;
+    padding: 13px;
     border: 1px solid rgba(32, 35, 31, 0.06);
     border-radius: 17px;
     background: rgba(247, 248, 243, 0.86);
@@ -4741,7 +4741,7 @@ a {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin: 10px 0 17px;
+    margin: 7px 0 13px;
   }
 
   .account-currency {
@@ -4784,6 +4784,7 @@ a {
     color: #656b62;
     font-size: 14px;
     box-shadow: 0 5px 14px rgba(32, 35, 31, 0.045);
+    transform: translateY(-3px);
   }
 
   .is-apollo .account-balance-value-row .balance-visibility-btn {
@@ -4797,7 +4798,7 @@ a {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: baseline;
     gap: 3px 8px;
-    padding: 12px 1px 0;
+    padding: 9px 1px 0;
     border-top: 1px solid rgba(32, 35, 31, 0.065);
   }
 
