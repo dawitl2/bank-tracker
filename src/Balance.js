@@ -1394,26 +1394,43 @@ function Balance({
 
         {activePanel === "interest" && (
           <article className={`analytics-card focus-card interest-card${interestUnlocked ? "" : " is-locked"}`}>
-            <span>Credit Interest</span>
-            <div className="interest-lock-row">
-              <h2 className={!showInterest ? "masked-interest-value" : ""}>{showInterest ? money(analytics.interest.netMonthEstimate) : hiddenCardMoney}</h2>
-              <button
-                className="interest-lock-btn"
-                onClick={requestInterestVisibility}
-                type="button"
-                aria-label={showInterest ? "Hide credit interest values" : "Show credit interest values"}
-              >
-                {showInterest ? <FaEye /> : <FaEyeSlash />}
-              </button>
+            <div className="interest-card-header">
+              <div className="interest-card-identity">
+                <span className="interest-card-mark" aria-hidden="true"><FaBolt /></span>
+                <div>
+                  <span>Credit interest</span>
+                  <strong>Interest estimate</strong>
+                </div>
+              </div>
+              <span className="interest-month-pill">{analytics.interest.monthLabel}</span>
             </div>
-            <p>Based on the lowest balance reached in {analytics.interest.monthLabel} using the whole transaction table.</p>
-            <div className="interest-grid">
-              <div><small>Minimum balance</small><strong className={!showInterest ? "masked-interest-value" : ""}>{showInterest ? money(analytics.interest.minimumBalance) : hiddenCardMoney}</strong></div>
-              <div><small>Remaining est.</small><strong className={!showInterest ? "masked-interest-value" : ""}>{showInterest ? money(analytics.interest.remainingEstimate) : hiddenCardMoney}</strong></div>
-              <div><small>Remaining day</small><strong>{analytics.interest.remainingDays}</strong></div>
-              <div><small>Interest days</small><strong>{analytics.interest.elapsedDays}/{analytics.interest.monthDays}</strong></div>
-              <div><small>Annual rate</small><strong>{(analytics.interest.annualRate * 100).toFixed(1)}%</strong></div>
-              <div><small>Deduction</small><strong>{(analytics.interest.taxRate * 100).toFixed(0)}%</strong></div>
+
+            <div className="interest-estimate-panel">
+              <span>Estimated this month</span>
+              <div className="interest-lock-row">
+                <div className="interest-estimate-value">
+                  <h2 className={!showInterest ? "masked-interest-value" : ""}>{showInterest ? money(analytics.interest.netMonthEstimate) : hiddenCardMoney}</h2>
+                  <span>ETB</span>
+                </div>
+                <button
+                  className="interest-lock-btn"
+                  onClick={requestInterestVisibility}
+                  type="button"
+                  aria-label={showInterest ? "Hide credit interest values" : "Show credit interest values"}
+                >
+                  {showInterest ? <FaEye /> : <FaEyeSlash />}
+                </button>
+              </div>
+              <p>Calculated from the lowest balance held during the month.</p>
+            </div>
+
+            <div className="interest-grid interest-metrics">
+              <div className="interest-metric is-highlight"><small>Minimum balance</small><strong className={!showInterest ? "masked-interest-value" : ""}>{showInterest ? money(analytics.interest.minimumBalance) : hiddenCardMoney}</strong><span>ETB</span></div>
+              <div className="interest-metric is-highlight"><small>Remaining estimate</small><strong className={!showInterest ? "masked-interest-value" : ""}>{showInterest ? money(analytics.interest.remainingEstimate) : hiddenCardMoney}</strong><span>ETB</span></div>
+              <div className="interest-metric"><small>Days remaining</small><strong>{analytics.interest.remainingDays}</strong><span>days</span></div>
+              <div className="interest-metric"><small>Interest period</small><strong>{analytics.interest.elapsedDays}/{analytics.interest.monthDays}</strong><span>days</span></div>
+              <div className="interest-metric"><small>Annual rate</small><strong>{(analytics.interest.annualRate * 100).toFixed(1)}%</strong><span>per year</span></div>
+              <div className="interest-metric"><small>Tax deduction</small><strong>{(analytics.interest.taxRate * 100).toFixed(0)}%</strong><span>from interest</span></div>
             </div>
             {!interestUnlocked && (
               <button className="interest-locked-overlay" type="button" onClick={requestInterestVisibility}>
