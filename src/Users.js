@@ -656,9 +656,9 @@ export default function Users({
       <div className="users-container">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
           <div className="analytics-card focus-card" style={{ flexGrow: 1, margin: 0 }}>
-            <span>Spending Overview</span>
-            <h2>Tracked Outflow Share</h2>
-            <p>Analyzing total spending of <b>{money(totalOutflowTracked)} ETB</b> across team members.</p>
+            <span>People</span>
+            <h2>Spending by person</h2>
+            <p>See how <b>{money(totalOutflowTracked)} ETB</b> is distributed across your team.</p>
           </div>
         </div>
 

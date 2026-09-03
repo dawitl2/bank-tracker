@@ -1219,28 +1219,28 @@ function Balance({
                 <span className="account-identity-mark" aria-hidden="true" />
                 <div>
                   <span>{isFlipped ? "Apollo account" : "Primary account"}</span>
-                  <strong>Balance overview</strong>
+                  <strong>Balance</strong>
                 </div>
               </div>
-              <button
-                className="balance-visibility-btn"
-                onClick={apolloLocked ? undefined : requestVisibility}
-                type="button"
-                aria-label={showBalance ? "Hide account values" : "Show account values"}
-                style={apolloLocked ? { opacity: 0, pointerEvents: "none" } : {}}
-              >
-                {showBalance ? <FaEyeSlash /> : <FaEye />}
-              </button>
+              <span className="account-currency">ETB</span>
             </div>
 
             <div className="account-balance-block">
-              <div className="account-balance-label">
-                <span>Available balance</span>
-                <span className="account-currency">ETB</span>
+              <span className="account-balance-caption">Available balance</span>
+              <div className="account-balance-value-row">
+                <h1 className={isSmsNumberLoading || apolloLocked ? "money-updating" : ""}>
+                  {apolloLocked ? hiddenCardMoney : isSmsNumberLoading ? "..." : showBalance ? displayedBalance : hiddenCardMoney}
+                </h1>
+                <button
+                  className="balance-visibility-btn"
+                  onClick={apolloLocked ? undefined : requestVisibility}
+                  type="button"
+                  aria-label={showBalance ? "Hide account values" : "Show account values"}
+                  style={apolloLocked ? { opacity: 0, pointerEvents: "none" } : {}}
+                >
+                  {showBalance ? <FaEye /> : <FaEyeSlash />}
+                </button>
               </div>
-              <h1 className={isSmsNumberLoading || apolloLocked ? "money-updating" : ""}>
-                {apolloLocked ? hiddenCardMoney : isSmsNumberLoading ? "..." : showBalance ? displayedBalance : hiddenCardMoney}
-              </h1>
               <div className="account-activity-row">
                 <span>{visibleBalanceMeta.label}</span>
                 <strong>{visibleBalanceMeta.amount}</strong>
@@ -1394,7 +1394,7 @@ function Balance({
             <div className="interest-lock-row">
               <h2 className={!showInterest ? "masked-interest-value" : ""}>{showInterest ? money(analytics.interest.netMonthEstimate) : hiddenCardMoney}</h2>
               <button className="interest-lock-btn" onClick={requestInterestVisibility} type="button">
-                {showInterest ? <FaEyeSlash /> : <FaEye />}
+                {showInterest ? <FaEye /> : <FaEyeSlash />}
               </button>
             </div>
             <p>Based on the lowest balance reached in {analytics.interest.monthLabel} using the whole transaction table.</p>
@@ -1408,9 +1408,13 @@ function Balance({
             </div>
             {!showInterest && (
               <button className="interest-locked-overlay" type="button" onClick={requestInterestVisibility}>
-                <FaLock aria-hidden="true" />
-                <strong>Credit interest locked</strong>
-                <small>Tap to unlock</small>
+                <span className="account-lock-mark"><FaLock aria-hidden="true" /></span>
+                <span className="account-lock-copy">
+                  <strong>Credit interest is locked</strong>
+                  <small>Unlock to view your estimated earnings and calculation details.</small>
+                  <small lang="am">የወለድ ግምትና ዝርዝሩን ለማየት ይክፈቱ።</small>
+                  <span className="account-lock-action">Tap to unlock</span>
+                </span>
               </button>
             )}
           </article>
