@@ -12,7 +12,7 @@ const SUPABASE_URL = "https://ywplzexakisliebyjtyf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_nmA6IJsDGUVki5i0smS1Tg_MLXy5_wX";
 
 const BASE_BALANCE = 1209518;
-const VERSION = "1.3.3.25"; // html.css.sys.db
+const VERSION = "1.3.3.26"; // html.css.sys.db
 const PASSWORD = "dawit123";
 const API_URL =
   process.env.REACT_APP_API_URL || "https://bank-backend-anhp.onrender.com";
@@ -207,6 +207,7 @@ function App() {
   const [calculatorButtonExpanded, setCalculatorButtonExpanded] = useState(true);
   const [calculatorAnimationToken, setCalculatorAnimationToken] = useState(0);
   const calculatorButtonTimerRef = useRef(null);
+  const calculatorSectionRef = useRef(null);
 
   // ONLY KEEP THIS FOR BALANCE TAB
   const [constructionOnly, setConstructionOnly] = useState(false);
@@ -243,6 +244,19 @@ function App() {
     replayCalculatorButtonAnimation();
     setShowCalculator((current) => !current);
   };
+
+  useEffect(() => {
+    if (!showCalculator || isDesktop) return undefined;
+
+    const frame = window.requestAnimationFrame(() => {
+      calculatorSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [showCalculator, isDesktop]);
 
   useEffect(() => {
     if (!lockedUntil) {
@@ -1570,11 +1584,13 @@ function App() {
             )}
 
             {showCalculator && (
-              <Calculator
-                importValue={calculatorImportValue}
-                importToken={calculatorImportToken}
-                onStateChange={handleCalculatorStateChange}
-              />
+              <div className="calculator-scroll-target" ref={calculatorSectionRef}>
+                <Calculator
+                  importValue={calculatorImportValue}
+                  importToken={calculatorImportToken}
+                  onStateChange={handleCalculatorStateChange}
+                />
+              </div>
             )}
 
           </div>

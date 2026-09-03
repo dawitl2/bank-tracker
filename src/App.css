@@ -4595,7 +4595,7 @@ a {
   }
 
   .balance-card-slide {
-    flex: 0 0 calc(100% - 16px);
+    flex: 0 0 calc(100% - 5px);
     scroll-snap-align: start;
     scroll-snap-stop: always;
   }
@@ -4629,13 +4629,36 @@ a {
     position: relative;
     min-width: 0;
     overflow: hidden;
-    padding: 15px;
-    border: 1px solid rgba(32, 35, 31, 0.075);
-    border-radius: 19px;
+    padding: 16px;
+    border: 1px solid rgba(41, 45, 39, 0.07);
+    border-radius: 21px;
     background:
-      radial-gradient(circle at 94% 5%, rgba(244, 163, 0, 0.11), transparent 29%),
-      rgba(255, 255, 255, 0.86);
-    box-shadow: 0 12px 28px rgba(34, 39, 34, 0.07);
+      radial-gradient(circle at 97% 0%, rgba(244, 163, 0, 0.13), transparent 32%),
+      linear-gradient(145deg, #fff 0%, #fafaf6 100%);
+    box-shadow: 0 14px 32px rgba(34, 39, 34, 0.075);
+    transition: border-color 0.22s ease, background 0.22s ease;
+  }
+
+  .balance-account-overview::before {
+    position: absolute;
+    top: 0;
+    left: 20px;
+    width: 44px;
+    height: 3px;
+    border-radius: 0 0 8px 8px;
+    background: #f4a300;
+    content: "";
+  }
+
+  .balance-account-overview.is-apollo {
+    border-color: rgba(104, 12, 45, 0.1);
+    background:
+      radial-gradient(circle at 97% 0%, rgba(124, 20, 55, 0.09), transparent 34%),
+      linear-gradient(145deg, #fff 0%, #fdf9fa 100%);
+  }
+
+  .balance-account-overview.is-apollo::before {
+    background: linear-gradient(90deg, #a43b20, #650124);
   }
 
   .account-overview-head {
@@ -4645,17 +4668,40 @@ a {
     gap: 12px;
   }
 
-  .account-overview-head > div {
+  .account-identity {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .account-identity > div {
     min-width: 0;
     display: grid;
     gap: 2px;
   }
 
+  .account-identity-mark {
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    border: 1px solid rgba(244, 163, 0, 0.15);
+    border-radius: 11px;
+    background:
+      radial-gradient(circle at 50% 50%, #f4a300 0 24%, transparent 26%),
+      rgba(244, 163, 0, 0.09);
+  }
+
+  .is-apollo .account-identity-mark {
+    border-color: rgba(104, 12, 45, 0.12);
+    background:
+      radial-gradient(circle at 50% 50%, #791636 0 24%, transparent 26%),
+      rgba(104, 12, 45, 0.065);
+  }
+
   .account-overview-head span,
-  .account-balance-block > span,
-  .account-withdraw-total > span,
-  .account-activity-row > span,
-  .account-withdraw-meta > span {
+  .account-balance-label > span:first-child,
+  .account-activity-row > span {
     color: #858a82;
     font-size: 9px;
     font-weight: 800;
@@ -4684,19 +4730,47 @@ a {
 
   .account-balance-block {
     min-width: 0;
-    margin-top: 13px;
-    padding: 14px;
-    border: 1px solid rgba(32, 35, 31, 0.055);
-    border-radius: 14px;
-    background: rgba(247, 248, 243, 0.92);
+    margin-top: 15px;
+    padding: 16px;
+    border: 1px solid rgba(32, 35, 31, 0.06);
+    border-radius: 17px;
+    background: rgba(247, 248, 243, 0.86);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
+  }
+
+  .is-apollo .account-balance-block {
+    border-color: rgba(104, 12, 45, 0.065);
+    background: rgba(250, 244, 246, 0.78);
+  }
+
+  .account-balance-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .account-currency {
+    padding: 4px 7px;
+    border-radius: 999px;
+    background: rgba(32, 35, 31, 0.055);
+    color: #6e746b;
+    font-size: 8px;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+  }
+
+  .is-apollo .account-currency {
+    background: rgba(104, 12, 45, 0.065);
+    color: #7a4054;
   }
 
   .account-balance-block h1 {
     width: 100%;
-    margin: 5px 0 13px;
+    margin: 10px 0 17px;
     overflow: hidden;
     color: #20231f;
-    font-size: clamp(29px, 9vw, 38px);
+    font-size: clamp(30px, 9.2vw, 40px);
     font-weight: 870;
     line-height: 1;
     letter-spacing: -0.055em;
@@ -4711,20 +4785,18 @@ a {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: baseline;
     gap: 3px 8px;
-    padding-top: 10px;
+    padding: 12px 1px 0;
     border-top: 1px solid rgba(32, 35, 31, 0.065);
   }
 
-  .account-activity-row strong,
-  .account-withdraw-meta strong {
+  .account-activity-row strong {
     color: #3d423a;
     font-size: 12px;
     line-height: 1.2;
     white-space: nowrap;
   }
 
-  .account-activity-row time,
-  .account-withdraw-meta time {
+  .account-activity-row time {
     grid-column: 1 / -1;
     min-width: 0;
     color: #969b93;
@@ -4733,47 +4805,9 @@ a {
     overflow-wrap: anywhere;
   }
 
-  .account-withdraw-block {
-    min-width: 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
-    gap: 12px;
-    margin-top: 10px;
-    padding: 13px 14px;
-    border: 1px solid rgba(180, 116, 19, 0.11);
-    border-radius: 14px;
-    background: rgba(255, 249, 238, 0.82);
-  }
-
-  .account-withdraw-total,
-  .account-withdraw-meta {
-    min-width: 0;
-    display: grid;
-    align-content: start;
-    gap: 5px;
-  }
-
-  .account-withdraw-total strong {
-    min-width: 0;
-    overflow: hidden;
-    color: #8b551e;
-    font-size: clamp(19px, 6vw, 25px);
-    font-weight: 860;
-    line-height: 1;
-    letter-spacing: -0.04em;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .account-withdraw-meta {
-    padding-left: 12px;
-    border-left: 1px solid rgba(180, 116, 19, 0.13);
-  }
-
   .balance-account-overview.is-locked > :not(.account-lock-overlay) {
-    opacity: 0.4;
-    filter: blur(0.7px);
+    opacity: 0.26;
+    filter: blur(0.45px);
   }
 
   .balance-account-overview.is-locked .money-updating {
@@ -4892,17 +4926,48 @@ a {
 
   .account-lock-overlay {
     position: absolute;
-    inset: 0;
+    inset: 10px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    place-content: center;
-    gap: 6px;
-    border-radius: inherit;
-    border-color: rgba(166, 81, 81, 0.09);
-    background: rgba(255, 248, 248, 0.68);
-    backdrop-filter: blur(1px);
-    -webkit-backdrop-filter: blur(1px);
+    justify-content: flex-start;
+    gap: 11px;
+    padding: 15px;
+    border-radius: 15px;
+    border-color: rgba(126, 45, 67, 0.1);
+    background: rgba(255, 250, 251, 0.9);
+    text-align: left;
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    box-shadow: 0 8px 24px rgba(75, 20, 38, 0.06);
+  }
+
+  .account-lock-mark {
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: rgba(137, 53, 76, 0.075);
+  }
+
+  .account-lock-copy {
+    min-width: 0;
+    display: grid;
+    gap: 4px;
+  }
+
+  .account-lock-copy .account-lock-action {
+    width: fit-content;
+    margin-top: 3px;
+    padding: 4px 7px;
+    border-radius: 999px;
+    background: rgba(137, 53, 76, 0.07);
+    color: #8a4646;
+    font-size: 8px;
+    font-weight: 850;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
   }
 
   .balance-stat.is-locked > :not(.account-lock-overlay) {
@@ -4926,16 +4991,25 @@ a {
   .account-lock-overlay strong,
   .interest-locked-overlay strong {
     color: #8a4646;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.01em;
+  }
+
+  .account-lock-copy strong {
+    font-size: 13px;
   }
 
   .account-lock-overlay small,
   .interest-locked-overlay small {
     color: #a76b6b;
-    font-size: 10px;
-    font-weight: 700;
+    font-size: 9px;
+    font-weight: 650;
+    line-height: 1.35;
+  }
+
+  .account-lock-copy small {
+    font-size: 9.5px;
   }
 
   .interest-card.is-locked {
@@ -4995,14 +5069,13 @@ a {
     padding: 12px;
   }
 
-  .account-withdraw-block {
-    gap: 8px;
-    padding: 12px;
+  .account-balance-block h1 {
+    font-size: clamp(28px, 9vw, 34px);
   }
+}
 
-  .account-withdraw-meta {
-    padding-left: 8px;
-  }
+.calculator-scroll-target {
+  scroll-margin-top: 12px;
 }
 
 .secure-password-overlay .password-box {

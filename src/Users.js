@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useLayoutEffect } from "react";
 import {
   AreaChart,
   Area,
@@ -125,9 +125,16 @@ export default function Users({
     return people.find((u) => u.id === selectedUserId);
   }, [selectedUserId, people]);
 
-  // Auto Scroll to Top & Reset State on User Change
+  // Put person details at the top before the new route is painted. This avoids
+  // showing the page travel through a long people list first.
+  useLayoutEffect(() => {
+    if (selectedUserId) {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    }
+  }, [selectedUserId]);
+
+  // Reset detail state on user change.
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
     setSubTab("transactions");
     setShowAddPaymentModal(false);
     setShowAddPersonModal(false);

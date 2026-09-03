@@ -1112,9 +1112,6 @@ function Balance({
   const displayedBalance = isFlipped
     ? formatSmsMoney(boaSmsState?.current_balance)
     : money(balance);
-  const displayedWithdraw = isFlipped
-    ? formatSmsMoney(boaSmsState?.latest_withdrawal_amount)
-    : money(analytics.totalWithdraw);
   const balanceMeta = isFlipped
     ? {
         label: "Latest deposit",
@@ -1126,17 +1123,13 @@ function Balance({
         amount: analytics.lastDeposit?.amount || "-",
         date: analytics.lastDeposit?.date || "No deposit yet"
       };
-  const withdrawMeta = isFlipped
+  const visibleBalanceMeta = apolloLocked
     ? {
-        label: "Latest withdraw",
-        amount: formatSmsMoney(boaSmsState?.latest_withdrawal_amount),
-        date: formatSmsDate(boaSmsState?.withdrawal_updated_at || boaSmsState?.updated_at)
+        label: "Latest activity",
+        amount: hiddenCardMoney,
+        date: "Protected account detail"
       }
-    : {
-        label: "Last withdraw",
-        amount: analytics.lastWithdraw?.amount || "-",
-        date: analytics.lastWithdraw?.date || "No withdraw yet"
-      };
+    : balanceMeta;
 
   const requestVisibility = () => { setShowBalance(current => !current); };
 
@@ -1220,11 +1213,14 @@ function Balance({
         </div>
 
         <div className="balance-grid balance-account-grid">
-          <section className={`balance-account-overview${apolloLocked ? " is-locked" : ""}`}>
+          <section className={`balance-account-overview${isFlipped ? " is-apollo" : ""}${apolloLocked ? " is-locked" : ""}`}>
             <div className="account-overview-head">
-              <div>
-                <span>{isFlipped ? "Apollo account" : "Primary account"}</span>
-                <strong>Account overview</strong>
+              <div className="account-identity">
+                <span className="account-identity-mark" aria-hidden="true" />
+                <div>
+                  <span>{isFlipped ? "Apollo account" : "Primary account"}</span>
+                  <strong>Balance overview</strong>
+                </div>
               </div>
               <button
                 className="balance-visibility-btn"
@@ -1238,33 +1234,29 @@ function Balance({
             </div>
 
             <div className="account-balance-block">
-              <span>{isFlipped ? "Apollo balance" : "Available balance"}</span>
+              <div className="account-balance-label">
+                <span>Available balance</span>
+                <span className="account-currency">ETB</span>
+              </div>
               <h1 className={isSmsNumberLoading || apolloLocked ? "money-updating" : ""}>
-                {isSmsNumberLoading ? "..." : apolloLocked || showBalance ? displayedBalance : hiddenCardMoney}
+                {apolloLocked ? hiddenCardMoney : isSmsNumberLoading ? "..." : showBalance ? displayedBalance : hiddenCardMoney}
               </h1>
               <div className="account-activity-row">
-                <span>{balanceMeta.label}</span>
-                <strong>{balanceMeta.amount}</strong>
-                <time>{balanceMeta.date}</time>
-              </div>
-            </div>
-
-            <div className="account-withdraw-block">
-              <div className="account-withdraw-total">
-                <span>{isFlipped ? "Apollo withdrawal" : "Total withdrawal"}</span>
-                <strong>{isSmsNumberLoading ? "..." : apolloLocked || showBalance ? displayedWithdraw : hiddenCardMoney}</strong>
-              </div>
-              <div className="account-withdraw-meta">
-                <span>{withdrawMeta.label}</span>
-                <strong>{withdrawMeta.amount}</strong>
-                <time>{withdrawMeta.date}</time>
+                <span>{visibleBalanceMeta.label}</span>
+                <strong>{visibleBalanceMeta.amount}</strong>
+                <time>{visibleBalanceMeta.date}</time>
               </div>
             </div>
 
             {apolloLocked && (
               <button className="account-lock-overlay" type="button" onClick={requestApolloUnlock}>
-                <FaLock aria-hidden="true" />
-                <strong>Apollo locked</strong>
+                <span className="account-lock-mark"><FaLock aria-hidden="true" /></span>
+                <span className="account-lock-copy">
+                  <strong>Apollo is locked</strong>
+                  <small>Unlock to view your balance and latest activity.</small>
+                  <small lang="am">ቀሪ ሂሳብዎን ለማየት ይክፈቱ።</small>
+                  <span className="account-lock-action">Tap to unlock</span>
+                </span>
               </button>
             )}
           </section>
