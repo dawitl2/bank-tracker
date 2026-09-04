@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FaCamera, FaCheck, FaClock, FaRedo, FaUpload } from "react-icons/fa";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { FaCamera, FaCheck, FaChevronRight, FaClock, FaImages, FaRedo } from "react-icons/fa";
 import {
   calculateParkingCharge,
+  calculateParkingAmount,
   extractParkingTimestamp,
   formatParkingDateTime,
   formatParkingDuration,
@@ -71,13 +72,10 @@ export default function ParkingReceiptFlow({
   saving,
   saveSuccess
 }) {
-  const videoRef = useRef(null);
-  const captureCanvasRef = useRef(null);
-  const streamRef = useRef(null);
+  const cameraInputRef = useRef(null);
   const fileInputRef = useRef(null);
   const previewUrlRef = useRef("");
   const mountedRef = useRef(true);
-  const [cameraOpen, setCameraOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
   const [scanState, setScanState] = useState("idle");
   const [scanMessage, setScanMessage] = useState("");
@@ -87,32 +85,37 @@ export default function ParkingReceiptFlow({
   const [durationMinutes, setDurationMinutes] = useState("");
   const [now, setNow] = useState(() => new Date());
 
-  const stopCamera = useCallback(() => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) videoRef.current.srcObject = null;
-    setCameraOpen(false);
-  }, []);
-
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 30000);
     return () => window.clearInterval(timer);
   }, []);
 
-  useEffect(() => () => {
-    mountedRef.current = false;
-    if (streamRef.current) streamRef.current.getTracks().forEach((track) => track.stop());
-    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    };
   }, []);
 
   const entryDate = useMemo(() => parseParkingDateTime(parkingDraft.date), [parkingDraft.date]);
   const charge = useMemo(() => calculateParkingCharge(entryDate, now), [entryDate, now]);
   const enteredDurationMinutes =
     (Number(durationHours) || 0) * 60 + (Number(durationMinutes) || 0);
-  const durationAmount = Math.round((enteredDurationMinutes / 60) * PARKING_RATE_PER_HOUR * 100) / 100;
+  const durationAmount = calculateParkingAmount(enteredDurationMinutes);
   const amountText = entryMode === "duration" ? durationAmount.toFixed(2) : charge.amount.toFixed(2);
+
+  useEffect(() => {
+    if (entryMode !== "scan" || !entryDate) return undefined;
+    const currentTime = Date.now();
+    const elapsed = currentTime - entryDate.getTime();
+    if (elapsed < 0) return undefined;
+    // Update the quote as soon as the next hour starts, rather than waiting
+    // for the regular 30-second duration refresh.
+    const nextBoundary = entryDate.getTime() + Math.max(1, Math.ceil(elapsed / 3600000)) * 3600000 + 1;
+    const timer = window.setTimeout(() => setNow(new Date()), nextBoundary - currentTime);
+    return () => window.clearTimeout(timer);
+  }, [entryDate, entryMode, now]);
 
   useEffect(() => {
     if (entryMode !== "scan" || charge.error || parkingDraft.amount === amountText) return;
@@ -179,6 +182,7 @@ export default function ParkingReceiptFlow({
         return;
       }
 
+      setNow(new Date());
       setParkingDraft((current) => ({
         ...current,
         date: detected.date,
@@ -199,48 +203,7 @@ export default function ParkingReceiptFlow({
     }
   };
 
-  const startCamera = async () => {
-    stopCamera();
-    try {
-      if (!navigator.mediaDevices?.getUserMedia) throw new Error("Camera API unavailable");
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
-        audio: false
-      });
-      if (!mountedRef.current) {
-        stream.getTracks().forEach((track) => track.stop());
-        return;
-      }
-      streamRef.current = stream;
-      setCameraOpen(true);
-      window.requestAnimationFrame(async () => {
-        if (!videoRef.current) return;
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      });
-    } catch (error) {
-      console.error("PARKING CAMERA ERROR:", error);
-      setScanState("error");
-      setScanMessage("Camera unavailable. Choose a photo from the gallery instead.");
-    }
-  };
-
-  const captureReceipt = () => {
-    const video = videoRef.current;
-    const canvas = captureCanvasRef.current;
-    if (!video?.videoWidth || !canvas) return;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      stopCamera();
-      scanReceipt(new File([blob], "abrihot-parking.jpg", { type: "image/jpeg" }));
-    }, "image/jpeg", 0.94);
-  };
-
   const resetScan = () => {
-    stopCamera();
     if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
     previewUrlRef.current = "";
     setPreviewUrl("");
@@ -251,7 +214,6 @@ export default function ParkingReceiptFlow({
   };
 
   const changeEntryMode = (nextMode) => {
-    stopCamera();
     if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
     previewUrlRef.current = "";
     setPreviewUrl("");
@@ -286,7 +248,7 @@ export default function ParkingReceiptFlow({
     <div className="parking-flow">
       <div className="parking-context-row">
         <span>Abrihot Library</span>
-        <span>{PARKING_RATE_PER_HOUR} ETB / hour</span>
+        <span>{PARKING_RATE_PER_HOUR} ETB / started hour</span>
       </div>
 
       <div className="parking-mode-toggle" role="group" aria-label="Parking entry method">
@@ -310,26 +272,19 @@ export default function ParkingReceiptFlow({
 
       {entryMode === "scan" && (
         <>
-          {!cameraOpen && !previewUrl && (
+          {!previewUrl && (
             <section className="parking-source-panel" aria-label="Choose parking receipt source">
               <div className="parking-source-actions">
-                <button type="button" onClick={startCamera}>
-                  <FaCamera /><span><strong>Camera</strong><small>Take a photo</small></span>
+                <button className="parking-source-camera" type="button" onClick={() => cameraInputRef.current?.click()}>
+                  <span className="parking-source-icon" aria-hidden="true"><FaCamera /></span>
+                  <span className="parking-source-copy"><strong>Take a ticket photo</strong><small>Open your phone’s camera</small></span>
+                  <FaChevronRight className="parking-source-arrow" aria-hidden="true" />
                 </button>
                 <button type="button" onClick={() => fileInputRef.current?.click()}>
-                  <FaUpload /><span><strong>Gallery</strong><small>Choose a photo</small></span>
+                  <span className="parking-source-icon" aria-hidden="true"><FaImages /></span>
+                  <span className="parking-source-copy"><strong>Choose from gallery</strong><small>Use a photo you already have</small></span>
+                  <FaChevronRight className="parking-source-arrow" aria-hidden="true" />
                 </button>
-              </div>
-            </section>
-          )}
-
-          {cameraOpen && (
-            <section className="parking-live-camera">
-              <video ref={videoRef} playsInline muted aria-label="Live parking receipt camera" />
-              <div className="parking-camera-hint">Keep the whole ticket visible</div>
-              <div className="parking-live-actions">
-                <button type="button" className="close-btn" onClick={stopCamera}>Cancel</button>
-                <button type="button" className="parking-primary-button" onClick={captureReceipt}><FaCamera /> Take photo</button>
               </div>
             </section>
           )}
@@ -350,17 +305,31 @@ export default function ParkingReceiptFlow({
             </section>
           )}
 
+          {/* Let the phone capture a full-resolution rear-camera photo with its
+              native focus/lens controls instead of a browser video frame. */}
           <input
-            ref={fileInputRef}
+            ref={cameraInputRef}
             className="parking-file-input"
             type="file"
             accept="image/*"
+            capture="environment"
+            aria-label="Take parking ticket photo"
             onChange={(event) => {
               scanReceipt(event.target.files?.[0]);
               event.target.value = "";
             }}
           />
-          <canvas ref={captureCanvasRef} hidden></canvas>
+          <input
+            ref={fileInputRef}
+            className="parking-file-input"
+            type="file"
+            accept="image/*"
+            aria-label="Choose parking ticket from gallery"
+            onChange={(event) => {
+              scanReceipt(event.target.files?.[0]);
+              event.target.value = "";
+            }}
+          />
 
           {scanState === "error" && !previewUrl && <p className="parking-inline-error">{scanMessage}</p>}
 

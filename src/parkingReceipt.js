@@ -1,5 +1,12 @@
 export const PARKING_RATE_PER_HOUR = 30;
 
+// Parking is sold in started, entry-relative hour blocks, not prorated minutes.
+// A valid entry starts the first block immediately; invalid durations cost nothing.
+export const calculateParkingAmount = (elapsedMinutes) => {
+  if (!Number.isFinite(elapsedMinutes) || elapsedMinutes < 0) return 0;
+  return Math.max(1, Math.ceil(elapsedMinutes / 60)) * PARKING_RATE_PER_HOUR;
+};
+
 const RECEIPT_DATE_PATTERN =
   /(\d{1,2})\s*[/-]\s*(\d{1,2})\s*[/-]\s*(\d{2,4})[,\s]+(\d{1,2})\s*[:.]\s*(\d{2})(?:\s*[:.]\s*(\d{2}))?/;
 const RECEIPT_TIME_PATTERN =
@@ -109,7 +116,7 @@ export const calculateParkingCharge = (entryDate, currentDate = new Date()) => {
   }
 
   const elapsedMinutes = elapsedMilliseconds / 60000;
-  const amount = Math.round((elapsedMinutes / 60) * PARKING_RATE_PER_HOUR * 100) / 100;
+  const amount = calculateParkingAmount(elapsedMinutes);
 
   return { amount, elapsedMinutes, error: "" };
 };
