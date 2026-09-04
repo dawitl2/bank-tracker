@@ -5419,6 +5419,81 @@ a {
   color: #815566;
 }
 
+@media (max-width: 600px) {
+  .apollo-password-overlay {
+    top: var(--apollo-visible-top, 0px);
+    bottom: auto;
+    height: 100dvh;
+    height: var(--apollo-visible-height, 100dvh);
+    box-sizing: border-box;
+    padding: 12px;
+  }
+
+  .apollo-password-box {
+    max-width: 330px;
+    max-height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    box-sizing: border-box;
+    padding: 18px 20px;
+    gap: 13px;
+    border-radius: 18px;
+  }
+
+  .apollo-password-box > * {
+    flex-shrink: 0;
+  }
+
+  .apollo-logo-frame {
+    width: 136px;
+    margin-bottom: 5px;
+    border-radius: 10px;
+    box-shadow: 0 5px 14px rgba(83, 8, 33, 0.13);
+  }
+
+  .apollo-login-header {
+    gap: 4px;
+    margin-bottom: 0;
+  }
+
+  .apollo-login-header h2 {
+    font-size: 19px;
+    line-height: 1.25;
+  }
+
+  .apollo-login-header p {
+    max-width: 250px;
+    line-height: 1.35;
+  }
+
+  .apollo-password-box .login-field {
+    gap: 4px;
+  }
+
+  .apollo-password-box .login-field input {
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 16px;
+  }
+
+  .apollo-password-box .secure-password-actions > button {
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+
+  .apollo-password-box .secure-password-close {
+    top: 6px;
+    right: 6px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .apollo-password-box .login-error-msg {
+    padding: 7px 10px;
+  }
+}
+
 @keyframes secureSurfaceIn {
   from { opacity: 0; }
   to { opacity: 1; }

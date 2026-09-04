@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import useApolloViewport from "./useApolloViewport";
 import {
   FaArrowLeft,
   FaBolt,
@@ -851,6 +852,7 @@ function Balance({
   const [visibilityPassword, setVisibilityPassword] = useState("");
   const [visibilityError, setVisibilityError] = useState(false);
   const [apolloPromptOpen, setApolloPromptOpen] = useState(false);
+  const apolloOverlayRef = useApolloViewport(apolloPromptOpen);
   const [apolloPassword, setApolloPassword] = useState("");
   const [apolloError, setApolloError] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -1484,7 +1486,7 @@ function Balance({
       )}
 
       {apolloPromptOpen && (
-        <div className="password-overlay secure-password-overlay apollo-password-overlay" role="dialog" aria-modal="true" aria-labelledby="apollo-unlock-title">
+        <div ref={apolloOverlayRef} className="password-overlay secure-password-overlay apollo-password-overlay" role="dialog" aria-modal="true" aria-labelledby="apollo-unlock-title">
           <div className="password-box apollo-password-box">
             <button className="secure-password-close" type="button" aria-label="Close Apollo unlock" onClick={() => { setApolloPromptOpen(false); setApolloPassword(""); setApolloError(false); }}>
               <FaTimes aria-hidden="true" />
