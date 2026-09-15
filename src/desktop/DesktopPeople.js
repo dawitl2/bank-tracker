@@ -444,7 +444,7 @@ export default function DesktopPeople({
   };
 
   return (
-    <div className="desktop-main-content" style={{ padding: 0, height: "auto" }}>
+    <div className="desktop-main-content" style={{ padding: 0, height: "auto", minHeight: "100%" }}>
       {/* Page Header */}
       <div className="desktop-section-header">
         <div>

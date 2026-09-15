@@ -285,7 +285,7 @@ export default function DesktopConstruction() {
   }
 
   return (
-    <div className="desktop-main-content" style={{ padding: 0, height: "auto" }}>
+    <div className="desktop-main-content" style={{ padding: 0, height: "auto", minHeight: "100%" }}>
       {/* Redesigned section header */}
       <div className="desktop-section-header">
         <div>

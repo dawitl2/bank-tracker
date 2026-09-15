@@ -124,11 +124,18 @@ body.desktop-body {
 .desktop-main-content {
   padding: 40px 48px;
   overflow-y: auto;
-  height: 100vh;
+  height: 133.33vh;
+  min-height: 133.33vh;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: 32px;
+}
+
+.desktop-main-content > .desktop-main-content {
+  overflow: visible;
+  min-height: 100%;
+  flex: 1;
 }
 
 /* Section Header */
@@ -456,7 +463,7 @@ body.desktop-body {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  max-height: calc(100vh - 280px);
+  max-height: calc(133.33vh - 280px);
   overflow-y: auto;
   padding-right: 8px;
 }
