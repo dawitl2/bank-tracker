@@ -1,34 +1,32 @@
-# Bank receipt tabs
+# Bank receipts within the installed app
 
-Mobile **More**, desktop **View**, and person-detail **View** open a normal new tab at the app's /slip/?trx=<token> URL. Native modified clicks and middle-clicks work too. Other receipt hosts keep their existing external links. The tab title is **Receipt**. There is no app toolbar, opening/closed message, corrected-link label, or availability banner.
+Mobile **More**, desktop **View**, and person-detail **View** navigate within the current app to /slip/?trx=<token>. The link adds one browser-history entry instead of opening a new tab or reloading the PWA. Device/browser Back reveals the previous app view with its transaction data and filters still mounted. Forward reopens the receipt. Modified clicks retain normal browser link behavior, and shared/reloaded receipt URLs have an explicit SPA rewrite.
 
-## Actual receipt first
+There is no additional startup animation, receipt toolbar, opening/closed message, corrected-link label, or availability banner. The browser/OS still owns the installed PWA's initial static splash; the second web splash has been removed as requested.
 
-The React receipt route loads the backend's GET /receipt-page?trx=<token> in a full-viewport iframe. The backend relays the bank's actual HTML shell and original assets from its fixed /slip/assets/ directory. It injects a small bridge before the original module to route its bank API call through GET /receipt-details. The bank itself constructs the layout, table, encrypted verification QR, social footer, and Download PDF action. Its CSS and viewport rules remain unchanged, including on phones.
+## Actual bank page first
 
-This relay is necessary because the bank sends X-Frame-Options: DENY and its API cannot be requested directly from the app origin. Asset names and receipt tokens are validated; callers cannot select an arbitrary host or path. Public shell HTML is cached in server memory for five minutes. Hashed bank assets have browser cache headers. Receipt responses are always no-store, and personal bank data is not cached by this implementation.
+The viewer loads /api/boa-receipt?kind=page&trx=<token> from the app's own origin. The function in api/boa-receipt.js ships alongside the frontend source and calls only the bank's fixed public slip and receipt-data endpoints. It requires no credentials, database writes, new dependencies, Render update, or REACT_APP_API_URL setting.
 
-The bank's logo/QR shell may appear before all transaction fields arrive. Only after the bank has rendered the requested transaction-reference row does the bridge declare the receipt ready. Explicit failures switch to the saved template immediately; a stalled page switches after 30 seconds, allowing for a cold backend start and delayed bank data. Individual upstream requests have a 12-second timeout.
+The bank prevents direct embedding and does not permit cross-origin receipt-data fetches. The relay retains the bank's original HTML, CSS, rendering code, encrypted verification QR, footer, and PDF action. Only asset addresses are rewritten to the app's /api/boa-receipt/assets/ path, and the injected bridge relays the receipt-data request through the same function. Relative lazy PDF modules resolve beneath that asset path. vercel.json contains only the required source-controlled asset and SPA rewrites.
 
-## Quiet fallback
+The bank's shell/QR may appear before fields arrive. The page becomes ready only after its original renderer displays the requested transaction-reference row. Confirmed invalid receipts switch to the saved template immediately. Temporary page, script, or API failures retry the actual page once within the same 30-second overall deadline. Optional image failures do not discard real receipt fields. A stalled page falls back at that deadline. Upstream requests have 12-second deadlines. The public shell has a five-minute in-process cache, public hashed assets have cache headers, and receipt data stays no-store. Tokens and asset names cannot select arbitrary hosts or filesystem paths.
 
-Clicking a BOA link hands off only its saved amount, date, reference, and narrative through a ten-minute localStorage entry. The receipt tab consumes that entry into sessionStorage for reloads; expired entries are rejected and cleaned up. Storage restrictions never block the actual bank page. No saved details are put in URLs. If the actual page fails, only those known fields appear in the local bank-style template. Missing account fields, fees, or totals are omitted. Shared links without saved fields can show the generic template on failure.
+The previous separate backend endpoints remain compatible for older clients, but the frontend no longer depends on them. The live backend returned 404 for both /receipt-page and /receipt-details when this fix was investigated; local-only testing had missed that boundary.
 
-The fallback QR opens the original bank link; it does not claim to verify a payment. Its Download PDF action works locally. The original bank receipt keeps its original encrypted verification QR and original PDF generation.
+## Quiet fallback and navigation
 
-The confirmed extra-digit token FT26082QM3HF413499 is still corrected to FT26082QM3HF41349 for viewing only. Other tokens and database records are unchanged.
+The same-app navigation event passes the selected transaction directly to the viewer, so fallback works even when browser storage is disabled. A ten-minute handoff of only amount, date, reference, and narrative still supports modified clicks and reloads. Receipt tabs consume it into sessionStorage and reject expired entries. No saved financial details go into URL parameters.
 
-## Installed-app startup
+Only when the actual receipt fails does the local template use those saved fields. Missing account numbers, fees, and totals are omitted. Its QR opens the original bank link; it does not claim to verify payment. PDF download works locally. A shared link without saved fields can show a generic template on failure.
 
-The HTML document contains the existing logoTop.png on the existing white background, with a subtle breathing scale and a masked light sweep. Inline CSS starts the animation before the React bundle downloads. It appears only in installed/standalone mode, supports iOS navigator.standalone and prefers-reduced-motion, and fades out when React commits the requested page. There is no artificial minimum launch delay. Receipt tabs skip it.
+The confirmed token FT26082QM3HF413499 is corrected to FT26082QM3HF41349 for viewing only. Other tokens and database records are unchanged.
 
-The OS-generated PWA splash is a static image controlled by the browser/OS; web code cannot animate that initial native frame. The custom animation starts when the HTML startup page can paint. See https://web.dev/learn/pwa/web-app-manifest.
-
-## Verification
+## Checks and delivery
 
 - CI=true npm test -- --watchAll=false --runInBand
-- node --test backend/boaReceipt.test.js backend/receiptPage.test.js
+- node --test backend/boaReceipt.test.js backend/receiptPage.test.js backend/receiptApi.test.js
 - npm run build
-- Check the app receipt route with the receipt-only local backend, including the real bank page on phone/desktop widths, an invalid token, delayed fields, and PDF download.
+- Serve the production frontend and actual api/boa-receipt.js handler locally, with the repository rewrites. Verify mobile More → real receipt → Back → retained transaction view; repeat with a failed link and verify saved fallback. Check original and fallback PDF downloads and direct receipt reloads.
 
-No hosting operations, schema migrations, environment changes, or additional dependencies are required by this change. Frontend and backend source must both be running the updated version for the original-page relay to be available. Delivery for this request is a Git commit and push only.
+Delivery is a Git commit and push. No manual deployment commands or dashboard changes are part of this request. The frontend's existing GitHub integration must finish running the new commit before the live app can use its new same-origin function.

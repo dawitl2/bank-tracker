@@ -6,15 +6,21 @@ const ASSET_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_.-]*\.(?:js|css|png|jpg|webp|svg|i
 // API does not allow app-origin requests, so relay only its receipt API here.
 function receiptBridge() {
   const token = new URLSearchParams(window.location.search).get("trx");
+  const detailsEndpoint = document.currentScript?.dataset.receiptDetails || "/receipt-details";
   const originalFetch = window.fetch.bind(window);
   let ready = false;
-  const notify = type => window.parent.postMessage({ type, token }, "*");
+  const notify = (type, retryable = false) => window.parent.postMessage({ type, token, retryable }, "*");
   window.fetch = async (input, options) => {
     const url = new URL(typeof input === "string" ? input : input.url, window.location.href);
     if (url.origin !== "https://cs.bankofabyssinia.com" || url.pathname !== "/api/onlineSlip/getDetails/") return originalFetch(input, options);
     try {
-      const response = await originalFetch(`/receipt-details?trx=${encodeURIComponent(token)}`, { cache: "no-store" });
-      if (!response.ok) throw new Error("Receipt unavailable");
+      const separator = detailsEndpoint.includes("?") ? "&" : "?";
+      const response = await originalFetch(`${detailsEndpoint}${separator}trx=${encodeURIComponent(token)}`, { cache: "no-store" });
+      if (!response.ok) {
+        const error = new Error("Receipt unavailable");
+        error.retryable = response.status >= 500;
+        throw error;
+      }
       const payload = await response.json();
       if (payload.token !== token || !payload.data) throw new Error("Receipt mismatch");
       const observer = new MutationObserver(() => {
@@ -29,17 +35,21 @@ function receiptBridge() {
       // Let the original bank code construct its own receipt and verification QR.
       return new Response(JSON.stringify({ body: [payload.data] }), { status: 200, headers: { "Content-Type": "application/json" } });
     } catch (error) {
-      notify("boa-receipt-failed");
+      notify("boa-receipt-failed", error.retryable !== false);
       throw error;
     }
   };
-  window.addEventListener("error", () => { if (!ready) notify("boa-receipt-failed"); }, true);
-  window.addEventListener("unhandledrejection", () => { if (!ready) notify("boa-receipt-failed"); });
+  window.addEventListener("error", event => {
+    // A missing stamp, logo, or footer image must not discard real bank data.
+    const resource = event.target?.tagName;
+    if (!ready && (!resource || resource === "SCRIPT" || resource === "LINK")) notify("boa-receipt-failed", true);
+  }, true);
+  window.addEventListener("unhandledrejection", () => { if (!ready) notify("boa-receipt-failed", true); });
 }
 
 let cachedShell;
 let shellPending;
-async function getReceiptPage(token, fetchPage = fetch) {
+async function getReceiptPage(token, fetchPage = fetch, { detailsEndpoint = "/receipt-details", assetPrefix = "/slip/assets/" } = {}) {
   if (typeof token !== "string" || !TOKEN_PATTERN.test(token)) return { status: 400, body: "Invalid receipt token" };
   try {
     // Cache only the public shell, never receipt data or rendered receipts.
@@ -59,11 +69,11 @@ async function getReceiptPage(token, fetchPage = fetch) {
       }
       html = cachedShell.body;
     }
-    const bridge = `<script>(${receiptBridge.toString()})()</script>`;
-    return { status: 200, body: html.replace(/<head>/i, `<head>${bridge}`) };
+    const bridge = `<script data-receipt-details="${detailsEndpoint}">(${receiptBridge.toString()})()</script>`;
+    return { status: 200, body: html.replaceAll("/slip/assets/", assetPrefix).replace(/<head>/i, `<head>${bridge}`) };
   } catch {
     // The parent switches to its saved receipt without showing an error page.
-    return { status: 502, body: '<!doctype html><script>parent.postMessage({type:"boa-receipt-failed",token:new URLSearchParams(location.search).get("trx")},"*")</script>' };
+    return { status: 502, body: '<!doctype html><script>parent.postMessage({type:"boa-receipt-failed",retryable:true,token:new URLSearchParams(location.search).get("trx")},"*")</script>' };
   }
 }
 

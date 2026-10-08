@@ -8,7 +8,7 @@ import { FaTelegramPlane } from "react-icons/fa";
 import { getBoaReceiptLink, readSavedReceipt, savedReceiptRows } from "./boaReceipt";
 import "./BoaReceiptViewer.css";
 
-const API_URL = process.env.REACT_APP_API_URL || "https://bank-backend-anhp.onrender.com";
+const RECEIPT_API = `${process.env.PUBLIC_URL || ""}/api/boa-receipt`;
 const socials = [
   ["Facebook", "https://www.facebook.com/BoAeth/", FaFacebookF, "#1877F2"],
   ["YouTube", "https://www.youtube.com/@abyssinia_bank", FaYoutube, "#c4302b"],
@@ -53,24 +53,34 @@ function receiptDocument(rows, bankLink) {
   return `<!doctype html>${markup}`;
 }
 
-export default function BoaReceiptViewer() {
+export default function BoaReceiptViewer({ transaction: providedTransaction }) {
   const frameRef = useRef(null);
   const pdfPendingRef = useRef(false);
+  const attemptRef = useRef(0);
+  const [attempt, setAttempt] = useState(0);
   const [pdfError, setPdfError] = useState("");
   const [failed, setFailed] = useState(false);
   const token = new URLSearchParams(window.location.search).get("trx");
   const bankLink = getBoaReceiptLink(`https://cs.bankofabyssinia.com/slip/?trx=${encodeURIComponent(token || "")}`);
   const bankToken = bankLink?.token;
-  const [transaction] = useState(() => bankLink ? readSavedReceipt(bankLink.token) : null);
+  const [transaction] = useState(() => {
+    const saved = bankLink ? readSavedReceipt(bankLink.token) : null;
+    return providedTransaction || saved;
+  });
 
   useEffect(() => {
     document.title = "Receipt";
     if (!bankToken) return undefined;
     const timeout = setTimeout(() => setFailed(true), 30000);
     const receive = event => {
-      if (event.source !== frameRef.current?.contentWindow || event.origin !== new URL(API_URL).origin || event.data?.token !== bankToken) return;
+      if (event.source !== frameRef.current?.contentWindow || event.origin !== window.location.origin || event.data?.token !== bankToken) return;
       if (event.data.type === "boa-receipt-ready") clearTimeout(timeout);
       if (event.data.type === "boa-receipt-failed") {
+        if (event.data.retryable && attemptRef.current === 0) {
+          attemptRef.current = 1;
+          setAttempt(1);
+          return;
+        }
         clearTimeout(timeout);
         setFailed(true);
       }
@@ -117,9 +127,9 @@ export default function BoaReceiptViewer() {
   const fallback = failed;
   return <main className="boa-receipt-page">
     {pdfError && <p role="alert" className="receipt-pdf-error">{pdfError}</p>}
-    <iframe key={fallback ? "saved" : "bank"} ref={frameRef} title="Receipt"
+    <iframe key={fallback ? "saved" : `bank-${attempt}`} ref={frameRef} title="Receipt"
       sandbox="allow-scripts allow-same-origin allow-modals allow-popups allow-popups-to-escape-sandbox allow-downloads"
-      src={fallback ? undefined : `${API_URL}/receipt-page?trx=${encodeURIComponent(bankLink.token)}`}
+      src={fallback ? undefined : `${RECEIPT_API}?kind=page&trx=${encodeURIComponent(bankLink.token)}`}
       srcDoc={fallback ? receiptDocument(savedReceiptRows(transaction || {}), bankLink) : undefined}
       onError={() => setFailed(true)}
       onLoad={() => {

@@ -41,8 +41,9 @@ test("relays exact asset bytes, including dotted PDF modules, from only the bank
 
 test("the bridge waits for the original bank to render real rows before declaring success", async () => {
   const { body } = await getReceiptPage(token, async () => ({ ok: true, text: async () => shell }));
-  const script = body.match(/<script>([\s\S]*?)<\/script>/)[1];
+  const script = body.match(/<script[^>]*>([\s\S]*?)<\/script>/)[1];
   const messages = [];
+  const listeners = {};
   let mutation;
   let rows = [];
   const data = { "Transaction Reference": "FT262485K1B8" };
@@ -53,7 +54,7 @@ test("the bridge waits for the original bank to render real rows before declarin
       assert.equal(options.cache, "no-store");
       return { ok: true, json: async () => ({ token, data }) };
     },
-    parent: { postMessage: message => messages.push(message) }, addEventListener() {}
+    parent: { postMessage: message => messages.push(message) }, addEventListener(type, callback) { listeners[type] = callback; }
   };
   vm.runInNewContext(script, { window, URL, URLSearchParams, Response,
     MutationObserver: class { constructor(callback) { mutation = callback; } observe() {} disconnect() {} },
@@ -61,6 +62,8 @@ test("the bridge waits for the original bank to render real rows before declarin
   });
   const response = await window.fetch(`https://cs.bankofabyssinia.com/api/onlineSlip/getDetails/?id=${token}`);
   assert.deepEqual(await response.json(), { body: [data] });
+  listeners.error({ target: { tagName: "IMG" } });
+  assert.equal(messages.length, 0, "optional images must not trigger a fallback");
   mutation();
   assert.equal(messages.length, 0);
   rows = [{ cells: [{ textContent: "Transaction Reference" }, { textContent: "FT262485K1B8 " }] }];

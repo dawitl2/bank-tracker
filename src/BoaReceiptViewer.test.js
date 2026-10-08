@@ -5,7 +5,7 @@ import { rememberSavedReceipt } from "./boaReceipt";
 
 const token = "FT26082QM3HF41349";
 const transaction = { amount: "2000.00", date: "23/03/26 12:26", reference: "FT26082QM3HF", narrative: "<script>bad()</script>", receipt_url: "https://cs.bankofabyssinia.com/slip/?trx=FT26082QM3HF413499" };
-const apiOrigin = new URL(process.env.REACT_APP_API_URL || "https://bank-backend-anhp.onrender.com").origin;
+const apiOrigin = window.location.origin;
 
 beforeEach(() => {
   localStorage.clear(); sessionStorage.clear();
@@ -23,7 +23,7 @@ test("opens the actual bank page first without a generated receipt or toolbar", 
   rememberSavedReceipt(token, transaction);
   render(<BoaReceiptViewer />);
   const frame = screen.getByTitle("Receipt");
-  expect(frame.src).toContain("/receipt-page?trx=" + token);
+  expect(frame.src).toContain("/api/boa-receipt?kind=page&trx=" + token);
   expect(frame).not.toHaveAttribute("srcdoc");
   expect(screen.queryByRole("button")).not.toBeInTheDocument();
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
@@ -62,6 +62,18 @@ test("a stalled page uses saved details at the deadline", () => {
   expect(screen.getByTitle("Receipt").srcdoc).toContain("ETB 2000.00");
 });
 
+test("a transient load failure retries the actual page once before falling back", () => {
+  rememberSavedReceipt(token, transaction);
+  render(<BoaReceiptViewer />);
+  const first = screen.getByTitle("Receipt");
+  notify("boa-receipt-failed", { data: { type: "boa-receipt-failed", token, retryable: true } });
+  const second = screen.getByTitle("Receipt");
+  expect(second).not.toBe(first);
+  expect(second).not.toHaveAttribute("srcdoc");
+  notify("boa-receipt-failed", { data: { type: "boa-receipt-failed", token, retryable: true } });
+  expect(screen.getByTitle("Receipt").srcdoc).toContain("ETB 2000.00");
+});
+
 test("ignores messages from another origin, frame, or transaction", () => {
   rememberSavedReceipt(token, transaction);
   render(<BoaReceiptViewer />);
@@ -78,11 +90,11 @@ test("shared links can fall back to the generic receipt without invented details
   expect(screen.getByTitle("Receipt").srcdoc).not.toContain("Transferred amount");
 });
 
-test("More is a native app-domain new-tab link, including modified clicks", () => {
+test("More uses the current app context; modified clicks retain native link behavior", () => {
   render(<ReceiptLink transaction={transaction}>More</ReceiptLink>);
   const link = screen.getByRole("link", { name: "More" });
   expect(link).toHaveAttribute("href", "/slip/?trx=" + token);
-  expect(link).toHaveAttribute("target", "_blank");
+  expect(link).not.toHaveAttribute("target", "_blank");
   fireEvent.click(link, { ctrlKey: true });
   expect(JSON.parse(localStorage.getItem("receipt-handoff:" + token)).transaction.amount).toBe("2000.00");
   expect(screen.queryByTitle("Receipt")).not.toBeInTheDocument();

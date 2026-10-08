@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/boa-receipt/assets/:name",
+      "destination": "/api/boa-receipt?kind=asset&name=:name"
+    },
+    {
+      "source": "/slip/:path*",
+      "destination": "/index.html"
+    }
+  ]
+}
