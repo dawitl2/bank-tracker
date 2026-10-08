@@ -1,4 +1,4 @@
-import { bankReceiptRows, getBoaReceiptLink, savedReceiptRows, rememberSavedReceipt, readSavedReceipt } from "./boaReceipt";
+import { bankReceiptRows, getBoaReceiptLink, savedReceiptRows, rememberSavedReceipt, readSavedReceipt, isDawitTransaction, generateHashedAccount } from "./boaReceipt";
 
 test("saved handoff excludes unrelated fields, is consumed once, and survives a tab reload", () => {
   localStorage.clear(); sessionStorage.clear();
@@ -25,15 +25,39 @@ test.each(["https://example.com/slip/?trx=FT262485K1B810104", "https://cs.bankof
   expect(getBoaReceiptLink(url)).toBeNull();
 });
 
-test("a saved receipt uses its own fields and never invents charges or account details", () => {
-  expect(savedReceiptRows({ amount: "ETB 2,000.00", date: "23/03/26 12:26", reference: "FT26082QM3HF", narrative: "<script>alert(1)</script>" })).toEqual([
-    ["Source Account", "—"], ["Source Account Name", "—"], ["Transferred amount", "ETB 2000.00"], ["Service Charge", "—"], ["VAT (15%)", "—"], ["Total Amount", "—"], ["Phone Number", "—"], ["Transaction Date", "23/03/26 12:26"], ["Transaction Type", "—"], ["Transaction Reference", "FT26082QM3HF"], ["Narrative", "<script>alert(1)</script>"]
-  ]);
+test("a saved receipt populates static and generated fields without placeholders or phone number", () => {
+  const rows = savedReceiptRows({ amount: "ETB 2,000.00", date: "23/03/26 12:26", reference: "FT26082QM3HF", narrative: "<script>alert(1)</script>" });
+  const rowMap = Object.fromEntries(rows);
+  expect(rowMap["Source Account Name"]).toBe("DAWIT ENKU");
+  expect(rowMap["Transferred amount"]).toBe("ETB 2000.00");
+  expect(rowMap["Service Charge"]).toBe("ETB 10.00");
+  expect(rowMap["VAT (15%)"]).toBe("ETB 1.50");
+  expect(rowMap["Total Amount"]).toBe("ETB 2011.50");
+  expect(rowMap["Transaction Date"]).toBe("23/03/26 12:26");
+  expect(rowMap["Transaction Type"]).toBe("Account Transfer");
+  expect(rowMap["Transaction Reference"]).toBe("FT26082QM3HF");
+  expect(rowMap.Narrative).toBe("<script>alert(1)</script>");
+  expect(rowMap["Phone Number"]).toBeUndefined();
+  expect(rowMap["Source Account"]).toMatch(/^\d\*{6}\d{2}$/);
+  expect(rows.some(([, value]) => value === "—")).toBe(false);
 });
 
-test("unknown saved data uses explicit placeholders instead of inventing a value", () => {
-  expect(savedReceiptRows({ amount: "unknown", reference: "FT26082QM3HF" })).toEqual(expect.arrayContaining([["Transferred amount", "—"], ["Transaction Reference", "FT26082QM3HF"]]));
-  expect(savedReceiptRows({})).toEqual([]);
+test("isDawitTransaction identifies Dawit withdrawals and rejects deposits and other users", () => {
+  expect(isDawitTransaction({ person: "Dawit", is_withdraw: true })).toBe(true);
+  expect(isDawitTransaction({ person: "dawit", is_withdraw: true })).toBe(true);
+  expect(isDawitTransaction({ person: "Dawit", is_withdraw: false })).toBe(false);
+  expect(isDawitTransaction({ person: "yiss", is_withdraw: true })).toBe(false);
+  expect(isDawitTransaction({ person: "mihret", is_withdraw: true })).toBe(false);
+  expect(isDawitTransaction({ person: "asnake", is_withdraw: true })).toBe(false);
+  expect(isDawitTransaction({ person: "enku", is_withdraw: true })).toBe(false);
+  expect(isDawitTransaction(null)).toBe(false);
+  expect(isDawitTransaction({})).toBe(false);
+});
+
+test("generateHashedAccount generates valid masked account with first and last two digits", () => {
+  const acct = generateHashedAccount("FT26082QM3HF");
+  expect(acct).toMatch(/^\d\*{6}\d{2}$/);
+  expect(generateHashedAccount("FT26082QM3HF")).toBe(acct);
 });
 
 test("matches the reference receipt order and hides zero charges and redundant total", () => {

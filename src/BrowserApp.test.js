@@ -4,7 +4,7 @@ import BrowserApp from "./BrowserApp";
 import BoaReceiptViewer from "./BoaReceiptViewer";
 import ReceiptLink from "./ReceiptLink";
 
-const transaction = { amount: 42, reference: "DEMO", receipt_url: "https://cs.bankofabyssinia.com/slip/?trx=FT26082TEST41349" };
+const transaction = { amount: 42, reference: "DEMO", receipt_url: "https://cs.bankofabyssinia.com/slip/?trx=FT26082TEST41349", person: "Dawit", is_withdraw: true };
 function TestApp() {
   const [count, setCount] = useState(0);
   return <><button onClick={() => setCount(count + 1)}>Filter {count}</button><ReceiptLink transaction={transaction}>More</ReceiptLink></>;

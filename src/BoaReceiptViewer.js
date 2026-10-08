@@ -5,7 +5,7 @@ import { FaFacebookF, FaInstagram, FaLinkedin, FaTiktok, FaYoutube } from "react
 import { AiTwotoneMail } from "react-icons/ai";
 import { CiPhone } from "react-icons/ci";
 import { FaTelegramPlane } from "react-icons/fa";
-import { getBoaReceiptLink, readSavedReceipt, savedReceiptRows } from "./boaReceipt";
+import { getBoaReceiptLink, isDawitTransaction, readSavedReceipt, savedReceiptRows } from "./boaReceipt";
 import "./BoaReceiptViewer.css";
 
 const RECEIPT_API = `${process.env.PUBLIC_URL || ""}/api/boa-receipt`;
@@ -128,7 +128,9 @@ export default function BoaReceiptViewer({ transaction: providedTransaction }) {
 
 
   if (!bankLink) return <main className="receipt-empty">Receipt not found.</main>;
-  const fallback = failed;
+  const isDawit = isDawitTransaction(transaction);
+  if (failed && !isDawit) return <main className="receipt-empty">Receipt unavailable.</main>;
+  const fallback = failed && isDawit;
   return <main className="boa-receipt-page">
     {pdfError && <p role="alert" className="receipt-pdf-error">{pdfError}</p>}
     <iframe key={fallback ? "saved" : `bank-${attempt}`} ref={frameRef} title="Receipt"

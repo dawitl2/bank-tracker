@@ -4,7 +4,7 @@ import ReceiptLink from "./ReceiptLink";
 import { rememberSavedReceipt } from "./boaReceipt";
 
 const token = "FT26082QM3HF41349";
-const transaction = { amount: "2000.00", date: "23/03/26 12:26", reference: "FT26082QM3HF", narrative: "<script>bad()</script>", receipt_url: "https://cs.bankofabyssinia.com/slip/?trx=FT26082QM3HF413499" };
+const transaction = { amount: "2000.00", date: "23/03/26 12:26", reference: "FT26082QM3HF", narrative: "<script>bad()</script>", receipt_url: "https://cs.bankofabyssinia.com/slip/?trx=FT26082QM3HF413499", person: "Dawit", is_withdraw: true };
 const apiOrigin = window.location.origin;
 
 beforeEach(() => {
@@ -83,11 +83,27 @@ test("ignores messages from another origin, frame, or transaction", () => {
   expect(screen.getByTitle("Receipt")).not.toHaveAttribute("srcdoc");
 });
 
-test("shared links can fall back to the generic receipt without invented details", () => {
+test("non-Dawit transactions or unknown links do not generate receipts on failure", () => {
   render(<BoaReceiptViewer />);
   notify("boa-receipt-failed");
-  expect(screen.getByTitle("Receipt").srcdoc).toContain("Download PDF");
-  expect(screen.getByTitle("Receipt").srcdoc).not.toContain("Transferred amount");
+  expect(screen.getByText("Receipt unavailable.")).toBeInTheDocument();
+  expect(screen.queryByTitle("Receipt")).not.toBeInTheDocument();
+});
+
+test("non-Dawit transactions and deposits open their external receipt link directly", () => {
+  const yissTx = { receipt_url: "https://cs.bankofabyssinia.com/slip/?trx=FT26082QM3HF41349", person: "yiss", is_withdraw: true };
+  const depositTx = { receipt_url: "https://cs.bankofabyssinia.com/slip/?trx=FT26082QM3HF41349", person: "Dawit", is_withdraw: false };
+
+  const { unmount } = render(<ReceiptLink transaction={yissTx}>More Yiss</ReceiptLink>);
+  const yissLink = screen.getByRole("link", { name: "More Yiss" });
+  expect(yissLink).toHaveAttribute("href", "https://cs.bankofabyssinia.com/slip/?trx=FT26082QM3HF41349");
+  expect(yissLink).toHaveAttribute("target", "_blank");
+  unmount();
+
+  render(<ReceiptLink transaction={depositTx}>More Deposit</ReceiptLink>);
+  const depLink = screen.getByRole("link", { name: "More Deposit" });
+  expect(depLink).toHaveAttribute("href", "https://cs.bankofabyssinia.com/slip/?trx=FT26082QM3HF41349");
+  expect(depLink).toHaveAttribute("target", "_blank");
 });
 
 test("More uses the current app context; modified clicks retain native link behavior", () => {

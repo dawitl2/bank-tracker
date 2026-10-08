@@ -1,10 +1,15 @@
-import { getBoaReceiptLink, getLocalReceiptUrl, rememberSavedReceipt } from "./boaReceipt";
+import { getBoaReceiptLink, getLocalReceiptUrl, isDawitTransaction, rememberSavedReceipt } from "./boaReceipt";
 import { RECEIPT_NAVIGATION } from "./BrowserApp";
 
 export default function ReceiptLink({ transaction, children, ...props }) {
-  const bankLink = getBoaReceiptLink(transaction.receipt_url);
+  const isDawit = isDawitTransaction(transaction);
+  const bankLink = isDawit ? getBoaReceiptLink(transaction?.receipt_url) : null;
   return (
-    <a {...props} href={bankLink ? getLocalReceiptUrl(bankLink.token) : transaction.receipt_url}
+    <a
+      {...props}
+      href={bankLink ? getLocalReceiptUrl(bankLink.token) : transaction?.receipt_url}
+      target={bankLink ? props.target : (props.target || "_blank")}
+      rel={bankLink ? props.rel : (props.rel || "noopener noreferrer")}
       onClick={event => {
         if (!bankLink) return;
         rememberSavedReceipt(bankLink.token, transaction);
