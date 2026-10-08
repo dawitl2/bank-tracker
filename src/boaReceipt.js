@@ -4,6 +4,46 @@ const BANK_ORIGIN = "https://cs.bankofabyssinia.com";
 // identifies the account, and guessing can select a different receipt.
 const CORRECTED_TOKENS = { FT26082QM3HF413499: "FT26082QM3HF41349" };
 
+export function getLocalReceiptUrl(token) {
+  return `${process.env.PUBLIC_URL || ""}/slip/?trx=${encodeURIComponent(token)}`;
+}
+
+// A short-lived handoff supports native new-tab and modified clicks without
+// putting saved financial details in the address bar.
+const SAVED_RECEIPT_PREFIX = "receipt-handoff:";
+const HANDOFF_TTL = 10 * 60 * 1000;
+
+export function rememberSavedReceipt(token, transaction) {
+  try {
+    Object.keys(localStorage).filter(key => key.startsWith(SAVED_RECEIPT_PREFIX)).forEach(key => {
+      try {
+        if (JSON.parse(localStorage.getItem(key)).expires <= Date.now()) localStorage.removeItem(key);
+      } catch { localStorage.removeItem(key); }
+    });
+    const { amount, date, reference, narrative } = transaction;
+    localStorage.setItem(SAVED_RECEIPT_PREFIX + token, JSON.stringify({
+      expires: Date.now() + HANDOFF_TTL, transaction: { amount, date, reference, narrative }
+    }));
+  } catch { /* Storage restrictions must not block the bank receipt. */ }
+}
+
+export function readSavedReceipt(token) {
+  try {
+    const key = SAVED_RECEIPT_PREFIX + token;
+    const saved = JSON.parse(localStorage.getItem(key));
+    if (saved?.expires > Date.now()) {
+      sessionStorage.setItem(key, JSON.stringify(saved));
+      localStorage.removeItem(key);
+      return saved.transaction;
+    }
+    localStorage.removeItem(key);
+    const session = JSON.parse(sessionStorage.getItem(key));
+    if (session?.expires > Date.now()) return session.transaction;
+    sessionStorage.removeItem(key);
+  } catch { /* The bank page can still load without a saved copy. */ }
+  return null;
+}
+
 export function getBoaReceiptLink(value) {
   try {
     const url = new URL(value);

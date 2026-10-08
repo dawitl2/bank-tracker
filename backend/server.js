@@ -3,19 +3,14 @@ const cors = require("cors");
 const puppeteer = require("puppeteer-core");
 const chromium = require("@sparticuz/chromium");
 const supabase = require("./supabaseClient");
-const { getBankReceipt } = require("./boaReceipt");
+const { registerReceiptRoutes } = require("./receiptRoutes");
 
 const app = express();
 
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 
-// Fast optional enrichment for the local receipt viewer; no database writes.
-app.get("/receipt-details", async (req, res) => {
-  const result = await getBankReceipt(req.query.trx);
-  res.set("Cache-Control", "no-store");
-  res.status(result.status).json(result.body);
-});
+registerReceiptRoutes(app);
 
 const PORT = process.env.PORT || 5000;
 const BASE_URL = "https://bank-backend-anhp.onrender.com";

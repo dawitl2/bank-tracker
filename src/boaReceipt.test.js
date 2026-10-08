@@ -1,4 +1,19 @@
-import { bankReceiptRows, getBoaReceiptLink, savedReceiptRows } from "./boaReceipt";
+import { bankReceiptRows, getBoaReceiptLink, savedReceiptRows, rememberSavedReceipt, readSavedReceipt } from "./boaReceipt";
+
+test("saved handoff excludes unrelated fields, is consumed once, and survives a tab reload", () => {
+  localStorage.clear(); sessionStorage.clear();
+  rememberSavedReceipt("FT26082QM3HF41349", { amount: 20, reference: "DEMO", account: "must not persist" });
+  expect(readSavedReceipt("FT26082QM3HF41349")).toEqual({ amount: 20, reference: "DEMO" });
+  expect(localStorage.getItem("receipt-handoff:FT26082QM3HF41349")).toBeNull();
+  expect(readSavedReceipt("FT26082QM3HF41349")).toEqual({ amount: 20, reference: "DEMO" });
+});
+
+test("expired handoffs cannot show stale transaction details", () => {
+  localStorage.clear(); sessionStorage.clear();
+  localStorage.setItem("receipt-handoff:FT26082QM3HF41349", JSON.stringify({ expires: Date.now() - 1, transaction: { amount: 99 } }));
+  expect(readSavedReceipt("FT26082QM3HF41349")).toBeNull();
+  expect(localStorage.getItem("receipt-handoff:FT26082QM3HF41349")).toBeNull();
+});
 
 test("corrects only the confirmed extra digit and preserves the working receipt", () => {
   expect(getBoaReceiptLink("https://cs.bankofabyssinia.com/slip/?trx=FT26082QM3HF413499")).toEqual({ token: "FT26082QM3HF41349", url: "https://cs.bankofabyssinia.com/slip/?trx=FT26082QM3HF41349", corrected: true });

@@ -2,7 +2,7 @@ const INVALID_RECEIPT = /invalid reference|incorrect parameter|invalid account/i
 
 function isBankReceipt(data) {
   return data && typeof data === "object" && !Object.values(data).some(value => typeof value === "string" && INVALID_RECEIPT.test(value)) &&
-    typeof data["Transaction Reference"] === "string" && data["Transferred Amount"] !== undefined && data["Transferred Amount"] !== null && data["Transferred Amount"] !== "" &&
+    typeof data["Transaction Reference"] === "string" && /^[a-zA-Z0-9]{10,60}$/.test(data["Transaction Reference"]) && data["Transferred Amount"] !== undefined && data["Transferred Amount"] !== null && data["Transferred Amount"] !== "" &&
     Number.isFinite(Number(data["Transferred Amount"])) && typeof data["Transaction Date"] === "string" && data["Transaction Date"];
 }
 
@@ -13,7 +13,7 @@ async function getBankReceipt(token, fetchReceipt = fetch) {
   try {
     // Only this bank endpoint is allowed. User input cannot change the host.
     const response = await fetchReceipt(`https://cs.bankofabyssinia.com/api/onlineSlip/getDetails/?id=${encodeURIComponent(token)}`, {
-      signal: AbortSignal.timeout(4000), headers: { Accept: "application/json" }
+      signal: AbortSignal.timeout(12000), headers: { Accept: "application/json" }
     });
     if (!response.ok) return { status: 502, body: { error: "Bank receipt service unavailable" } };
     const payload = await response.json();

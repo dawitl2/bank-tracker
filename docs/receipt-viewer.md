@@ -1,35 +1,34 @@
-# Instant Bank of Abyssinia receipt copies
+# Bank receipt tabs
 
-The mobile **More**, desktop **View**, and person-detail **View** actions open an in-app receipt immediately for Bank of Abyssinia slip links. Other receipt hosts retain their existing external-link behavior. Modified clicks (Ctrl/Cmd/Shift) still open the bank website.
+Mobile **More**, desktop **View**, and person-detail **View** open a normal new tab at the app's /slip/?trx=<token> URL. Native modified clicks and middle-clicks work too. Other receipt hosts keep their existing external links. The tab title is **Receipt**. There is no app toolbar, opening/closed message, corrected-link label, or availability banner.
 
-The viewer uses the bank's original CSS, system font stack, logo, leaf watermark, stamp, SWIFT image, table ordering, gold borders, and social footer. Files are served locally from `public/boa-receipt/`, so displaying the copy does not require the bank website to load. CSS is isolated in an iframe so bank styles cannot change the dashboard.
+## Actual receipt first
 
-## Data and availability
+The React receipt route loads the backend's GET /receipt-page?trx=<token> in a full-viewport iframe. The backend relays the bank's actual HTML shell and original assets from its fixed /slip/assets/ directory. It injects a small bridge before the original module to route its bank API call through GET /receipt-details. The bank itself constructs the layout, table, encrypted verification QR, social footer, and Download PDF action. Its CSS and viewport rules remain unchanged, including on phones.
 
-Saved amount, date, reference, and narrative render first. The viewer then requests `GET /receipt-details?trx=<token>` from the Express backend. This route reads only the bank's `https://cs.bankofabyssinia.com/api/onlineSlip/getDetails/?id=<token>` endpoint; it does not access or write Supabase. The bank request times out after four seconds; the frontend stops waiting after six seconds, including a cold backend start. Network failures, invalid references, malformed responses, or mismatched references leave the saved copy visible.
+This relay is necessary because the bank sends X-Frame-Options: DENY and its API cannot be requested directly from the app origin. Asset names and receipt tokens are validated; callers cannot select an arbitrary host or path. Public shell HTML is cached in server memory for five minutes. Hashed bank assets have browser cache headers. Receipt responses are always no-store, and personal bank data is not cached by this implementation.
 
-Successful bank responses add that transaction's account fields, charges, VAT, total, and payment type. The browser holds at most 100 successful receipts in memory for the current page session. No personal receipt data is stored in public assets, source files, localStorage, or URLs in this implementation.
+The bank's logo/QR shell may appear before all transaction fields arrive. Only after the bank has rendered the requested transaction-reference row does the bridge declare the receipt ready. Explicit failures switch to the saved template immediately; a stalled page switches after 30 seconds, allowing for a cold backend start and delayed bank data. Individual upstream requests have a 12-second timeout.
 
-Copies are labeled as Bank Tracker copies, including in PDF downloads. Missing details are omitted rather than invented. The QR opens the corrected original bank link; it deliberately does not recreate the bank's encrypted payment-verification QR. **Download PDF** produces a PDF locally; **Print / Save PDF** uses the browser print dialog. The PDF library loads only when downloading.
+## Quiet fallback
 
-## Confirmed broken link
+Clicking a BOA link hands off only its saved amount, date, reference, and narrative through a ten-minute localStorage entry. The receipt tab consumes that entry into sessionStorage for reloads; expired entries are rejected and cleaned up. Storage restrictions never block the actual bank page. No saved details are put in URLs. If the actual page fails, only those known fields appear in the local bank-style template. Missing account fields, fees, or totals are omitted. Shared links without saved fields can show the generic template on failure.
 
-The supplied token `FT26082QM3HF413499` returns HTTP 200 with `Payer's Name: Invalid reference number`. The token has an extra final `9`. `FT26082QM3HF41349` returns the actual receipt for reference `FT26082QM3HF`.
+The fallback QR opens the original bank link; it does not claim to verify a payment. Its Download PDF action works locally. The original bank receipt keeps its original encrypted verification QR and original PDF generation.
 
-`getBoaReceiptLink` corrects this one confirmed token. It does not truncate other tokens or infer account suffixes. This correction changes only the link used for viewing, not the saved database transaction.
+The confirmed extra-digit token FT26082QM3HF413499 is still corrected to FT26082QM3HF41349 for viewing only. Other tokens and database records are unchanged.
 
-## Deployment and checks
+## Installed-app startup
 
-Deploy the updated React frontend on Vercel and the updated `backend/` service on Render through the existing GitHub integrations. There are no schema migrations or new environment variables. `REACT_APP_API_URL` continues to select the backend. If the frontend deploys first, it can already show saved copies; full bank enrichment becomes available when the backend is deployed.
+The HTML document contains the existing logoTop.png on the existing white background, with a subtle breathing scale and a masked light sweep. Inline CSS starts the animation before the React bundle downloads. It appears only in installed/standalone mode, supports iOS navigator.standalone and prefers-reduced-motion, and fades out when React commits the requested page. There is no artificial minimum launch delay. Receipt tabs skip it.
 
-Checks:
+The OS-generated PWA splash is a static image controlled by the browser/OS; web code cannot animate that initial native frame. The custom animation starts when the HTML startup page can paint. See https://web.dev/learn/pwa/web-app-manifest.
 
-```sh
-CI=true npm test -- --watchAll=false --runInBand
-npm run build
-node --test backend/boaReceipt.test.js
-```
+## Verification
 
-To verify in the browser, open the transactions table, click More/View for a BOA receipt, and confirm its saved fields appear immediately. Confirm both supplied links load full bank fields with a running updated backend. Disable or block the `/receipt-details` request and confirm the copy stays usable. Check mobile layout, Escape/Close, the original bank link, QR destination, and PDF download. Do not commit real transaction fixtures or exported PDFs.
+- CI=true npm test -- --watchAll=false --runInBand
+- node --test backend/boaReceipt.test.js backend/receiptPage.test.js
+- npm run build
+- Check the app receipt route with the receipt-only local backend, including the real bank page on phone/desktop widths, an invalid token, delayed fields, and PDF download.
 
-Asset source (retrieved 2026-10-08): `https://cs.bankofabyssinia.com/slip/`, bundle `index-C2eKgekR.css`, images `Logo-dC0ZsAUl.png`, `BOALeaf2-Cm6qtFka.png`, `Boastamp-DF_7dWa9.png`, `swift-7yBLt-L-.png`. The bank currently uses system sans-serif fonts, not a downloadable font. If the bank redesigns its receipts, update the local assets and template together.
+No hosting operations, schema migrations, environment changes, or additional dependencies are required by this change. Frontend and backend source must both be running the updated version for the original-page relay to be available. Delivery for this request is a Git commit and push only.

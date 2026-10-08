@@ -30,6 +30,14 @@ test("does not return a different transaction", async () => {
   assert.equal(result.status, 502);
 });
 
+test("incomplete bank data does not count as a usable actual receipt", async () => {
+  for (const missing of ["Transaction Reference", "Transferred Amount", "Transaction Date"]) {
+    const incomplete = { ...data, [missing]: "" };
+    const result = await getBankReceipt("FT262485K1B810104", async () => ({ ok: true, json: async () => ({ body: [incomplete] }) }));
+    assert.equal(result.status, 404);
+  }
+});
+
 test("timeouts, invalid JSON, and HTTP errors leave the viewer on its saved copy", async () => {
   const failingFetches = [
     async () => { throw new Error("timeout"); },

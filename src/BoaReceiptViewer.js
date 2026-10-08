@@ -1,16 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { createPortal } from "react-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { FaFacebookF, FaInstagram, FaLinkedin, FaTiktok, FaYoutube } from "react-icons/fa";
 import { AiTwotoneMail } from "react-icons/ai";
 import { CiPhone } from "react-icons/ci";
 import { FaTelegramPlane } from "react-icons/fa";
-import { bankReceiptRows, savedReceiptRows } from "./boaReceipt";
+import { getBoaReceiptLink, readSavedReceipt, savedReceiptRows } from "./boaReceipt";
 import "./BoaReceiptViewer.css";
 
 const API_URL = process.env.REACT_APP_API_URL || "https://bank-backend-anhp.onrender.com";
-const receiptCache = new Map();
 const socials = [
   ["Facebook", "https://www.facebook.com/BoAeth/", FaFacebookF, "#1877F2"],
   ["YouTube", "https://www.youtube.com/@abyssinia_bank", FaYoutube, "#c4302b"],
@@ -20,13 +18,12 @@ const socials = [
   ["TikTok", "https://www.tiktok.com/@abyssinia_bank", FaTiktok]
 ];
 
-function receiptDocument(rows, bankLink, bankData) {
+function receiptDocument(rows, bankLink) {
   const assets = `${window.location.origin}${process.env.PUBLIC_URL || ""}/boa-receipt`;
-  const provenance = bankData ? "Bank Tracker copy · Details retrieved from Bank of Abyssinia." : "Bank Tracker saved copy · Only saved transaction details are shown. Other bank fields are unavailable.";
   const markup = renderToStaticMarkup(
     <html lang="en"><head><meta charSet="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-      <title>Bank Tracker receipt copy</title><link rel="stylesheet" href={`${assets}/bank.css`} />
-      <style>{`body{background:#fff;color:#000}td{overflow-wrap:anywhere}button:focus-visible,a:focus-visible{outline:2px solid #000;outline-offset:3px}.receipt-copy-note{font-size:11px;margin:16px auto 0;color:#555}@media print{[data-download-pdf]{display:none}#root{padding:1rem}}`}</style>
+      <title>Receipt</title><link rel="stylesheet" href={`${assets}/bank.css`} />
+      <style>{`body{background:#fff;color:#000}td{overflow-wrap:anywhere}button:focus-visible,a:focus-visible{outline:2px solid #000;outline-offset:3px}@media print{[data-download-pdf]{display:none}#root{padding:1rem}}`}</style>
     </head><body><div id="root"><div id="invoice" className="md:bg-[position:85%_65%] bg-[position:110%_65%] md:bg-[length:25%] bg-[length:40%] bg-no-repeat" style={{ backgroundImage: `url(${assets}/stamp.png)`, width: "100%", margin: "0 auto" }}>
       <div className="flex flex-col justify-center">
         <div><img src={`${assets}/logo.png`} className="md:w-80 w-60" alt="Bank of Abyssinia" /></div>
@@ -51,62 +48,40 @@ function receiptDocument(rows, bankLink, bankData) {
       <div className="w-2/4 flex justify-between mx-auto my-4">
         {socials.map(([name, href, Icon, color]) => <a key={name} href={href} target="_blank" rel="noopener noreferrer" aria-label={name}><Icon color={color} /></a>)}
       </div>
-      <p className="receipt-copy-note">{provenance} QR opens the bank website; this copy is not bank verification.</p>
     </div></div></body></html>
   );
   return `<!doctype html>${markup}`;
 }
 
-export default function BoaReceiptViewer({ transaction, bankLink, onClose }) {
-  const dialogRef = useRef(null);
+export default function BoaReceiptViewer() {
   const frameRef = useRef(null);
   const pdfPendingRef = useRef(false);
-  const [bankData, setBankData] = useState(() => receiptCache.get(bankLink.token) || null);
-  const [status, setStatus] = useState(() => receiptCache.has(bankLink.token) ? "bank" : "loading");
-  const [pdfBusy, setPdfBusy] = useState(false);
   const [pdfError, setPdfError] = useState("");
+  const [failed, setFailed] = useState(false);
+  const token = new URLSearchParams(window.location.search).get("trx");
+  const bankLink = getBoaReceiptLink(`https://cs.bankofabyssinia.com/slip/?trx=${encodeURIComponent(token || "")}`);
+  const bankToken = bankLink?.token;
+  const [transaction] = useState(() => bankLink ? readSavedReceipt(bankLink.token) : null);
 
   useEffect(() => {
-    const dialog = dialogRef.current;
-    const focusedElement = document.activeElement;
-    dialog.showModal();
-    return () => {
-      dialog.close();
-      focusedElement?.focus();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (receiptCache.has(bankLink.token)) return;
-    const controller = new AbortController();
-    // Includes a cold backend start. Saved details remain usable throughout.
-    const timeout = setTimeout(() => controller.abort(), 6000);
-    let active = true;
-    async function load() {
-      try {
-        const response = await fetch(`${API_URL}/receipt-details?trx=${encodeURIComponent(bankLink.token)}`, { signal: controller.signal });
-        if (!response.ok) throw new Error("Receipt unavailable");
-        const payload = await response.json();
-        if (payload.token !== bankLink.token || typeof payload.data?.["Transaction Reference"] !== "string" || !bankLink.token.startsWith(payload.data["Transaction Reference"])) throw new Error("Receipt mismatch");
-        if (!active) return;
-        if (receiptCache.size >= 100) receiptCache.delete(receiptCache.keys().next().value);
-        receiptCache.set(bankLink.token, payload.data);
-        setBankData(payload.data);
-        setStatus("bank");
-      } catch {
-        if (active) setStatus("saved");
-      } finally {
+    document.title = "Receipt";
+    if (!bankToken) return undefined;
+    const timeout = setTimeout(() => setFailed(true), 30000);
+    const receive = event => {
+      if (event.source !== frameRef.current?.contentWindow || event.origin !== new URL(API_URL).origin || event.data?.token !== bankToken) return;
+      if (event.data.type === "boa-receipt-ready") clearTimeout(timeout);
+      if (event.data.type === "boa-receipt-failed") {
         clearTimeout(timeout);
+        setFailed(true);
       }
-    }
-    load();
-    return () => { active = false; clearTimeout(timeout); controller.abort(); };
-  }, [bankLink.token]);
+    };
+    window.addEventListener("message", receive);
+    return () => { clearTimeout(timeout); window.removeEventListener("message", receive); };
+  }, [bankToken]);
 
   async function downloadPdf() {
     if (pdfPendingRef.current) return;
     pdfPendingRef.current = true;
-    setPdfBusy(true);
     setPdfError("");
     try {
       const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import("html2canvas"), import("jspdf")]);
@@ -131,39 +106,26 @@ export default function BoaReceiptViewer({ transaction, bankLink, onClose }) {
       }
       pdf.save(`BOA-Receipt-${bankLink.token}-copy.pdf`);
     } catch {
-      setPdfError("Could not download PDF. Use Print / Save PDF instead.");
+      setPdfError("Could not download PDF. Please try again.");
     } finally {
       pdfPendingRef.current = false;
-      setPdfBusy(false);
     }
   }
 
-  const rows = bankData ? bankReceiptRows(bankData) : savedReceiptRows(transaction);
-  // Render outside the desktop table's 0.75 zoom so the bank template keeps
-  // its original font sizes and iframe pointer coordinates remain accurate.
-  return createPortal(
-    <dialog ref={dialogRef} className="boa-viewer" aria-labelledby="boa-viewer-title" onCancel={onClose}
-      onClick={event => { if (event.target === dialogRef.current) onClose(); }}>
-      <div className="boa-viewer-panel">
-        <header className="boa-viewer-toolbar">
-          <h2 id="boa-viewer-title">Receipt</h2>
-          <a href={bankLink.url} target="_blank" rel="noopener noreferrer">Open bank receipt{bankLink.corrected ? " (corrected link)" : ""}</a>
-          <button type="button" onClick={() => frameRef.current?.contentWindow?.print()}>Print / Save PDF</button>
-          <button type="button" onClick={onClose} aria-label="Close receipt" autoFocus>Close</button>
-        </header>
-        <p className="boa-viewer-status" role="status">
-          {status === "bank" ? "Bank Tracker copy · Details loaded from the bank." : status === "loading" ? "Saved copy is ready. Checking for full bank details…" : "Bank receipt unavailable. Showing saved transaction details."}
-          {pdfBusy ? " Preparing PDF…" : ""}{pdfError ? ` ${pdfError}` : ""}
-        </p>
-        <iframe ref={frameRef} title="Bank of Abyssinia receipt copy" sandbox="allow-same-origin allow-modals allow-popups allow-popups-to-escape-sandbox"
-          srcDoc={receiptDocument(rows, bankLink, !!bankData)}
-          onLoad={() => {
-            const doc = frameRef.current?.contentDocument;
-            const button = doc?.querySelector("[data-download-pdf]");
-            if (button) button.onclick = downloadPdf;
-            doc?.addEventListener("keydown", event => { if (event.key === "Escape") onClose(); });
-          }} />
-      </div>
-    </dialog>, document.body
-  );
+
+  if (!bankLink) return <main className="receipt-empty">Receipt not found.</main>;
+  const fallback = failed;
+  return <main className="boa-receipt-page">
+    {pdfError && <p role="alert" className="receipt-pdf-error">{pdfError}</p>}
+    <iframe key={fallback ? "saved" : "bank"} ref={frameRef} title="Receipt"
+      sandbox="allow-scripts allow-same-origin allow-modals allow-popups allow-popups-to-escape-sandbox allow-downloads"
+      src={fallback ? undefined : `${API_URL}/receipt-page?trx=${encodeURIComponent(bankLink.token)}`}
+      srcDoc={fallback ? receiptDocument(savedReceiptRows(transaction || {}), bankLink) : undefined}
+      onError={() => setFailed(true)}
+      onLoad={() => {
+        if (!fallback) return;
+        const button = frameRef.current?.contentDocument?.querySelector("[data-download-pdf]");
+        if (button) button.onclick = downloadPdf;
+      }} />
+  </main>;
 }
