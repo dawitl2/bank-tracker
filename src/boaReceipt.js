@@ -66,12 +66,18 @@ function money(value, currency = "ETB") {
 }
 
 export function savedReceiptRows(transaction) {
-  return [
+  const known = [
     ["Transferred amount", money(transaction.amount)],
     ["Transaction Date", transaction.date],
     ["Transaction Reference", transaction.reference],
     ["Narrative", transaction.narrative]
   ].filter(([, value]) => value !== null && value !== undefined && value !== "");
+  if (!known.length) return [];
+  const values = Object.fromEntries(known);
+  // Match the usual seven-row bank layout while making missing information
+  // explicit. A saved ledger entry does not establish account/name/type data.
+  return ["Transferred amount", "Receiver's Account", "Receiver's Name", "Transaction Date", "Transaction Type", "Transaction Reference", "Narrative"]
+    .map(label => [label, values[label] ?? "—"]);
 }
 
 // Mirrors the bank's field ordering and display rules without inventing

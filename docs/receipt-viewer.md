@@ -18,9 +18,15 @@ The previous separate backend endpoints remain compatible for older clients, but
 
 The same-app navigation event passes the selected transaction directly to the viewer, so fallback works even when browser storage is disabled. A ten-minute handoff of only amount, date, reference, and narrative still supports modified clicks and reloads. Receipt tabs consume it into sessionStorage and reject expired entries. No saved financial details go into URL parameters.
 
-Only when the actual receipt fails does the local template use those saved fields. Missing account numbers, fees, and totals are omitted. Its QR opens the original bank link; it does not claim to verify payment. PDF download works locally. A shared link without saved fields can show a generic template on failure.
+Only when the actual receipt fails does the local template use those saved fields. It retains the usual seven-row bank layout with em dashes for unrecorded account, receiver, or transaction-type details. Fees and totals are not invented. The table's watermark keeps the same 140px footprint even with sparse saved data, and long values wrap inside their columns. Its QR opens the original bank link; it does not claim to verify payment. PDF download works locally. A shared link without saved fields can show a generic template on failure.
 
 The confirmed token FT26082QM3HF413499 is corrected to FT26082QM3HF41349 for viewing only. Other tokens and database records are unchanged.
+
+## Editing a transaction date
+
+The shared edit-transaction form has a calendar button inside the right edge of its date input. It opens an animated day/month/year wheel picker with native scrolling and snapping. Today uses the device's actual local date. Month/year changes clamp invalid days, including leap days. Keyboard arrows and Page Up/Down work, focus stays in the picker, and reduced-motion settings disable decorative animation. Cancel, Close, Escape, or tapping the backdrop leave the draft unchanged.
+
+Set date applies only the date to the draft, preserving its existing time suffix and date format. Save Changes uses the existing transaction-update flow. The picker makes no network requests and does not change other fields.
 
 ## Checks and delivery
 

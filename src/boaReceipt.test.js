@@ -27,12 +27,13 @@ test.each(["https://example.com/slip/?trx=FT262485K1B810104", "https://cs.bankof
 
 test("a saved receipt uses its own fields and never invents charges or account details", () => {
   expect(savedReceiptRows({ amount: "ETB 2,000.00", date: "23/03/26 12:26", reference: "FT26082QM3HF", narrative: "<script>alert(1)</script>" })).toEqual([
-    ["Transferred amount", "ETB 2000.00"], ["Transaction Date", "23/03/26 12:26"], ["Transaction Reference", "FT26082QM3HF"], ["Narrative", "<script>alert(1)</script>"]
+    ["Transferred amount", "ETB 2000.00"], ["Receiver's Account", "—"], ["Receiver's Name", "—"], ["Transaction Date", "23/03/26 12:26"], ["Transaction Type", "—"], ["Transaction Reference", "FT26082QM3HF"], ["Narrative", "<script>alert(1)</script>"]
   ]);
 });
 
-test("an unknown saved amount is omitted instead of becoming zero", () => {
-  expect(savedReceiptRows({ amount: "unknown", reference: "FT26082QM3HF" })).toEqual([["Transaction Reference", "FT26082QM3HF"]]);
+test("unknown saved data uses explicit placeholders instead of inventing a value", () => {
+  expect(savedReceiptRows({ amount: "unknown", reference: "FT26082QM3HF" })).toEqual(expect.arrayContaining([["Transferred amount", "—"], ["Transaction Reference", "FT26082QM3HF"]]));
+  expect(savedReceiptRows({})).toEqual([]);
 });
 
 test("matches the reference receipt order and hides zero charges and redundant total", () => {

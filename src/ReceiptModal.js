@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { FaArrowLeft, FaCar, FaImage, FaLink, FaQrcode, FaTimes } from "react-icons/fa";
 import ParkingReceiptFlow from "./ParkingReceiptFlow";
+import TransactionDateField from "./TransactionDateField";
 
 const GENERATED_TRANSACTION_FIELDS = ["id", "created_at"];
 
@@ -189,7 +190,9 @@ export default function ReceiptModal({
                 .map(([field, value]) => (
                   <label key={field} className="draft-field">
                     <span>{field}</span>
-                    {field === "person" ? (
+                    {field === "date" && receiptDraft.id ? (
+                      <TransactionDateField value={value} disabled={draftSaving} onChange={next => handleDraftChange(field, next)} />
+                    ) : field === "person" ? (
                       <select value={value ?? "null"} onChange={(event) => handleDraftChange(field, event.target.value)}>
                         {personOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                       </select>
