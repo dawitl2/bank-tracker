@@ -27,7 +27,7 @@ test.each(["https://example.com/slip/?trx=FT262485K1B810104", "https://cs.bankof
 
 test("a saved receipt uses its own fields and never invents charges or account details", () => {
   expect(savedReceiptRows({ amount: "ETB 2,000.00", date: "23/03/26 12:26", reference: "FT26082QM3HF", narrative: "<script>alert(1)</script>" })).toEqual([
-    ["Transferred amount", "ETB 2000.00"], ["Receiver's Account", "—"], ["Receiver's Name", "—"], ["Transaction Date", "23/03/26 12:26"], ["Transaction Type", "—"], ["Transaction Reference", "FT26082QM3HF"], ["Narrative", "<script>alert(1)</script>"]
+    ["Source Account", "—"], ["Source Account Name", "—"], ["Transferred amount", "ETB 2000.00"], ["Service Charge", "—"], ["VAT (15%)", "—"], ["Total Amount", "—"], ["Phone Number", "—"], ["Transaction Date", "23/03/26 12:26"], ["Transaction Type", "—"], ["Transaction Reference", "FT26082QM3HF"], ["Narrative", "<script>alert(1)</script>"]
   ]);
 });
 

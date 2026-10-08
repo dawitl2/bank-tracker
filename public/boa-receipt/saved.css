@@ -1,0 +1,45 @@
+body { background: #fff; color: #000; }
+td { overflow-wrap: anywhere; }
+
+/* The reference has ten 23px rows. Use its 230px watermark area even when
+   saved data is sparse. The original PNG already has 18% maximum opacity. */
+.saved-receipt-details {
+  min-height: 230px;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.saved-receipt-details table { table-layout: fixed; }
+.saved-receipt-details td:first-child { width: 48%; }
+
+/* Anchor the stamp beside the QR, rather than to the total invoice height.
+   Wrapping narratives and extra rows must not shift it into the data table. */
+.saved-receipt-verification { position: relative; margin: 20px auto 0; }
+.saved-receipt-stamp {
+  position: absolute;
+  width: 40%;
+  top: -28px;
+  right: -6%;
+  pointer-events: none;
+}
+[data-download-pdf] {
+  max-width: 100%;
+  padding-inline: clamp(2rem, calc(50vw - 87px), 5rem);
+  white-space: nowrap;
+}
+.saved-receipt-copy-label { margin-top: 8px; color: #777; font-size: 10px; }
+button:focus-visible, a:focus-visible { outline: 2px solid #000; outline-offset: 3px; }
+
+@media (max-width: 359px) {
+  #root { padding-inline: 24px; }
+  .saved-receipt-stamp { width: 35%; top: -24px; }
+  .saved-receipt-contacts { font-size: 14px; }
+}
+@media (min-width: 768px) {
+  .saved-receipt-verification { width: 80%; }
+  .saved-receipt-stamp { width: 25%; right: 5%; }
+}
+@media print {
+  [data-download-pdf] { display: none; }
+  #root { padding: 1rem; }
+}

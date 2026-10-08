@@ -23,8 +23,8 @@ function receiptDocument(rows, bankLink) {
   const markup = renderToStaticMarkup(
     <html lang="en"><head><meta charSet="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>Receipt</title><link rel="stylesheet" href={`${assets}/bank.css`} />
-      <style>{`body{background:#fff;color:#000}td{overflow-wrap:anywhere}.saved-receipt-details{min-height:140px;background-size:auto 140px;background-position:center;background-repeat:no-repeat}.saved-receipt-details table{table-layout:fixed}.saved-receipt-details td:first-child{width:48%}[data-download-pdf]{max-width:100%;padding-inline:clamp(2rem,calc(50vw - 87px),5rem);white-space:nowrap}button:focus-visible,a:focus-visible{outline:2px solid #000;outline-offset:3px}@media print{[data-download-pdf]{display:none}#root{padding:1rem}}`}</style>
-    </head><body><div id="root"><div id="invoice" className="md:bg-[position:85%_65%] bg-[position:110%_65%] md:bg-[length:25%] bg-[length:40%] bg-no-repeat" style={{ backgroundImage: `url(${assets}/stamp.png)`, width: "100%", margin: "0 auto" }}>
+      <link rel="stylesheet" href={`${assets}/saved.css`} />
+    </head><body><div id="root"><div id="invoice" style={{ width: "100%", margin: "0 auto" }}>
       <div className="flex flex-col justify-center">
         <div><img src={`${assets}/logo.png`} className="md:w-80 w-60" alt="Bank of Abyssinia" /></div>
         <div className="border-t-2 border-b-2 w-full border-[#f1ab15] my-2"><h1 className="text-center text-base font-bold">Receipt</h1></div>
@@ -37,10 +37,13 @@ function receiptDocument(rows, bankLink) {
           </tr>)}
         </tbody></table>
       </div>
-      <div className="flex justify-center py-1"><QRCodeSVG size={120} value={bankLink.url} level="L" title="Open the original bank receipt" /></div>
+      <div className="saved-receipt-verification flex justify-center py-1">
+        <QRCodeSVG size={120} value={bankLink.url} level="L" title="Open the original bank receipt" />
+        <img className="saved-receipt-stamp" src={`${assets}/stamp.png`} alt="" aria-hidden="true" />
+      </div>
       <div className="flex justify-center"><p>Scan the QR to open the bank receipt</p></div>
       <div className="flex justify-center"><button type="button" data-download-pdf="true" data-html2canvas-ignore="true" className="my-1 bg-[#f1ab15] py-0.5 px-20">Download PDF</button></div>
-      <div className="p-3 border-b-4 border-[#f1ab15] mx-auto"><div className="flex justify-center">
+      <div className="saved-receipt-contacts p-3 border-b-4 border-[#f1ab15] mx-auto"><div className="flex justify-center">
         <div className="flex items-center"><h2 className="md:px-2 px-2"><CiPhone /></h2><h2 className="md:px-2 text-left">8397</h2></div>
         <div className="flex items-center"><h2 className="md:px-2 px-2"><AiTwotoneMail /></h2><h2 className="md:px-2 text-left">Contactcenter</h2></div>
         <div className="flex items-center"><h2 className="md:px-2 px-2"><img src={`${assets}/swift.png`} width={15} alt="SWIFT" /></h2><h2 className="md:px-2 text-left">ABYSETAA</h2></div>
@@ -48,6 +51,7 @@ function receiptDocument(rows, bankLink) {
       <div className="w-2/4 flex justify-between mx-auto my-4">
         {socials.map(([name, href, Icon, color]) => <a key={name} href={href} target="_blank" rel="noopener noreferrer" aria-label={name}><Icon color={color} /></a>)}
       </div>
+      <p className="saved-receipt-copy-label">Saved transaction copy</p>
     </div></div></body></html>
   );
   return `<!doctype html>${markup}`;

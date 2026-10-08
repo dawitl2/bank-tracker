@@ -74,10 +74,12 @@ export function savedReceiptRows(transaction) {
   ].filter(([, value]) => value !== null && value !== undefined && value !== "");
   if (!known.length) return [];
   const values = Object.fromEntries(known);
-  // Match the usual seven-row bank layout while making missing information
-  // explicit. A saved ledger entry does not establish account/name/type data.
-  return ["Transferred amount", "Receiver's Account", "Receiver's Name", "Transaction Date", "Transaction Type", "Transaction Reference", "Narrative"]
+  // Match the reference's field order without inventing account, fee, phone,
+  // or payment-type information. Saved references remain unchanged.
+  const rows = ["Source Account", "Source Account Name", "Transferred amount", "Service Charge", "VAT (15%)", "Total Amount", "Phone Number", "Transaction Date", "Transaction Type", "Transaction Reference"]
     .map(label => [label, values[label] ?? "—"]);
+  if (values.Narrative) rows.push(["Narrative", values.Narrative]);
+  return rows;
 }
 
 // Mirrors the bank's field ordering and display rules without inventing
