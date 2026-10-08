@@ -1,0 +1,29 @@
+.boa-viewer {
+  position: fixed;
+  inset: 0;
+  width: min(1280px, calc(100vw - 24px));
+  height: calc(100dvh - 24px);
+  max-width: none;
+  max-height: none;
+  margin: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: white;
+  color: #111;
+}
+.boa-viewer::backdrop { background: rgb(0 0 0 / 65%); }
+.boa-viewer-panel { display: flex; flex-direction: column; height: 100%; }
+.boa-viewer-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #ddd; }
+.boa-viewer-toolbar h2 { margin: 0 auto 0 0; font-size: 18px; color: #111; }
+.boa-viewer-toolbar a { color: #765100; font-size: 13px; text-decoration: underline; }
+.boa-viewer-toolbar button { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; background: #fff; color: #111; cursor: pointer; }
+.boa-viewer-toolbar button:focus-visible, .boa-viewer-toolbar a:focus-visible { outline: 2px solid #765100; outline-offset: 3px; }
+.boa-viewer-status { padding: 8px 16px; margin: 0; background: #fff8e8; color: #59400a; font-size: 13px; }
+.boa-viewer iframe { display: block; width: 100%; flex: 1; min-height: 0; border: 0; background: #fff; }
+@media (max-width: 600px) {
+  .boa-viewer { width: 100vw; height: 100dvh; border-radius: 0; }
+  .boa-viewer-toolbar { gap: 8px; padding: 10px; }
+  .boa-viewer-toolbar h2 { font-size: 16px; }
+  .boa-viewer-toolbar button { padding: 6px 8px; font-size: 12px; }
+}

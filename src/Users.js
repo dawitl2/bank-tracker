@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { FaArrowLeft, FaCamera, FaChevronRight } from "react-icons/fa";
 import "./Users.css";
+import ReceiptLink from "./ReceiptLink";
 
 const SUPABASE_URL = "https://ywplzexakisliebyjtyf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_nmA6IJsDGUVki5i0smS1Tg_MLXy5_wX";
@@ -1085,9 +1086,9 @@ export default function Users({
                 </td>
                 <td className="action">
                   {!tx.is_custom && tx.receipt_url ? (
-                    <a href={tx.receipt_url} target="_blank" rel="noopener noreferrer">
+                    <ReceiptLink transaction={tx}>
                       View
-                    </a>
+                    </ReceiptLink>
                   ) : (
                     "-"
                   )}

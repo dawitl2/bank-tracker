@@ -7,6 +7,7 @@ import {
   FaLink 
 } from "react-icons/fa";
 import "./DesktopStyles.css";
+import ReceiptLink from "../ReceiptLink";
 
 const parseAmount = (value) => parseFloat(value?.toString().replace(/[^\d.-]/g, "")) || 0;
 const money = (value) => Math.round(value || 0).toLocaleString("en-US");
@@ -196,15 +197,13 @@ export default function DesktopTransactions({
                     <td style={{ fontSize: "13px" }}>{tx.narrative || "—"}</td>
                     <td>
                       {tx.receipt_url ? (
-                        <a
-                          href={tx.receipt_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <ReceiptLink
+                          transaction={tx}
                           className="desktop-table-action-btn"
                           style={{ display: "inline-flex", alignItems: "center", gap: "6px", textDecoration: "none", color: "var(--desktop-accent)", fontWeight: 600, fontSize: "13px" }}
                         >
                           <FaLink size={12} /> View
-                        </a>
+                        </ReceiptLink>
                       ) : (
                         <span style={{ color: "var(--desktop-border)" }}>—</span>
                       )}

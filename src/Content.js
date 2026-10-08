@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FaCalculator } from "react-icons/fa";
+import ReceiptLink from "./ReceiptLink";
 
 function Content({
   transactions,
@@ -272,13 +273,9 @@ function Content({
 
               <td className="action">
                 {tx.receipt_url ? (
-                  <a
-                    href={tx.receipt_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
+                  <ReceiptLink transaction={tx}>
                     More
-                  </a>
+                  </ReceiptLink>
                 ) : (
                   "-"
                 )}
