@@ -14,7 +14,7 @@ The companion app listens for incoming SMS messages, processes only BOA senders,
 - Frontend: the flipped Apollo side of the balance card reads `GET /boa-sms/account-state`.
 - Frontend: the Apollo Summary panel reads recent BOA SMS transactions from `GET /boa-sms/monthly-summary`.
 
-The receipt transaction table stays separate. The **Check latest** button compares only the newest BOA SMS with the saved table, regardless of whether it is opened from Balance or Apollo.
+The receipt transaction table stays separate. The **Check latest** button on unlocked Apollo compares only the newest BOA SMS with the saved table.
 
 ## Version 1.1 update
 
@@ -26,13 +26,14 @@ The backend stores receipt/date/narrative metadata in a versioned envelope insid
 
 ### Apollo import behavior
 
-- Mobile/PWA: **Check latest** replaces the ETB label at the top right of the Balance panel for both Primary and Apollo. It stays usable while Apollo balance is locked. Interest has no check button.
-- Desktop: both account cards have the same **Check latest** button inside their top right corner.
+- Mobile/PWA: **Check latest** appears at the top right of the unlocked Apollo Balance panel. Primary keeps its original ETB label. Interest has no check button.
+- Desktop: only the unlocked Apollo account card has **Check latest** inside its top right corner.
 - Every button click opens an Apollo-themed password dialog using the existing Apollo password. Unlocking the balance alone does not start a check or show an automatic prompt.
-- After the password is accepted, compare only the newest SMS against saved transactions. A match shows **You're up to date**; older unmatched messages are never offered.
-- Choose a person (or Unassigned), then click **Add transaction**. The amount, date, reference, narrative, withdrawal/deposit direction and genuine receipt URL are saved through the same `POST /transactions` endpoint as the plus button. The existing **More** action appears when a receipt URL is available.
-- BOA receipt details can fill missing date/reference/narrative when its amount and reference agree with the SMS. Missing fields stay empty when neither source supplies them; receipt account suffixes are never guessed.
-- An import request carries a transient `_boa_sms_message_hash` marker, which is never stored in the transaction table. The server validates it against the newest SMS, builds the transaction from trusted event fields, and rechecks saved references/receipt links or amount/date/direction before inserting.
+- After the password is accepted, compare only the newest SMS against saved transactions. A match shows **Up to date**; older unmatched messages are never offered.
+- Choose a known person (or Unassigned) from the dropdown, then click **Add transaction**. Tap the narrative to edit it; it defaults to **Materials** when no narrative is supplied. Reference and receipt information are revealed under **Details**.
+- Amount, date, reference, the chosen narrative, withdrawal/deposit direction and genuine receipt URL are saved through the same `POST /transactions` endpoint as the plus button. The existing **More** action appears when a receipt URL is available.
+- BOA receipt details can fill missing date/reference/narrative when its amount and reference agree with the SMS. References and links stay empty when neither source supplies them; receipt account suffixes are never guessed.
+- An import request carries a transient `_boa_sms_message_hash` marker, which is never stored in the transaction table. The server validates it against the newest SMS, builds the transaction from trusted event fields and the chosen person/narrative, and rechecks saved references/receipt links or amount/date/direction before inserting.
 - Imports are serialized within one backend process to prevent double clicks and simultaneous retries from inserting twice. Multiple backend replicas would require a database uniqueness constraint for an absolute cross-process guarantee.
 - **Later** closes the popup. Clicking **Check latest** again starts a fresh password-protected check. Leaving Balance/going to Interest closes pending checks.
 

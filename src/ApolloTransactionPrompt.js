@@ -9,6 +9,8 @@ const API_URL = process.env.REACT_APP_API_URL || "https://bank-backend-anhp.onre
 export default function ApolloTransactionPrompt({ requestId = 0, enabled = true, transactions = [], personOptions = [], onAdded }) {
   const [event, setEvent] = useState(null);
   const [person, setPerson] = useState("");
+  const [narrative, setNarrative] = useState("Materials");
+  const [editingNarrative, setEditingNarrative] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [stage, setStage] = useState(null);
@@ -28,6 +30,8 @@ export default function ApolloTransactionPrompt({ requestId = 0, enabled = true,
       setStage("password");
       setPassword("");
       setPerson("");
+      setNarrative("Materials");
+      setEditingNarrative(false);
       setEvent(null);
       setError("");
     }
@@ -51,6 +55,8 @@ export default function ApolloTransactionPrompt({ requestId = 0, enabled = true,
       }
       setEvent(data.event);
       setPerson("");
+      setNarrative(data.event.narrative || "Materials");
+      setEditingNarrative(false);
       setStage("transaction");
     } catch (failure) {
       if (pending.signal.aborted) return;
@@ -62,7 +68,7 @@ export default function ApolloTransactionPrompt({ requestId = 0, enabled = true,
   useEffect(() => {
     if (!open) return undefined;
     const previousFocus = document.activeElement;
-    dialog.current?.querySelector("input, select, button")?.focus();
+    (dialog.current?.querySelector("input, select") || dialog.current?.querySelector("button"))?.focus();
     return () => previousFocus?.focus?.();
   }, [open, stage]);
 
@@ -87,7 +93,7 @@ export default function ApolloTransactionPrompt({ requestId = 0, enabled = true,
     try {
       const response = await fetch(`${API_URL}/transactions`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...smsTransactionDraft(event, person), _boa_sms_message_hash: event.message_hash })
+        body: JSON.stringify({ ...smsTransactionDraft(event, person), narrative: narrative.trim() || null, _boa_sms_message_hash: event.message_hash })
       });
       const data = await response.json();
       if (!response.ok) {
@@ -106,11 +112,11 @@ export default function ApolloTransactionPrompt({ requestId = 0, enabled = true,
 
   if (!open) return null;
   const draft = event ? smsTransactionDraft(event) : null;
-  const titles = { password: "Check latest transaction", checking: "Checking latest BOA SMS...", empty: "No BOA SMS transactions yet", matched: "You're up to date", error: "Could not check BOA SMS", transaction: "Add the latest transaction?" };
+  const titles = { password: "Check latest", checking: "Checking...", empty: "No recent SMS", matched: "Up to date", error: "Couldn't check", transaction: "Latest transaction" };
   const onKeyDown = keyEvent => {
     if (keyEvent.key === "Escape") { keyEvent.preventDefault(); close(); }
     if (keyEvent.key !== "Tab") return;
-    const elements = [...dialog.current.querySelectorAll("button, input, select, a[href]")].filter(element => !element.disabled);
+    const elements = [...dialog.current.querySelectorAll("button, input, select, summary, a[href]")].filter(element => !element.disabled && element.getClientRects().length > 0);
     const first = elements[0], last = elements[elements.length - 1];
     if (keyEvent.shiftKey && document.activeElement === first) { keyEvent.preventDefault(); last?.focus(); }
     if (!keyEvent.shiftKey && document.activeElement === last) { keyEvent.preventDefault(); first?.focus(); }
@@ -120,30 +126,33 @@ export default function ApolloTransactionPrompt({ requestId = 0, enabled = true,
     <div ref={overlay} className="apollo-transaction-overlay apollo-password-overlay" onKeyDown={onKeyDown}>
       <form ref={dialog} className="apollo-transaction-dialog" role="dialog" aria-modal="true" aria-labelledby="apollo-transaction-title" onSubmit={add} aria-busy={saving || stage === "checking"}>
         <div className="apollo-logo-frame"><img className="apollo-unlock-logo" src="/apollo-logo.webp" alt="Apollo" /></div>
-        <span className="apollo-transaction-source">Apollo · BOA SMS</span>
-        <h2 id="apollo-transaction-title">{titles[stage]}</h2>
+        {stage === "transaction" && <span className="apollo-transaction-source">BOA SMS</span>}
+        <h2 id="apollo-transaction-title" aria-live="polite">{titles[stage]}</h2>
         {stage === "password" && <>
-          <p>Enter the Apollo password to compare the newest BOA SMS with your transaction table.</p>
-          <label htmlFor="apollo-check-password">Apollo password</label>
+          <label htmlFor="apollo-check-password">Password</label>
           <input id="apollo-check-password" type="password" autoComplete="off" value={password} onChange={change => { setPassword(change.target.value); setError(""); }} required />
         </>}
-        {stage === "checking" && <p role="status">Comparing the latest SMS with saved transactions...</p>}
-        {stage === "empty" && <p>Sync BOA messages from the companion app, then check again.</p>}
-        {stage === "matched" && <p>The latest BOA SMS is already in your transaction table.</p>}
+        {stage === "empty" && <p>Sync your messages, then try again.</p>}
+        {stage === "matched" && <p>Latest SMS already saved.</p>}
         {stage === "transaction" && <>
-        <p>Your latest BOA SMS transaction hasn’t been added to the table.</p>
-        <dl>
-          <div><dt>{draft.is_withdraw ? "Withdrawal" : "Deposit"}</dt><dd>ETB {Number(draft.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}</dd></div>
-          <div><dt>Date</dt><dd>{draft.date}</dd></div>
-          <div><dt>Reference</dt><dd>{draft.reference || "Not included in SMS"}</dd></div>
-          <div><dt>Narrative</dt><dd>{draft.narrative || "Not included in SMS"}</dd></div>
-        </dl>
-        {draft.receipt_url && <a href={draft.receipt_url} target="_blank" rel="noreferrer">View bank receipt</a>}
-        <label htmlFor="apollo-transaction-person">Who is this transaction for?</label>
-        <select id="apollo-transaction-person" value={person} onChange={change => setPerson(change.target.value)} required disabled={saving}>
-          <option value="" disabled>Choose a person</option>
-          {personOptions.map(option => <option key={option.value} value={option.value}>{option.value === "null" ? "Unassigned" : option.label}</option>)}
-        </select>
+          <dl>
+            <div><dt>{draft.is_withdraw ? "Withdrawal" : "Deposit"}</dt><dd>ETB {Number(draft.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}</dd></div>
+            <div><dt>Date</dt><dd>{draft.date}</dd></div>
+            <div><dt>Narrative</dt><dd>
+              {editingNarrative ? <input aria-label="Narrative" className="apollo-narrative-input" value={narrative} maxLength={2000} autoFocus disabled={saving} onChange={change => setNarrative(change.target.value)} onBlur={() => setEditingNarrative(false)} onKeyDown={keyEvent => { if (keyEvent.key === "Enter") keyEvent.preventDefault(); }} />
+                : <button type="button" className="apollo-narrative-edit" aria-label="Edit narrative" disabled={saving} onClick={() => setEditingNarrative(true)}>{narrative || "Add narrative"}<svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15z" /></svg></button>}
+            </dd></div>
+          </dl>
+          <label htmlFor="apollo-transaction-person">Person</label>
+          <select id="apollo-transaction-person" value={person} onChange={change => setPerson(change.target.value)} required disabled={saving}>
+            <option value="" disabled>Select person</option>
+            {personOptions.map(option => <option key={option.value} value={option.value}>{option.value === "null" ? "Unassigned" : option.label}</option>)}
+          </select>
+          <details className="apollo-transaction-details">
+            <summary>Details</summary>
+            <dl><div><dt>Reference</dt><dd>{draft.reference || "Unavailable"}</dd></div></dl>
+            {draft.receipt_url && <a href={draft.receipt_url} target="_blank" rel="noreferrer">View receipt</a>}
+          </details>
         </>}
         {error && <p className="apollo-transaction-error" role="alert">{error}</p>}
         <div className="apollo-transaction-actions">

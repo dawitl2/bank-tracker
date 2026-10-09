@@ -38,14 +38,18 @@ function registerBoaSmsImportRoutes(app, supabase, fetchReceipt = getBankReceipt
     }
   });
 
-  async function saveLatest(hash, person) {
+  async function saveLatest(hash, person, narrative) {
     const { event, existing } = await latestSnapshot(true);
     if (!event || hash !== event.message_hash) {
       return { status: 409, body: { error: "A newer BOA SMS is available. Check latest again before adding." } };
     }
     if (existing) return { status: 200, transaction: existing, already_added: true };
     if (person != null && typeof person !== "string") return { status: 400, body: { error: "Choose a valid person" } };
+    if (narrative !== undefined && narrative !== null && (typeof narrative !== "string" || narrative.length > 2000)) {
+      return { status: 400, body: { error: "Narrative must be text of up to 2,000 characters" } };
+    }
     const draft = smsTransactionDraft(event, person);
+    draft.narrative = narrative === undefined ? draft.narrative || "Materials" : narrative?.trim() || null;
     if (!draft.date || !Number.isFinite(Number(draft.amount)) || Number(draft.amount) <= 0) {
       return { status: 422, body: { error: "SMS amount or date is missing" } };
     }
@@ -67,7 +71,7 @@ function registerBoaSmsImportRoutes(app, supabase, fetchReceipt = getBankReceipt
     const hash = legacy ? req.body?.message_hash : req.body?._boa_sms_message_hash;
     if (!legacy && !Object.prototype.hasOwnProperty.call(req.body || {}, "_boa_sms_message_hash")) return next();
     try {
-      const pending = savingTail.then(() => saveLatest(hash, req.body?.person));
+      const pending = savingTail.then(() => saveLatest(hash, req.body?.person, req.body?.narrative));
       savingTail = pending.catch(() => {});
       const result = await pending;
       res.status(result.status).json(result.body || (legacy

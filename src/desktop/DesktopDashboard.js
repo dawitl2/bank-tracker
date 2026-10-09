@@ -193,7 +193,7 @@ export default function DesktopDashboard({
     <div className="desktop-main-content" style={{ padding: 0, height: "auto", minHeight: "100%" }}>
       <ApolloTransactionPrompt
         requestId={smsCheckRequest}
-        enabled={currentPath === "/balance" || currentPath === "/balance/summary"}
+        enabled={apolloUnlocked && (currentPath === "/balance" || currentPath === "/balance/summary")}
         transactions={transactions}
         personOptions={personOptions}
         onAdded={onSmsTransactionAdded}
@@ -237,7 +237,6 @@ export default function DesktopDashboard({
       <div className="desktop-bank-card-container">
         {/* Regular Receipts-based Card */}
         <div className="desktop-card" style={{ padding: "28px" }}>
-          <div className="apollo-check-card-head"><button type="button" className="apollo-check-latest" aria-label="Check latest BOA SMS from Balance" onClick={() => setSmsCheckRequest(value => value + 1)}>Check latest</button></div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
             {/* Center card image */}
             <img 
@@ -276,7 +275,7 @@ export default function DesktopDashboard({
 
         {/* Apollo SMS-based Card */}
         <div className="desktop-card" style={{ padding: "28px" }}>
-          <div className="apollo-check-card-head"><button type="button" className="apollo-check-latest" aria-label="Check latest BOA SMS from Apollo" onClick={() => setSmsCheckRequest(value => value + 1)}>Check latest</button></div>
+          {apolloUnlocked && <div className="apollo-check-card-head"><button type="button" className="apollo-check-latest" aria-label="Check latest BOA SMS from Apollo" onClick={() => setSmsCheckRequest(value => value + 1)}>Check latest</button></div>}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
             {/* Center card image */}
             <img 
