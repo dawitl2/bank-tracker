@@ -7,6 +7,7 @@ import {
 } from "react-icons/fa";
 import "./DesktopStyles.css";
 import ApolloTransactionPrompt from "../ApolloTransactionPrompt";
+import ApolloBalanceComparison from "../ApolloBalanceComparison";
 import { formatTransactionAmount } from "../transactionAmount";
 
 const VISIBILITY_PASSWORD = "pass";
@@ -310,6 +311,8 @@ export default function DesktopDashboard({
                 </div>
               )}
               
+              <ApolloBalanceComparison apolloBalance={boaSmsState?.current_balance} regularBalance={analytics.currentBalance} loading={boaSmsLoading} locked={!apolloUnlocked} />
+
               {/* Only SMS withdrawal underneath */}
               <div className="desktop-balance-details-row" style={{ display: "block", background: "transparent", border: "none", padding: 0, marginTop: "16px" }}>
                 <div className="desktop-detail-block withdraw" style={{ padding: "16px", border: "1px solid var(--desktop-border)", borderRadius: "10px", background: "var(--desktop-surface)" }}>

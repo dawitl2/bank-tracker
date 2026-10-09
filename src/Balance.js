@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import useApolloViewport from "./useApolloViewport";
 import ApolloTransactionPrompt from "./ApolloTransactionPrompt";
+import ApolloBalanceComparison from "./ApolloBalanceComparison";
 import { formatTransactionAmount } from "./transactionAmount";
 import {
   FaArrowLeft,
@@ -1121,24 +1122,11 @@ function Balance({
   const displayedBalance = isFlipped
     ? formatSmsMoney(boaSmsState?.current_balance)
     : money(balance);
-  const balanceMeta = isFlipped
-    ? {
-        label: "Latest deposit",
-        amount: formatSmsMoney(boaSmsState?.latest_deposit_amount),
-        date: formatSmsDate(boaSmsState?.deposit_updated_at || boaSmsState?.updated_at)
-      }
-    : {
+  const balanceMeta = {
         label: "Last deposit",
         amount: analytics.lastDeposit?.amount || "-",
         date: analytics.lastDeposit?.date || "No deposit yet"
       };
-  const visibleBalanceMeta = apolloLocked
-    ? {
-        label: "Latest activity",
-        amount: hiddenCardMoney,
-        date: "Protected account detail"
-      }
-    : balanceMeta;
 
   const requestVisibility = () => { setShowBalance(current => !current); };
 
@@ -1260,11 +1248,13 @@ function Balance({
                   {showBalance ? <FaEye /> : <FaEyeSlash />}
                 </button>
               </div>
-              <div className="account-activity-row">
-                <span>{visibleBalanceMeta.label}</span>
-                <strong>{visibleBalanceMeta.amount}</strong>
-                <time>{visibleBalanceMeta.date}</time>
-              </div>
+              {isFlipped ? <ApolloBalanceComparison apolloBalance={boaSmsState?.current_balance} regularBalance={balance} loading={isSmsNumberLoading} locked={apolloLocked} /> : (
+                <div className="account-activity-row">
+                  <span>{balanceMeta.label}</span>
+                  <strong>{balanceMeta.amount}</strong>
+                  <time>{balanceMeta.date}</time>
+                </div>
+              )}
             </div>
 
             {apolloLocked && (

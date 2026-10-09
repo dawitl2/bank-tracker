@@ -1,0 +1,29 @@
+.apollo-balance-comparison.account-activity-row {
+  --apollo-comparison-color: #858a82;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 3px 8px;
+  padding: 9px 1px 0;
+  border-top: 1px solid rgba(32, 35, 31, .065);
+}
+.apollo-balance-comparison.is-surplus { --apollo-comparison-color: #15803d; }
+.apollo-balance-comparison.is-deficit { --apollo-comparison-color: #c62828; }
+.apollo-balance-comparison.account-activity-row > span {
+  color: var(--apollo-comparison-color);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+  text-align: left;
+}
+.apollo-balance-comparison.account-activity-row > strong {
+  color: var(--apollo-comparison-color);
+  font-size: 12px;
+  line-height: 1.2;
+  text-align: right;
+  white-space: nowrap;
+}
+.desktop-card .apollo-balance-comparison { margin-bottom: 16px; padding-top: 12px; }
+.desktop-card .apollo-balance-comparison > span { font-size: 11px; }
+.desktop-card .apollo-balance-comparison > strong { font-size: 14px; }

@@ -28,6 +28,7 @@ The backend stores receipt/date/narrative metadata in a versioned envelope insid
 
 - Mobile/PWA: **Check latest** appears at the top right of the unlocked Apollo Balance panel. Primary keeps its original ETB label. Interest has no check button.
 - Desktop: only the unlocked Apollo account card has **Check latest** inside its top right corner.
+- Apollo's balance comparison uses its SMS balance minus the regular card's calculated balance. A surplus is green with a plus sign; a deficit is red with a minus sign; equality displays **Balanced**. The difference includes **ETB** and replaces Apollo's deposit/date row on mobile. The regular card is unchanged.
 - The check reuses Apollo's existing unlock. Clicking **Check latest** opens a compact Apollo-themed dialog with a short explanation; it does not ask for the password again. Unlocking the balance alone does not start a check.
 - Read only the newest SMS from the existing public-read SMS table and compare it with fresh saved transactions from the existing backend. A match shows **Up to date**; older unmatched messages are never offered. This does not depend on the newer `/boa-sms/latest-transaction` route being deployed.
 - Choose a known person (or Unassigned) from the dropdown, then click **Add transaction**. Tap the narrative to edit it; it defaults to **Materials** when no narrative is supplied. Reference and receipt information are revealed under **Details**.
