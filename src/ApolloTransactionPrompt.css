@@ -7,21 +7,35 @@
 .apollo-transaction-dialog {
   width: min(100%, 440px); max-height: 100%; overflow-y: auto;
   box-sizing: border-box; padding: 26px; border-radius: 22px;
-  background: #fff; color: #20231f; box-shadow: 0 24px 80px #0004;
+  background: linear-gradient(165deg, #fff 0%, #fffafa 58%, #fff4f1 100%);
+  border: 1px solid #6b08292e; color: #4d1025; box-shadow: 0 26px 70px #26041052;
 }
-.apollo-transaction-source { color: #956600; font-size: 12px; font-weight: 700; }
+.apollo-transaction-dialog .apollo-logo-frame { width: 152px; margin-bottom: 18px; }
+.apollo-transaction-source { color: #815566; font-size: 12px; font-weight: 700; }
 .apollo-transaction-dialog h2 { font-size: 23px; margin: 10px 0; }
-.apollo-transaction-dialog p { color: #626a70; font-size: 14px; line-height: 1.5; }
-.apollo-transaction-dialog dl { margin: 20px 0; padding: 16px; border-radius: 12px; background: #faf7f0; }
+.apollo-transaction-dialog p { color: #846b73; font-size: 14px; line-height: 1.5; }
+.apollo-transaction-dialog dl { margin: 20px 0; padding: 16px; border-radius: 12px; background: #5d002409; border: 1px solid #5d002414; }
 .apollo-transaction-dialog dl > div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; font-size: 13px; }
 .apollo-transaction-dialog dt { color: #626a70; flex-shrink: 0; }
 .apollo-transaction-dialog dd { margin: 0; text-align: right; font-weight: 600; overflow-wrap: anywhere; }
-.apollo-transaction-dialog a { color: #956600; font-size: 14px; }
+.apollo-transaction-dialog a { color: #76163a; font-size: 14px; }
 .apollo-transaction-dialog label { display: block; margin: 20px 0 8px; font-size: 14px; font-weight: 600; }
-.apollo-transaction-dialog select { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #d8dce0; border-radius: 10px; background: #fff; color: #20231f; }
+.apollo-transaction-dialog select, .apollo-transaction-dialog input { box-sizing: border-box; width: 100%; padding: 12px; font-size: 16px; border: 1px solid #d8c9cf; border-radius: 10px; background: #fff; color: #4d1025; }
 .apollo-transaction-actions { display: flex; gap: 10px; margin-top: 22px; }
 .apollo-transaction-actions button { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 10px; cursor: pointer; background: #f7f7f7; color: #20231f; font-weight: 700; }
-.apollo-transaction-actions button[type=submit] { background: #f4a300; border-color: #f4a300; }
+.apollo-transaction-actions button[type=submit], .apollo-transaction-actions .apollo-transaction-primary { background: linear-gradient(135deg, #8f2d18, #5d0024); border-color: #5d0024; color: #fff; }
 .apollo-transaction-actions button:disabled { opacity: .6; cursor: default; }
 .apollo-transaction-dialog .apollo-transaction-error { color: #b32020; }
-.apollo-transaction-dialog :focus-visible { outline: 3px solid #b87200; outline-offset: 3px; }
+.apollo-transaction-dialog :focus-visible, .apollo-check-latest:focus-visible { outline: 3px solid #76163a; outline-offset: 3px; }
+.apollo-check-latest { position: relative; z-index: 3; flex-shrink: 0; padding: 9px 11px; border: 1px solid #76163a30; border-radius: 10px; background: #fff7f8; color: #5d0024; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.apollo-check-latest:hover { background: #f5e8ed; }
+.apollo-check-card-head { display: flex; justify-content: flex-end; margin: -8px -8px 12px; }
+.balance-dashboard .balance-account-overview.is-locked > .account-overview-head { filter: none; opacity: 1; pointer-events: auto; }
+.balance-dashboard .balance-account-overview.is-locked .account-overview-head .account-identity { filter: blur(6px); }
+.balance-dashboard .balance-account-overview.is-locked .account-overview-head .apollo-check-latest { z-index: 5; }
+@media (max-width: 600px) {
+  .apollo-transaction-overlay { padding: 12px; }
+  .apollo-transaction-dialog { padding: 20px; }
+  .apollo-transaction-dialog .apollo-logo-frame { width: 126px; margin-bottom: 12px; }
+  .apollo-transaction-dialog h2 { font-size: 21px; }
+}

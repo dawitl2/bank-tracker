@@ -3,7 +3,7 @@ const { matchesSmsTransaction, newestSmsEvent, smsTransactionDraft, receiptLink 
 const event = { message_hash: "sms-1", sms_received_at: "2026-10-09T08:30:00Z", transaction_type: "withdrawal", amount: "1,200.50", raw_reference: "FT26282TEST", narrative: "Materials", receipt_url: "https://cs.bankofabyssinia.com/slip/?trx=FT26282TEST41349" };
 
 test("imports known SMS details with Addis Ababa date and the real receipt link", () => {
-  expect(smsTransactionDraft(event, "mihret")).toEqual({ amount: "1200.50", date: "09/10/26 11:30", reference: "FT26282TEST", narrative: "Materials", receipt_url: event.receipt_url, is_withdraw: true, person: "mihret", source_sms_hash: "sms-1" });
+  expect(smsTransactionDraft(event, "mihret")).toEqual({ amount: "1200.50", date: "09/10/26 11:30", reference: "FT26282TEST", narrative: "Materials", receipt_url: event.receipt_url, is_withdraw: true, person: "mihret" });
 });
 test("latest selection does not import older unmatched messages", () => {
   expect(newestSmsEvent([{ ...event, message_hash: "old", sms_received_at: "2026-10-08T08:30:00Z" }, event])).toBe(event);

@@ -70,8 +70,7 @@ function smsTransactionDraft(event, person = null) {
     narrative: event.narrative || null,
     receipt_url: receiptLink(event.receipt_url),
     is_withdraw: event.transaction_type === "withdrawal",
-    person: person === "null" || !person ? null : person,
-    source_sms_hash: event.message_hash
+    person: person === "null" || !person ? null : person
   };
 }
 

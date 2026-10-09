@@ -14,26 +14,27 @@ The companion app listens for incoming SMS messages, processes only BOA senders,
 - Frontend: the flipped Apollo side of the balance card reads `GET /boa-sms/account-state`.
 - Frontend: the Apollo Summary panel reads recent BOA SMS transactions from `GET /boa-sms/monthly-summary`.
 
-The receipt transaction table stays separate. Unlocked Apollo can now offer to import **only the newest** BOA SMS event into that table; older unmatched SMS messages are never offered automatically.
+The receipt transaction table stays separate. The **Check latest** button compares only the newest BOA SMS with the saved table, regardless of whether it is opened from Balance or Apollo.
 
-## Version 1.1 upgrade
+## Version 1.1 update
 
-1. Run `backend/sql/boa_sms_transaction_import.sql` in the existing project's Supabase SQL editor. This adds SMS date/narrative/receipt fields, an optional unique `transactions.source_sms_hash`, and an atomic timestamp-aware balance merge. It does not rewrite existing transactions.
-2. Ensure the backend has `SUPABASE_SERVICE_ROLE_KEY`, then deploy the updated backend and frontend from this repository.
-3. Install the v1.1 APK with `adb install -r android-boa-sms-companion/app/build/outputs/apk/debug/app-debug.apk`. Existing connection settings and SMS permissions are retained.
-4. Open the companion. It recovers useful BOA messages from the last 31 days. `Sync Apollo transactions` can also refresh receipt metadata on previously synced messages.
+1. Deploy the updated backend and frontend with the existing backend database credentials. **No database migration or new columns are required.**
+2. Install the v1.1 APK with `adb install -r android-boa-sms-companion/app/build/outputs/apk/debug/app-debug.apk`. Existing connection settings and SMS permissions are retained.
+3. Open the companion. It recovers useful BOA messages from the last 31 days. `Sync Apollo transactions` can refresh receipt metadata on previously synced messages.
 
-During rollout, the backend preserves the existing account-state and monthly-summary behavior if the additive SQL upgrade is pending. The new import stays unavailable until the required columns exist, and the phone keeps undelivered details queued for retry. The companion checks backend delivery version 2 before replaying older updates.
+The backend stores receipt/date/narrative metadata in a versioned envelope inside the existing SMS `raw_reference` text column. API responses decode it into separate fields and the original reference. Historical plain references and previously expanded rows remain readable. This fixes failed delivery caused by requiring extra columns. The phone retains failed requests for retry and checks backend delivery version 2 before replaying older updates.
 
 ### Apollo import behavior
 
-- Mobile/PWA: swipe to Apollo and unlock with the existing password. After two seconds, offer the newest SMS only when it is missing from the ledger.
-- Desktop: unlock Apollo on the Balance dashboard to use the same prompt.
-- No prompt on the primary card, Interest, People, Construction, or Transactions pages. Leaving Apollo closes it and cancels pending work.
-- Choose a person (or Unassigned), then click **Add transaction**. The amount, date, reference, narrative, withdrawal/deposit direction and genuine receipt URL are saved automatically. The existing **More** action appears when a receipt URL is available.
-- BOA receipt details can fill missing date/reference/narrative when its amount and reference agree with the SMS. Missing fields stay empty when neither SMS nor receipt supplies them; receipt account suffixes are never guessed.
-- The server rechecks the latest SMS before saving, detects an existing reference/receipt/hash, and uses a unique SMS hash to prevent duplicate inserts across retries or devices.
-- **Later** dismisses that SMS for the current visit; reopening the app can offer it again if still missing.
+- Mobile/PWA: **Check latest** replaces the ETB label at the top right of the Balance panel for both Primary and Apollo. It stays usable while Apollo balance is locked. Interest has no check button.
+- Desktop: both account cards have the same **Check latest** button inside their top right corner.
+- Every button click opens an Apollo-themed password dialog using the existing Apollo password. Unlocking the balance alone does not start a check or show an automatic prompt.
+- After the password is accepted, compare only the newest SMS against saved transactions. A match shows **You're up to date**; older unmatched messages are never offered.
+- Choose a person (or Unassigned), then click **Add transaction**. The amount, date, reference, narrative, withdrawal/deposit direction and genuine receipt URL are saved through the same `POST /transactions` endpoint as the plus button. The existing **More** action appears when a receipt URL is available.
+- BOA receipt details can fill missing date/reference/narrative when its amount and reference agree with the SMS. Missing fields stay empty when neither source supplies them; receipt account suffixes are never guessed.
+- An import request carries a transient `_boa_sms_message_hash` marker, which is never stored in the transaction table. The server validates it against the newest SMS, builds the transaction from trusted event fields, and rechecks saved references/receipt links or amount/date/direction before inserting.
+- Imports are serialized within one backend process to prevent double clicks and simultaneous retries from inserting twice. Multiple backend replicas would require a database uniqueness constraint for an absolute cross-process guarantee.
+- **Later** closes the popup. Clicking **Check latest** again starts a fresh password-protected check. Leaving Balance/going to Interest closes pending checks.
 
 ### Delivery reliability
 
@@ -52,7 +53,7 @@ npm run build
 
 Android: `gradle assembleDebug testDebugUnitTest`. The dependency-free `DeliveryInstrumentation` runner additionally checks durable queuing, failed-send retention, successful retry and deduplication on an actual phone, using isolated test preferences and a disposable local API on port 5002 via `adb reverse`.
 
-The SQL can be checked without touching live data:
+The optional atomic-state/expanded-column SQL is retained for existing installations, but this feature does not require it. It can be checked without touching live data:
 
 ```powershell
 npm install --prefix .gradle-local/sql-verification --no-audit --no-fund @electric-sql/pglite

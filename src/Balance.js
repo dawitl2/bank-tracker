@@ -832,6 +832,7 @@ function Balance({
   onSmsTransactionAdded
 }) {
   const [activePanel, setActivePanel] = useState("summary");
+  const [smsCheckRequest, setSmsCheckRequest] = useState(0);
 
   useEffect(() => {
     if (!currentPath) return;
@@ -1207,7 +1208,8 @@ function Balance({
   return (
     <div className="balance-page balance-dashboard">
       <ApolloTransactionPrompt
-        enabled={isFlipped && apolloUnlocked && activePanel === "summary" && (currentPath === "/balance" || currentPath === "/balance/summary")}
+        requestId={smsCheckRequest}
+        enabled={activePanel !== "interest"}
         transactions={ledgerTransactions}
         personOptions={personOptions}
         onAdded={onSmsTransactionAdded}
@@ -1238,7 +1240,7 @@ function Balance({
                   <strong>Balance</strong>
                 </div>
               </div>
-              <span className="account-currency">ETB</span>
+              {activePanel !== "interest" ? <button className="apollo-check-latest" type="button" onClick={() => setSmsCheckRequest(value => value + 1)} aria-label={`Check latest BOA SMS from ${isFlipped ? "Apollo" : "Balance"}`}>Check latest</button> : <span className="account-currency">ETB</span>}
             </div>
 
             <div className="account-balance-block">

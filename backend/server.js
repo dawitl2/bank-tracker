@@ -7,6 +7,7 @@ const { registerReceiptRoutes } = require("./receiptRoutes");
 const { registerBoaSmsImportRoutes } = require("./boaSmsImportRoutes");
 const { receiptLink } = require("./boaSmsImport");
 const { saveBoaSmsState } = require("./boaSmsState");
+const { encodeSmsEvent, decodeSmsEvent } = require("./boaSmsMetadata");
 
 const app = express();
 
@@ -159,25 +160,17 @@ const saveBoaSmsEvent = async (event) => {
     return { skipped: true };
   }
 
-  let { data, error } = await supabase
+  const { data, error } = await supabase
     .from("boa_sms_events")
-    .upsert(event, { onConflict: "message_hash" })
+    .upsert(encodeSmsEvent(event), { onConflict: "message_hash" })
     .select()
     .single();
-
-  if (["PGRST204", "42703"].includes(error?.code)) {
-    // Preserve the existing SMS summary while the additive schema upgrade is pending.
-    const { transaction_date, narrative, receipt_url, ...legacyEvent } = event;
-    const legacy = await supabase.from("boa_sms_events").upsert(legacyEvent, { onConflict: "message_hash" }).select().single();
-    data = legacy.data;
-    error = legacy.error || { message: "Apply boa_sms_transaction_import.sql to retain receipt details" };
-  }
 
   if (!error) {
     pruneOldBoaSmsEvents();
   }
 
-  return { data, error };
+  return { data: decodeSmsEvent(data), error };
 };
 
 
@@ -614,7 +607,7 @@ app.get("/boa-sms/monthly-summary", async (req, res) => {
 
   const { data, error } = await supabase
     .from("boa_sms_events")
-    .select("sms_received_at, transaction_type, amount, balance_after, sender")
+    .select("*")
     .gte("sms_received_at", getBoaSmsCutoffIso())
     .order("sms_received_at", { ascending: false });
 
@@ -668,13 +661,7 @@ app.get("/boa-sms/monthly-summary", async (req, res) => {
     }));
 
   res.json({
-    events: (data || []).map((event) => ({
-      sms_received_at: event.sms_received_at,
-      transaction_type: event.transaction_type,
-      amount: event.amount,
-      balance_after: event.balance_after,
-      sender: event.sender
-    })),
+    events: (data || []).map(decodeSmsEvent),
     months: summary,
     source: "BOA SMS",
     retention_months: BOA_SMS_HISTORY_MONTHS

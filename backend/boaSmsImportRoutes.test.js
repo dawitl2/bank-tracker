@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const express = require("express");
 const { registerBoaSmsImportRoutes } = require("./boaSmsImportRoutes");
 const { mergeFields } = require("./boaSmsState");
+const { encodeSmsEvent } = require("./boaSmsMetadata");
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -17,13 +18,17 @@ function database(events = [latest], rows = []) {
     const db = this;
     let insert, filter;
     const query = {
-      select() { return query; }, order() { return query; }, limit() { return query; },
+      select(columns) {
+        if (columns && columns.includes("source_sms_hash")) throw new Error("Column does not exist in original schema");
+        return query;
+      }, in() { return query; }, gt() { return query; }, order() { return query; }, limit() { return query; },
       eq(key, value) { filter = row => row[key] === value; return query; },
       insert(values) { insert = values[0]; return query; },
       then(resolve) { return Promise.resolve({ data: table === "transactions" ? db.rows : db.events }).then(resolve); },
       async maybeSingle() { return { data: table === "transactions" ? db.rows.find(filter) || null : db.events[0] || null }; },
       async single() {
-        if (db.rows.some(row => row.source_sms_hash === insert.source_sms_hash)) return { error: { code: "23505" } };
+        assert.equal(Object.hasOwn(insert, "source_sms_hash"), false);
+        assert.equal(Object.hasOwn(insert, "_boa_sms_message_hash"), false);
         const row = { id: ++db.inserts, ...insert }; db.rows.push(row); return { data: row };
       }
     }; return query;
@@ -31,6 +36,7 @@ function database(events = [latest], rows = []) {
 }
 async function server(t, db, bank = async () => ({ status: 502 })) {
   const app = express(); app.use(express.json()); registerBoaSmsImportRoutes(app, db, bank);
+  app.post("/transactions", (req, res) => res.status(201).json({ id: 99, ...req.body }));
   const listener = app.listen(0, "127.0.0.1");
   await new Promise(resolve => listener.once("listening", resolve));
   t.after(() => { listener.closeAllConnections(); listener.close(); });
@@ -53,8 +59,38 @@ test("one click inserts all SMS fields and repeated/concurrent adds cannot dupli
   const results = await Promise.all([request("/boa-sms/transactions/latest", body), request("/boa-sms/transactions/latest", body)]);
   assert.equal(db.rows.length, 1);
   assert.ok(results.every(result => [200, 201].includes(result.status)));
-  assert.deepEqual(db.rows[0], { id: 1, amount: "1200.50", date: "09/10/26 11:30", reference: latest.raw_reference, narrative: "Materials", receipt_url: latest.receipt_url, is_withdraw: true, person: "mihret", source_sms_hash: "newest" });
+  assert.deepEqual(db.rows[0], { id: 1, amount: "1200.50", date: "09/10/26 11:30", reference: latest.raw_reference, narrative: "Materials", receipt_url: latest.receipt_url, is_withdraw: true, person: "mihret" });
   assert.equal((await request("/boa-sms/transactions/latest", body)).body.already_added, true);
+});
+
+test("plus endpoint imports metadata using only original transaction columns", async t => {
+  const db = database([encodeSmsEvent(latest)]);
+  const request = await server(t, db);
+  const snapshot = await request("/boa-sms/latest-transaction");
+  assert.equal(snapshot.body.event.raw_reference, latest.raw_reference);
+  assert.equal(snapshot.body.event.receipt_url, latest.receipt_url);
+  const body = { _boa_sms_message_hash: "newest", person: "mihret", amount: "999999" };
+  const results = await Promise.all([request("/transactions", body), request("/transactions", body)]);
+  assert.equal(db.rows.length, 1);
+  assert.equal(results[0].body.amount, "1200.50");
+  assert.equal(results[1].body.id, results[0].body.id);
+  assert.equal(db.rows[0].narrative, "Materials");
+  assert.equal((await request("/boa-sms/latest-transaction")).body.already_added, true);
+});
+
+test("ordinary plus-button transactions still reach the existing save handler", async t => {
+  const db = database();
+  const request = await server(t, db);
+  const body = { amount: "50", reference: "MANUAL", person: "mihret" };
+  assert.deepEqual((await request("/transactions", body)).body, { id: 99, ...body });
+  assert.equal(db.inserts, 0);
+});
+
+test("an unavailable receipt service still permits known SMS details", async t => {
+  const db = database();
+  const request = await server(t, db, async () => { throw new Error("Bank offline"); });
+  assert.equal((await request("/transactions", { _boa_sms_message_hash: "newest" })).status, 201);
+  assert.equal(db.rows[0].reference, latest.raw_reference);
 });
 test("receipt metadata fills only missing fields when bank amount and reference agree", async t => {
   const db = database([{ ...latest, narrative: null }]);
