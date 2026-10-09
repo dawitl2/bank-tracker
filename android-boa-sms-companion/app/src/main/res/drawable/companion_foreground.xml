@@ -1,0 +1,8 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <!-- BOA's gold mark, with an SMS conversation badge; keep inside adaptive safe zone. -->
+    <group android:pivotX="54" android:pivotY="54" android:scaleX="0.72" android:scaleY="0.72">
+    <path android:fillColor="#F4A300" android:pathData="M27,24 L44,34 L44,52 L27,42 Z M48,34 L65,24 L65,42 L48,52 Z M8,55 L25,45 L42,55 L25,65 Z M50,55 L67,45 L84,55 L67,65 Z M27,68 L44,58 L44,76 L27,86 Z M48,58 L65,68 L65,86 L48,76 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M59,61 L85,61 Q91,61 91,67 L91,82 Q91,88 85,88 L70,88 L61,94 L61,87 Q55,86 55,81 L55,67 Q55,61 59,61 Z" />
+    <path android:fillColor="#20231F" android:pathData="M60,68 L86,68 L86,71 L60,71 Z M60,75 L80,75 L80,78 L60,78 Z" />
+    </group>
+</vector>

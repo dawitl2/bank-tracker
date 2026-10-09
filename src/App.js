@@ -17,7 +17,7 @@ const PASSWORD = "dawit123";
 const API_URL =
   process.env.REACT_APP_API_URL || "https://bank-backend-anhp.onrender.com";
 const BANK_RECEIPT_URL = "https://cs.bankofabyssinia.com/slip/";
-const GENERATED_TRANSACTION_FIELDS = ["id", "created_at"];
+const GENERATED_TRANSACTION_FIELDS = ["id", "created_at", "source_sms_hash"];
 
 function App() {
 
@@ -70,6 +70,10 @@ function App() {
   ], []);
 
   const [transactions, setTransactions] = useState([]);
+  const handleSmsTransactionAdded = (transaction) => {
+    if (!transaction) return;
+    setTransactions(current => [transaction, ...current.filter(tx => tx.id !== transaction.id)]);
+  };
   const [boaSmsState, setBoaSmsState] = useState(null);
   const [boaSmsSummary, setBoaSmsSummary] = useState([]);
   const [boaSmsLoading, setBoaSmsLoading] = useState(false);
@@ -1305,6 +1309,9 @@ function App() {
       boaSmsState={boaSmsState}
       boaSmsSummary={boaSmsSummary}
       boaSmsLoading={boaSmsLoading}
+      ledgerTransactions={transactions}
+      personOptions={personOptions}
+      onSmsTransactionAdded={handleSmsTransactionAdded}
       onRefreshBoaSmsState={fetchBoaSmsState}
       lastWithdraw={lastWithdraw}
       totalWithdraw={totalWithdraw}
@@ -1371,6 +1378,7 @@ function App() {
           boaSmsState={boaSmsState}
           boaSmsSummary={boaSmsSummary}
           boaSmsLoading={boaSmsLoading}
+          onSmsTransactionAdded={handleSmsTransactionAdded}
           parkingPayments={parkingPayments}
           suqePayments={suqePayments}
           people={people}

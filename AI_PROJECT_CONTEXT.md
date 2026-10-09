@@ -9,18 +9,20 @@ This project is a Bank of Abyssinia tracking system.
 There are two connected parts:
 
 1. The main React web app tracks receipt-based transactions and analytics.
-2. A separate Android companion app reads BOA SMS messages and sends only the latest account state to the backend.
+2. A separate Android companion app reads BOA SMS messages, persistently queues parsed account/transaction details, and delivers them to the backend with automatic retries.
 
 The BOA SMS latest-state integration is intentionally simple:
 
 - It stores the latest known current balance.
 - It stores the latest known withdrawal amount.
 - It stores the latest known deposit amount.
-- It does not store SMS transaction history.
-- It does not create transaction tables.
+- It stores deduped SMS transaction events for the last month.
+- Unlocked Apollo offers only the latest missing SMS transaction for explicit, one-click import into the existing receipt ledger after choosing a person.
 - It does not calculate balances from receipts.
 
 There is also a small BOA SMS event table for Apollo recent transactions only. It stores deduped deposit/withdrawal SMS events for the last month and feeds the Apollo-side Summary panel.
+
+Companion v1.1 adds receipt URL, reference, date and narrative extraction; a durable phone outbox; network-aware retry/reboot recovery; periodic inbox reconciliation; and a BOA/SMS launcher icon. See `docs/boa-sms-companion.md` for the upgrade order. The additive SQL upgrade is `backend/sql/boa_sms_transaction_import.sql`. New endpoints are `GET /boa-sms/latest-transaction` and `POST /boa-sms/transactions/latest`. Existing account and summary behavior is preserved during rollout; live import requires applying the SQL upgrade.
 
 The Apollo side of the balance card must use the BOA SMS account state, not receipt-processing calculations.
 

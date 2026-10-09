@@ -4,6 +4,10 @@ final class BoaSmsUpdate {
     final String currentBalance;
     final String latestWithdrawalAmount;
     final String latestDepositAmount;
+    String reference;
+    String transactionDate;
+    String narrative;
+    String receiptUrl;
 
     BoaSmsUpdate(String currentBalance, String latestWithdrawalAmount, String latestDepositAmount) {
         this.currentBalance = currentBalance;

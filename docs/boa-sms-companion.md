@@ -14,7 +14,52 @@ The companion app listens for incoming SMS messages, processes only BOA senders,
 - Frontend: the flipped Apollo side of the balance card reads `GET /boa-sms/account-state`.
 - Frontend: the Apollo Summary panel reads recent BOA SMS transactions from `GET /boa-sms/monthly-summary`.
 
-The receipt transaction table is still separate. BOA SMS events are used only on the Apollo side.
+The receipt transaction table stays separate. Unlocked Apollo can now offer to import **only the newest** BOA SMS event into that table; older unmatched SMS messages are never offered automatically.
+
+## Version 1.1 upgrade
+
+1. Run `backend/sql/boa_sms_transaction_import.sql` in the existing project's Supabase SQL editor. This adds SMS date/narrative/receipt fields, an optional unique `transactions.source_sms_hash`, and an atomic timestamp-aware balance merge. It does not rewrite existing transactions.
+2. Ensure the backend has `SUPABASE_SERVICE_ROLE_KEY`, then deploy the updated backend and frontend from this repository.
+3. Install the v1.1 APK with `adb install -r android-boa-sms-companion/app/build/outputs/apk/debug/app-debug.apk`. Existing connection settings and SMS permissions are retained.
+4. Open the companion. It recovers useful BOA messages from the last 31 days. `Sync Apollo transactions` can also refresh receipt metadata on previously synced messages.
+
+During rollout, the backend preserves the existing account-state and monthly-summary behavior if the additive SQL upgrade is pending. The new import stays unavailable until the required columns exist, and the phone keeps undelivered details queued for retry. The companion checks backend delivery version 2 before replaying older updates.
+
+### Apollo import behavior
+
+- Mobile/PWA: swipe to Apollo and unlock with the existing password. After two seconds, offer the newest SMS only when it is missing from the ledger.
+- Desktop: unlock Apollo on the Balance dashboard to use the same prompt.
+- No prompt on the primary card, Interest, People, Construction, or Transactions pages. Leaving Apollo closes it and cancels pending work.
+- Choose a person (or Unassigned), then click **Add transaction**. The amount, date, reference, narrative, withdrawal/deposit direction and genuine receipt URL are saved automatically. The existing **More** action appears when a receipt URL is available.
+- BOA receipt details can fill missing date/reference/narrative when its amount and reference agree with the SMS. Missing fields stay empty when neither SMS nor receipt supplies them; receipt account suffixes are never guessed.
+- The server rechecks the latest SMS before saving, detects an existing reference/receipt/hash, and uses a unique SMS hash to prevent duplicate inserts across retries or devices.
+- **Later** dismisses that SMS for the current visit; reopening the app can offer it again if still missing.
+
+### Delivery reliability
+
+Incoming SMS is written to a private, persistent phone outbox before the receiver returns. Android JobScheduler sends when a network is available, retries failures with exponential backoff, survives reboot, and periodically reconciles the inbox (nominally every 15 minutes, subject to Android battery scheduling). Opening the companion also schedules recovery. **Retry queued SMS** requests a retry immediately.
+
+The outbox contains parsed fields and a hash, not the raw SMS body. An update is acknowledged only after both its account state and transaction event have been saved. Older retries cannot replace newer balance/deposit/withdrawal values. The launcher icon and in-app logo combine BOA's gold mark with an SMS badge.
+
+### Validation commands
+
+```powershell
+$env:CI = 'true'
+npm test -- --watchAll=false --runInBand
+node --test (Get-ChildItem backend/*.test.js).FullName
+npm run build
+```
+
+Android: `gradle assembleDebug testDebugUnitTest`. The dependency-free `DeliveryInstrumentation` runner additionally checks durable queuing, failed-send retention, successful retry and deduplication on an actual phone, using isolated test preferences and a disposable local API on port 5002 via `adb reverse`.
+
+The SQL can be checked without touching live data:
+
+```powershell
+npm install --prefix .gradle-local/sql-verification --no-audit --no-fund @electric-sql/pglite
+node backend/sql/verify-boa-sms-upgrade.cjs (Resolve-Path .gradle-local/sql-verification/node_modules/@electric-sql/pglite).Path
+```
+
+The verification uses an isolated in-memory PostgreSQL instance and never touches the live database.
 
 ## Supabase Setup
 

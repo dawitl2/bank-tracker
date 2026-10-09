@@ -1,0 +1,4 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item><shape><solid android:color="#20231F" /><corners android:radius="20dp" /></shape></item>
+    <item android:drawable="@drawable/companion_foreground" />
+</layer-list>

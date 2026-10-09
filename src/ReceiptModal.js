@@ -3,7 +3,7 @@ import { FaArrowLeft, FaCar, FaImage, FaLink, FaQrcode, FaTimes } from "react-ic
 import ParkingReceiptFlow from "./ParkingReceiptFlow";
 import TransactionDateField from "./TransactionDateField";
 
-const GENERATED_TRANSACTION_FIELDS = ["id", "created_at"];
+const GENERATED_TRANSACTION_FIELDS = ["id", "created_at", "source_sms_hash"];
 
 export default function ReceiptModal({
   showModal,

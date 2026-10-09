@@ -4,6 +4,9 @@ const puppeteer = require("puppeteer-core");
 const chromium = require("@sparticuz/chromium");
 const supabase = require("./supabaseClient");
 const { registerReceiptRoutes } = require("./receiptRoutes");
+const { registerBoaSmsImportRoutes } = require("./boaSmsImportRoutes");
+const { receiptLink } = require("../src/boaSmsImport");
+const { saveBoaSmsState } = require("./boaSmsState");
 
 const app = express();
 
@@ -11,6 +14,7 @@ app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 registerReceiptRoutes(app);
+registerBoaSmsImportRoutes(app, supabase);
 
 const PORT = process.env.PORT || 5000;
 const BASE_URL = "https://bank-backend-anhp.onrender.com";
@@ -88,6 +92,7 @@ const requireBoaSmsToken = (req, res, next) => {
 };
 
 const formatBoaSmsState = (row) => ({
+  delivery_version: 2,
   current_balance: row?.current_balance ?? null,
   latest_withdrawal_amount: row?.latest_withdrawal_amount ?? null,
   latest_deposit_amount: row?.latest_deposit_amount ?? null,
@@ -131,7 +136,10 @@ const buildBoaSmsEvent = ({
     transaction_type: transactionType,
     amount,
     balance_after: currentBalance,
-    raw_reference: payload.reference || null
+    raw_reference: payload.reference || null,
+    transaction_date: payload.transaction_date || null,
+    narrative: payload.narrative || null,
+    receipt_url: receiptLink(payload.receipt_url)
   };
 };
 
@@ -151,11 +159,19 @@ const saveBoaSmsEvent = async (event) => {
     return { skipped: true };
   }
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("boa_sms_events")
     .upsert(event, { onConflict: "message_hash" })
     .select()
     .single();
+
+  if (["PGRST204", "42703"].includes(error?.code)) {
+    // Preserve the existing SMS summary while the additive schema upgrade is pending.
+    const { transaction_date, narrative, receipt_url, ...legacyEvent } = event;
+    const legacy = await supabase.from("boa_sms_events").upsert(legacyEvent, { onConflict: "message_hash" }).select().single();
+    data = legacy.data;
+    error = legacy.error || { message: "Apply boa_sms_transaction_import.sql to retain receipt details" };
+  }
 
   if (!error) {
     pruneOldBoaSmsEvents();
@@ -470,6 +486,8 @@ app.post("/boa-sms/account-state", requireBoaSmsToken, async (req, res) => {
   const sender = payload.sender || null;
   const messageHash = payload.message_hash || null;
 
+  if (!Number.isFinite(Date.parse(smsReceivedAt))) return res.status(400).json({ error: "Invalid SMS date" });
+
   if (!isBoaSender(sender)) {
     return res.status(400).json({
       error: "BOA SMS updates must come from a BOA sender"
@@ -513,11 +531,7 @@ app.post("/boa-sms/account-state", requireBoaSmsToken, async (req, res) => {
     });
   }
 
-  const { data, error } = await supabase
-    .from("boa_sms_account_state")
-    .upsert(update, { onConflict: "id" })
-    .select()
-    .single();
+  const { data, error } = await saveBoaSmsState(supabase, update);
 
   if (error) {
     console.error("BOA SMS UPSERT ERROR:", error);
@@ -542,6 +556,7 @@ app.post("/boa-sms/account-state", requireBoaSmsToken, async (req, res) => {
 
     if (eventError) {
       console.error("BOA SMS EVENT UPSERT ERROR:", eventError);
+      return res.status(503).json({ error: "BOA SMS transaction could not be saved; retry this update" });
     }
   }
 
@@ -554,6 +569,8 @@ app.post("/boa-sms/events", requireBoaSmsToken, async (req, res) => {
   const smsReceivedAt = payload.sms_received_at || new Date().toISOString();
   const sender = payload.sender || null;
   const messageHash = payload.message_hash || null;
+
+  if (!Number.isFinite(Date.parse(smsReceivedAt))) return res.status(400).json({ error: "Invalid SMS date" });
 
   if (!isBoaSender(sender)) {
     return res.status(400).json({

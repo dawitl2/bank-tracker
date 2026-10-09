@@ -6,6 +6,7 @@ import {
   FaArrowRight
 } from "react-icons/fa";
 import "./DesktopStyles.css";
+import ApolloTransactionPrompt from "../ApolloTransactionPrompt";
 
 const VISIBILITY_PASSWORD = "pass";
 const BASE_BALANCE = 1209518;
@@ -84,7 +85,10 @@ export default function DesktopDashboard({
   boaSmsLoading = false,
   parkingPayments = [],
   suqePayments = [],
-  navigate
+  navigate,
+  currentPath,
+  personOptions = [],
+  onSmsTransactionAdded
 }) {
   const getVisibilityDayKey = () => new Date().toISOString().slice(0, 10);
   
@@ -186,6 +190,12 @@ export default function DesktopDashboard({
 
   return (
     <div className="desktop-main-content" style={{ padding: 0, height: "auto", minHeight: "100%" }}>
+      <ApolloTransactionPrompt
+        enabled={apolloUnlocked && (currentPath === "/balance" || currentPath === "/balance/summary")}
+        transactions={transactions}
+        personOptions={personOptions}
+        onAdded={onSmsTransactionAdded}
+      />
       {/* Redesigned section header */}
       <div className="desktop-section-header">
         <div>

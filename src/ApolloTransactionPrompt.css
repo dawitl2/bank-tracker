@@ -1,0 +1,27 @@
+.apollo-transaction-overlay {
+  position: fixed; inset: 0; top: var(--apollo-visible-top, 0px);
+  height: var(--apollo-visible-height, 100dvh); z-index: 12000;
+  background: rgba(18, 23, 25, .65); display: grid; place-items: center;
+  padding: 20px; box-sizing: border-box; overflow-y: auto;
+}
+.apollo-transaction-dialog {
+  width: min(100%, 440px); max-height: 100%; overflow-y: auto;
+  box-sizing: border-box; padding: 26px; border-radius: 22px;
+  background: #fff; color: #20231f; box-shadow: 0 24px 80px #0004;
+}
+.apollo-transaction-source { color: #956600; font-size: 12px; font-weight: 700; }
+.apollo-transaction-dialog h2 { font-size: 23px; margin: 10px 0; }
+.apollo-transaction-dialog p { color: #626a70; font-size: 14px; line-height: 1.5; }
+.apollo-transaction-dialog dl { margin: 20px 0; padding: 16px; border-radius: 12px; background: #faf7f0; }
+.apollo-transaction-dialog dl > div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; font-size: 13px; }
+.apollo-transaction-dialog dt { color: #626a70; flex-shrink: 0; }
+.apollo-transaction-dialog dd { margin: 0; text-align: right; font-weight: 600; overflow-wrap: anywhere; }
+.apollo-transaction-dialog a { color: #956600; font-size: 14px; }
+.apollo-transaction-dialog label { display: block; margin: 20px 0 8px; font-size: 14px; font-weight: 600; }
+.apollo-transaction-dialog select { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #d8dce0; border-radius: 10px; background: #fff; color: #20231f; }
+.apollo-transaction-actions { display: flex; gap: 10px; margin-top: 22px; }
+.apollo-transaction-actions button { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 10px; cursor: pointer; background: #f7f7f7; color: #20231f; font-weight: 700; }
+.apollo-transaction-actions button[type=submit] { background: #f4a300; border-color: #f4a300; }
+.apollo-transaction-actions button:disabled { opacity: .6; cursor: default; }
+.apollo-transaction-dialog .apollo-transaction-error { color: #b32020; }
+.apollo-transaction-dialog :focus-visible { outline: 3px solid #b87200; outline-offset: 3px; }

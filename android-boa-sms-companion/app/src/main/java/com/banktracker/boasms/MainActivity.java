@@ -15,6 +15,7 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.ImageView;
 
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -78,6 +79,7 @@ public final class MainActivity extends Activity {
         super.onResume();
         refreshStatus();
         readLatestBoaSms();
+        SmsDelivery.schedule(this);
     }
 
     @Override
@@ -87,6 +89,7 @@ public final class MainActivity extends Activity {
         if (requestCode == SMS_PERMISSION_REQUEST) {
             refreshStatus();
             readLatestBoaSms();
+            SmsDelivery.schedule(this);
         }
     }
 
@@ -98,8 +101,12 @@ public final class MainActivity extends Activity {
         root.setPadding(dp(20), dp(22), dp(20), dp(22));
         scrollView.addView(root);
 
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(R.drawable.companion_icon);
+        icon.setContentDescription("BOA SMS Companion logo");
+        root.addView(icon, new LinearLayout.LayoutParams(dp(80), dp(80)));
         root.addView(text("BOA SMS Companion", 24, true));
-        root.addView(text("Token for now: boa123", 15, true));
+        root.addView(text("Version 1.1 · Automatic delivery and retry", 14, false));
 
         permissionStatus = statusText("");
         root.addView(permissionStatus);
@@ -122,6 +129,7 @@ public final class MainActivity extends Activity {
         Button saveButton = button("Save and test connection");
         saveButton.setOnClickListener(view -> {
             SettingsStore.saveConnection(this, apiUrlInput.getText().toString(), tokenInput.getText().toString());
+            SmsDelivery.schedule(this);
             refreshStatus();
             testConnection();
         });
@@ -151,6 +159,14 @@ public final class MainActivity extends Activity {
         root.addView(text("Send status", 17, true));
         lastStatus = statusText(SettingsStore.getLastStatus(this));
         root.addView(lastStatus);
+        Button retryButton = button("Retry queued SMS");
+        retryButton.setOnClickListener(view -> {
+            getSystemService(android.app.job.JobScheduler.class).cancel(4101);
+            SmsDelivery.schedule(this);
+            refreshStatus();
+        });
+        root.addView(retryButton);
+        root.addView(text("SMS stays on this phone until delivery succeeds. If your phone restricts background activity, allow background battery use for this companion. Reopen it to recover missed BOA messages.", 13, false));
 
         root.addView(text("Parser test", 17, true));
         parserInput = input("Paste sample BOA SMS to test parser");
@@ -300,14 +316,15 @@ public final class MainActivity extends Activity {
 
         executor.execute(() -> {
             try {
-                ApiClient.sendUpdate(
+                SmsDelivery.enqueue(
                     getApplicationContext(),
                     latestInboxUpdate,
                     latestInboxSender,
                     latestInboxDate,
-                    sha256(latestInboxSender + "\n" + latestInboxBody)
+                    sha256(latestInboxSender + "\n" + latestInboxBody), false, true
                 );
-                SettingsStore.setLastStatus(getApplicationContext(), "Latest parsed BOA SMS sent successfully.");
+                SmsDelivery.schedule(getApplicationContext());
+                SettingsStore.setLastStatus(getApplicationContext(), "Latest BOA SMS queued. Delivery retries automatically.");
                 runOnUiThread(() -> {
                     lastStatus.setText(SettingsStore.getLastStatus(this));
                     lastStatus.setTextColor(Color.rgb(24, 128, 56));
@@ -379,24 +396,25 @@ public final class MainActivity extends Activity {
                 int sent = 0;
 
                 for (PendingSmsUpdate pending : updates) {
-                    ApiClient.sendEventOnly(
+                    SmsDelivery.enqueue(
                         getApplicationContext(),
                         pending.update,
                         pending.sender,
                         pending.receivedAt,
-                        sha256(pending.sender + "\n" + pending.body)
+                        sha256(pending.sender + "\n" + pending.body), true, true
                     );
                     sent++;
                 }
 
                 PendingSmsUpdate latest = updates.get(updates.size() - 1);
+                SmsDelivery.schedule(getApplicationContext());
                 SettingsStore.setLastExtracted(
                     getApplicationContext(),
                     SmsTools.describeUpdate(latest.update, latest.sender, latest.receivedAt)
                 );
                 SettingsStore.setLastStatus(
                     getApplicationContext(),
-                    "Synced " + sent + " Apollo transaction rows. Latest balance row was not changed."
+                    "Queued " + sent + " Apollo transaction rows. Delivery retries automatically."
                 );
                 runOnUiThread(() -> {
                     refreshStatus();

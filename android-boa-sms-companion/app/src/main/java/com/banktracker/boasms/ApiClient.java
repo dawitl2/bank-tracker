@@ -42,17 +42,18 @@ final class ApiClient {
         long receivedAtMillis,
         String messageHash
     ) throws Exception {
-        String apiUrl = SettingsStore.getApiUrl(context);
-        String token = SettingsStore.getApiToken(context);
+        postPayload(context, path, smsPayload(update, sender, receivedAtMillis, messageHash));
+    }
 
-        if (apiUrl.isEmpty() || token.isEmpty()) {
-            throw new IllegalStateException("Backend URL or token is not configured.");
-        }
-
+    static JSONObject smsPayload(BoaSmsUpdate update, String sender, long receivedAtMillis, String messageHash) throws Exception {
         JSONObject body = new JSONObject();
         body.put("sender", sender);
         body.put("sms_received_at", isoUtc(receivedAtMillis));
         body.put("message_hash", messageHash);
+        body.put("reference", update.reference);
+        body.put("transaction_date", update.transactionDate);
+        body.put("narrative", update.narrative);
+        body.put("receipt_url", update.receiptUrl);
 
         if (update.currentBalance != null) {
             body.put("current_balance", update.currentBalance);
@@ -66,27 +67,28 @@ final class ApiClient {
             body.put("latest_deposit_amount", update.latestDepositAmount);
         }
 
+        return body;
+    }
+
+    static void postPayload(Context context, String path, JSONObject body) throws Exception {
+        String apiUrl = SettingsStore.getApiUrl(context);
+        String token = SettingsStore.getApiToken(context);
+        if (apiUrl.isEmpty() || token.isEmpty()) throw new IllegalStateException("Backend URL or token is not configured.");
         byte[] bytes = body.toString().getBytes(StandardCharsets.UTF_8);
         HttpURLConnection connection = (HttpURLConnection) new URL(apiUrl + path).openConnection();
         connection.setRequestMethod("POST");
-        connection.setConnectTimeout(8000);
-        connection.setReadTimeout(8000);
+        connection.setConnectTimeout(20000);
+        connection.setReadTimeout(90000);
         connection.setDoOutput(true);
         connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
         connection.setRequestProperty("Authorization", "Bearer " + token);
 
-        try (OutputStream stream = connection.getOutputStream()) {
-            stream.write(bytes);
-        }
-
-        int status = connection.getResponseCode();
-        String response = readResponse(status >= 200 && status < 300
-            ? connection.getInputStream()
-            : connection.getErrorStream());
-
-        if (status < 200 || status >= 300) {
-            throw new IllegalStateException("Backend returned HTTP " + status + ": " + response);
-        }
+        try {
+            try (OutputStream stream = connection.getOutputStream()) { stream.write(bytes); }
+            int status = connection.getResponseCode();
+            String response = readResponse(status >= 200 && status < 300 ? connection.getInputStream() : connection.getErrorStream());
+            if (status < 200 || status >= 300) throw new IllegalStateException("Backend returned HTTP " + status + ": " + response);
+        } finally { connection.disconnect(); }
     }
 
     static String fetchAccountState(Context context) throws Exception {
@@ -98,19 +100,14 @@ final class ApiClient {
 
         HttpURLConnection connection = (HttpURLConnection) new URL(apiUrl + "/boa-sms/account-state").openConnection();
         connection.setRequestMethod("GET");
-        connection.setConnectTimeout(8000);
-        connection.setReadTimeout(8000);
-
-        int status = connection.getResponseCode();
-        String response = readResponse(status >= 200 && status < 300
-            ? connection.getInputStream()
-            : connection.getErrorStream());
-
-        if (status < 200 || status >= 300) {
-            throw new IllegalStateException("Backend returned HTTP " + status + ": " + response);
-        }
-
-        return response;
+        connection.setConnectTimeout(20000);
+        connection.setReadTimeout(90000);
+        try {
+            int status = connection.getResponseCode();
+            String response = readResponse(status >= 200 && status < 300 ? connection.getInputStream() : connection.getErrorStream());
+            if (status < 200 || status >= 300) throw new IllegalStateException("Backend returned HTTP " + status + ": " + response);
+            return response;
+        } finally { connection.disconnect(); }
     }
 
     private static String readResponse(InputStream stream) throws Exception {
@@ -122,8 +119,8 @@ final class ApiClient {
         StringBuilder response = new StringBuilder();
         int read;
 
-        while ((read = stream.read(buffer)) != -1) {
-            response.append(new String(buffer, 0, read, StandardCharsets.UTF_8));
+        try (InputStream input = stream) {
+            while ((read = input.read(buffer)) != -1) response.append(new String(buffer, 0, read, StandardCharsets.UTF_8));
         }
 
         return response.toString();

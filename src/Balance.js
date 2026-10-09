@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import useApolloViewport from "./useApolloViewport";
+import ApolloTransactionPrompt from "./ApolloTransactionPrompt";
 import {
   FaArrowLeft,
   FaBolt,
@@ -825,7 +826,10 @@ function Balance({
   fetchDbPayments,
   people = [],
   fetchPeople,
-  openParkingModal
+  openParkingModal,
+  ledgerTransactions = [],
+  personOptions = [],
+  onSmsTransactionAdded
 }) {
   const [activePanel, setActivePanel] = useState("summary");
 
@@ -1202,6 +1206,12 @@ function Balance({
 
   return (
     <div className="balance-page balance-dashboard">
+      <ApolloTransactionPrompt
+        enabled={isFlipped && apolloUnlocked && activePanel === "summary" && (currentPath === "/balance" || currentPath === "/balance/summary")}
+        transactions={ledgerTransactions}
+        personOptions={personOptions}
+        onAdded={onSmsTransactionAdded}
+      />
 
       <section className="balance-hero">
         <div

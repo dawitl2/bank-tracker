@@ -86,7 +86,29 @@ final class BoaSmsParser {
         }
 
         BoaSmsUpdate update = new BoaSmsUpdate(balance, withdrawal, deposit);
+        update.receiptUrl = extract(text, "(?i)https://cs\\.bankofabyssinia\\.com/slip/?\\?trx=[a-z0-9]{10,60}");
+        update.reference = extract(text, "(?i)\\bFT[0-9A-Z]{8,}\\b");
+        if (update.reference != null && update.receiptUrl != null) {
+            // A receipt token includes an account suffix. Keep only a separately stated reference.
+            String withoutLink = text.replace(update.receiptUrl, "");
+            update.reference = extract(withoutLink, "(?i)\\bFT[0-9A-Z]{8,}\\b");
+        }
+        if (update.reference == null) {
+            update.reference = capture(text, "(?i)\\b(?:reference(?: number)?|ref(?: no)?|transaction (?:id|reference))\\s*[:#-]?\\s*([a-z0-9]{6,40})\\b");
+        }
+        update.transactionDate = capture(text, "(?i)\\b(?:on|date|dated)\\s*:?\\s*(\\d{1,2}/\\d{1,2}/(?:\\d{4}|\\d{2})(?:[, ]+\\d{1,2}:\\d{2}(?::\\d{2})?)?)");
+        update.narrative = capture(text, "(?i)\\b(?:narrative|payment reason|reason|description)\\s*:\\s*(.+?)(?=\\s+(?:https?://|(?:available|current|new)? ?balance|ref(?:erence)?\\b)|$)");
         return update.hasValues() ? update : null;
+    }
+
+    private static String extract(String text, String regex) {
+        Matcher matcher = Pattern.compile(regex).matcher(text);
+        return matcher.find() ? matcher.group() : null;
+    }
+
+    private static String capture(String text, String regex) {
+        Matcher matcher = Pattern.compile(regex).matcher(text);
+        return matcher.find() ? matcher.group(1).trim() : null;
     }
 
     private static boolean isOtp(String lower) {

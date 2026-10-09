@@ -13,10 +13,16 @@ final class SmsTools {
             + "Received: " + new SimpleDateFormat("MMM d, h:mm a", Locale.US).format(new Date(receivedAtMillis)) + "\n"
             + "Balance: " + value(update.currentBalance) + "\n"
             + "Withdrawal: " + value(update.latestWithdrawalAmount) + "\n"
-            + "Deposit: " + value(update.latestDepositAmount);
+            + "Deposit: " + value(update.latestDepositAmount) + "\n"
+            + "Reference: " + detail(update.reference) + "\n"
+            + "Transaction date: " + detail(update.transactionDate) + "\n"
+            + "Narrative: " + detail(update.narrative) + "\n"
+            + "Receipt: " + detail(update.receiptUrl);
     }
 
     private static String value(String value) {
         return value == null || value.trim().isEmpty() ? "0.0" : value;
     }
+
+    private static String detail(String value) { return value == null || value.isEmpty() ? "Not included in SMS" : value; }
 }
