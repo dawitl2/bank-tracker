@@ -61,6 +61,8 @@ node backend/sql/verify-boa-sms-upgrade.cjs (Resolve-Path .gradle-local/sql-veri
 
 The verification uses an isolated in-memory PostgreSQL instance and never touches the live database.
 
+`src/boaSmsImport.js` and `backend/boaSmsImport.js` contain identical matching/date rules so React and a backend deployed from the `backend/` directory both work independently. When changing these rules, update both files; the backend tests enforce consistency.
+
 ## Supabase Setup
 
 Run these SQL files in the Supabase SQL editor:

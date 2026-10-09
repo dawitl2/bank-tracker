@@ -3,6 +3,13 @@ const assert = require("node:assert/strict");
 const express = require("express");
 const { registerBoaSmsImportRoutes } = require("./boaSmsImportRoutes");
 const { mergeFields } = require("./boaSmsState");
+const fs = require("node:fs");
+const path = require("node:path");
+
+test("backend deployment has a self-contained copy of the frontend SMS matching rules", () => {
+  const read = file => fs.readFileSync(path.join(__dirname, file), "utf8").replace(/\r\n/g, "\n");
+  assert.equal(read("boaSmsImport.js"), read("../src/boaSmsImport.js"));
+});
 
 const latest = { id: 2, message_hash: "newest", sms_received_at: "2026-10-09T08:30:00Z", transaction_type: "withdrawal", amount: "1200.50", raw_reference: "FT26282TEST", narrative: "Materials", receipt_url: "https://cs.bankofabyssinia.com/slip/?trx=FT26282TEST41349" };
 function database(events = [latest], rows = []) {

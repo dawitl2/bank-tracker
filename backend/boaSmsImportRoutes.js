@@ -1,4 +1,4 @@
-const { matchesSmsTransaction, smsTransactionDraft, receiptLink, formatTransactionDate } = require("../src/boaSmsImport");
+const { matchesSmsTransaction, smsTransactionDraft, receiptLink, formatTransactionDate } = require("./boaSmsImport");
 const { getBankReceipt } = require("./boaReceipt");
 
 function registerBoaSmsImportRoutes(app, supabase, fetchReceipt = getBankReceipt) {

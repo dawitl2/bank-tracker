@@ -5,7 +5,7 @@ const chromium = require("@sparticuz/chromium");
 const supabase = require("./supabaseClient");
 const { registerReceiptRoutes } = require("./receiptRoutes");
 const { registerBoaSmsImportRoutes } = require("./boaSmsImportRoutes");
-const { receiptLink } = require("../src/boaSmsImport");
+const { receiptLink } = require("./boaSmsImport");
 const { saveBoaSmsState } = require("./boaSmsState");
 
 const app = express();
