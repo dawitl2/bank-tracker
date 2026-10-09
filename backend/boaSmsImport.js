@@ -39,6 +39,20 @@ function referenceValue(value) {
   return String(value || "").trim().toUpperCase();
 }
 
+function decodeSmsEvent(event) {
+  if (!event) return null;
+  const prefix = "boa-sms:v1:";
+  if (typeof event.raw_reference === "string" && event.raw_reference.startsWith(prefix)) {
+    try {
+      const details = JSON.parse(event.raw_reference.slice(prefix.length));
+      return Object.assign({}, event, { raw_reference: details.reference || null,
+        transaction_date: details.transaction_date || null,
+        narrative: details.narrative || null, receipt_url: receiptLink(details.receipt_url) });
+    } catch { /* Historical plain references remain readable. */ }
+  }
+  return Object.assign({}, event, { receipt_url: receiptLink(event.receipt_url) });
+}
+
 function matchesSmsTransaction(event, transaction) {
   if (event.message_hash && transaction.source_sms_hash === event.message_hash) return true;
   const reference = referenceValue(event.raw_reference || event.reference);
@@ -74,4 +88,4 @@ function smsTransactionDraft(event, person = null) {
   };
 }
 
-module.exports = { transactionDate, formatTransactionDate, receiptLink, matchesSmsTransaction, newestSmsEvent, smsTransactionDraft };
+module.exports = { transactionDate, formatTransactionDate, receiptLink, decodeSmsEvent, matchesSmsTransaction, newestSmsEvent, smsTransactionDraft };

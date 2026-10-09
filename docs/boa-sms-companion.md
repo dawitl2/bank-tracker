@@ -16,26 +16,25 @@ The companion app listens for incoming SMS messages, processes only BOA senders,
 
 The receipt transaction table stays separate. The **Check latest** button on unlocked Apollo compares only the newest BOA SMS with the saved table.
 
-## Version 1.1 update
+## Version 1.1.1 update
 
 1. Deploy the updated backend and frontend with the existing backend database credentials. **No database migration or new columns are required.**
-2. Install the v1.1 APK with `adb install -r android-boa-sms-companion/app/build/outputs/apk/debug/app-debug.apk`. Existing connection settings and SMS permissions are retained.
+2. Install the v1.1.1 APK with `adb install -r android-boa-sms-companion/app/build/outputs/apk/debug/app-debug.apk`. Existing connection settings and SMS permissions are retained.
 3. Open the companion. It recovers useful BOA messages from the last 31 days. `Sync Apollo transactions` can refresh receipt metadata on previously synced messages.
 
-The backend stores receipt/date/narrative metadata in a versioned envelope inside the existing SMS `raw_reference` text column. API responses decode it into separate fields and the original reference. Historical plain references and previously expanded rows remain readable. This fixes failed delivery caused by requiring extra columns. The phone retains failed requests for retry and checks backend delivery version 2 before replaying older updates.
+The backend stores receipt/date/narrative metadata in a versioned envelope inside the existing SMS `raw_reference` text column. API responses decode it into separate fields and the original reference. Historical plain references and previously expanded rows remain readable. This fixes failed delivery caused by requiring extra columns. The phone retains failed requests for retry. Version 1.1.1 also supports the existing live backend: it saves the event first, encodes metadata in its existing reference field, and only sends a state update when the SMS is newer than all saved state timestamps. Upgraded servers use the version 2 protocol.
 
 ### Apollo import behavior
 
 - Mobile/PWA: **Check latest** appears at the top right of the unlocked Apollo Balance panel. Primary keeps its original ETB label. Interest has no check button.
 - Desktop: only the unlocked Apollo account card has **Check latest** inside its top right corner.
-- Every button click opens an Apollo-themed password dialog using the existing Apollo password. Unlocking the balance alone does not start a check or show an automatic prompt.
-- After the password is accepted, compare only the newest SMS against saved transactions. A match shows **Up to date**; older unmatched messages are never offered.
+- The check reuses Apollo's existing unlock. Clicking **Check latest** opens a compact Apollo-themed dialog with a short explanation; it does not ask for the password again. Unlocking the balance alone does not start a check.
+- Read only the newest SMS from the existing public-read SMS table and compare it with fresh saved transactions from the existing backend. A match shows **Up to date**; older unmatched messages are never offered. This does not depend on the newer `/boa-sms/latest-transaction` route being deployed.
 - Choose a known person (or Unassigned) from the dropdown, then click **Add transaction**. Tap the narrative to edit it; it defaults to **Materials** when no narrative is supplied. Reference and receipt information are revealed under **Details**.
 - Amount, date, reference, the chosen narrative, withdrawal/deposit direction and genuine receipt URL are saved through the same `POST /transactions` endpoint as the plus button. The existing **More** action appears when a receipt URL is available.
 - BOA receipt details can fill missing date/reference/narrative when its amount and reference agree with the SMS. References and links stay empty when neither source supplies them; receipt account suffixes are never guessed.
-- An import request carries a transient `_boa_sms_message_hash` marker, which is never stored in the transaction table. The server validates it against the newest SMS, builds the transaction from trusted event fields and the chosen person/narrative, and rechecks saved references/receipt links or amount/date/direction before inserting.
-- Imports are serialized within one backend process to prevent double clicks and simultaneous retries from inserting twice. Multiple backend replicas would require a database uniqueness constraint for an absolute cross-process guarantee.
-- **Later** closes the popup. Clicking **Check latest** again starts a fresh password-protected check. Leaving Balance/going to Interest closes pending checks.
+- Before saving, the client fetches the newest SMS and saved transactions again. If the SMS changed, it requests another check; if already saved, it shows **Up to date**. The save uses ordinary plus-button fields with no new backend marker. Double clicks are blocked locally; simultaneous imports from separate devices would require a database uniqueness constraint for an absolute guarantee.
+- **Later** closes the popup. Clicking **Check latest** again starts a fresh check using the existing unlock. Leaving Balance/going to Interest closes pending checks.
 
 ### Delivery reliability
 

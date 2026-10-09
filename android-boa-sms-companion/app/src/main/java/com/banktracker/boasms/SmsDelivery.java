@@ -57,11 +57,10 @@ final class SmsDelivery {
         synchronized (LOCK) { return !pending(context).getAll().isEmpty(); }
     }
 
-    static void flush(Context context, java.util.function.BooleanSupplier stopped) throws Exception {
+    static synchronized void flush(Context context, java.util.function.BooleanSupplier stopped) throws Exception {
         if (!hasPending(context)) return;
-        // An older backend cannot retain the new fields or merge delayed account updates safely.
         JSONObject serverState = new JSONObject(ApiClient.fetchAccountState(context));
-        if (serverState.optInt("delivery_version", 0) < 2) throw new IllegalStateException("Waiting for the backend update; SMS remains queued.");
+        boolean legacyBackend = serverState.optInt("delivery_version", 0) < 2;
         while (!stopped.getAsBoolean()) {
             String key = null;
             JSONObject item = null;
@@ -74,7 +73,26 @@ final class SmsDelivery {
                 }
             }
             if (item == null) return;
-            ApiClient.postPayload(context, item.getString("path"), item.getJSONObject("body"));
+            if (legacyBackend) {
+                JSONObject body = legacyPayload(item.getJSONObject("body"));
+                boolean hasTransaction = body.has("latest_withdrawal_amount") || body.has("latest_deposit_amount");
+                // This endpoint acknowledges the event write, unlike the old
+                // account-state endpoint which silently ignored event failures.
+                if (hasTransaction) ApiClient.postPayload(context, "/boa-sms/events", body);
+                if ("/boa-sms/account-state".equals(item.getString("path"))) {
+                    serverState = new JSONObject(ApiClient.fetchAccountState(context));
+                    long receivedAt = java.time.Instant.parse(body.getString("sms_received_at")).toEpochMilli();
+                    long newestStateAt = 0;
+                    for (String field : new String[] { "last_sms_at", "balance_updated_at", "withdrawal_updated_at", "deposit_updated_at" }) {
+                        String timestamp = serverState.optString(field, "");
+                        if (!timestamp.isEmpty() && !"null".equals(timestamp)) newestStateAt = Math.max(newestStateAt, java.time.Instant.parse(timestamp).toEpochMilli());
+                    }
+                    // Recover historical events without rewinding the live balance.
+                    if (receivedAt > newestStateAt) ApiClient.postPayload(context, "/boa-sms/account-state", body);
+                }
+            } else {
+                ApiClient.postPayload(context, item.getString("path"), item.getJSONObject("body"));
+            }
             synchronized (LOCK) {
                 // A success lost before this acknowledgement is safe to resend: server hashes are unique.
                 if (!sent(context).edit().putLong(key, System.currentTimeMillis()).commit()) throw new IllegalStateException("Could not acknowledge SMS");
@@ -82,6 +100,20 @@ final class SmsDelivery {
             }
             SettingsStore.setLastStatus(context, "BOA SMS delivered successfully.");
         }
+    }
+
+    private static JSONObject legacyPayload(JSONObject original) throws Exception {
+        JSONObject body = new JSONObject(original.toString());
+        if (body.has("transaction_date") || body.has("narrative") || body.has("receipt_url")) {
+            JSONObject details = new JSONObject();
+            details.put("reference", body.opt("reference") == null ? JSONObject.NULL : body.opt("reference"));
+            details.put("transaction_date", body.opt("transaction_date") == null ? JSONObject.NULL : body.opt("transaction_date"));
+            details.put("narrative", body.opt("narrative") == null ? JSONObject.NULL : body.opt("narrative"));
+            details.put("receipt_url", body.opt("receipt_url") == null ? JSONObject.NULL : body.opt("receipt_url"));
+            // Older servers already preserve this text field. New clients decode it.
+            body.put("reference", "boa-sms:v1:" + details);
+        }
+        return body;
     }
 
     static void reconcileInbox(Context context) throws Exception {

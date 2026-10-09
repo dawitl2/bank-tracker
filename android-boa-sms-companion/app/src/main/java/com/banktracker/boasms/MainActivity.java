@@ -106,7 +106,7 @@ public final class MainActivity extends Activity {
         icon.setContentDescription("BOA SMS Companion logo");
         root.addView(icon, new LinearLayout.LayoutParams(dp(80), dp(80)));
         root.addView(text("BOA SMS Companion", 24, true));
-        root.addView(text("Version 1.1 · Automatic delivery and retry", 14, false));
+        root.addView(text("Version 1.1.1 · Automatic delivery and retry", 14, false));
 
         permissionStatus = statusText("");
         root.addView(permissionStatus);
