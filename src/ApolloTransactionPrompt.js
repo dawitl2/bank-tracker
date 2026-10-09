@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { smsTransactionDraft } from "./boaSmsImport";
 import { API_URL, checkLatestSms, readJsonResponse } from "./boaSmsClient";
+import { formatTransactionAmount } from "./transactionAmount";
 import useApolloViewport from "./useApolloViewport";
 import "./ApolloTransactionPrompt.css";
 
@@ -30,10 +31,10 @@ export default function ApolloTransactionPrompt({ requestId = 0, enabled = false
       const data = await checkLatestSms(pending.signal);
       if (pending.signal.aborted) return;
       if (!data.event) { setStage("empty"); return; }
+      setEvent(data.event);
       if (data.already_added) {
         setStage("matched"); return;
       }
-      setEvent(data.event);
       setPerson("");
       setNarrative(data.event.narrative || "Materials");
       setEditingNarrative(false);
@@ -126,11 +127,11 @@ export default function ApolloTransactionPrompt({ requestId = 0, enabled = false
         <h2 id="apollo-transaction-title" aria-live="polite">{titles[stage]}</h2>
         {stage === "checking" && <p role="status">Comparing your latest BOA SMS with saved transactions.</p>}
         {stage === "empty" && <p>Sync your messages, then try again.</p>}
-        {stage === "matched" && <p>Your latest SMS is already saved.</p>}
+        {stage === "matched" && <><p>Your latest SMS is already saved.</p><dl><div><dt>Reference</dt><dd>{draft?.reference}</dd></div></dl></>}
         {stage === "transaction" && <>
           <p>Select a person to add this transaction.</p>
           <dl>
-            <div><dt>{draft.is_withdraw ? "Withdrawal" : "Deposit"}</dt><dd>ETB {Number(draft.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}</dd></div>
+            <div><dt>{draft.is_withdraw ? "Withdrawal" : "Deposit"}</dt><dd>ETB {formatTransactionAmount(draft.amount)}</dd></div>
             <div><dt>Date</dt><dd>{draft.date}</dd></div>
             <div><dt>Narrative</dt><dd>
               {editingNarrative ? <input aria-label="Narrative" className="apollo-narrative-input" value={narrative} maxLength={2000} autoFocus disabled={saving} onChange={change => setNarrative(change.target.value)} onBlur={() => setEditingNarrative(false)} onKeyDown={keyEvent => { if (keyEvent.key === "Enter") keyEvent.preventDefault(); }} />

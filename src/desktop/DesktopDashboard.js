@@ -7,16 +7,17 @@ import {
 } from "react-icons/fa";
 import "./DesktopStyles.css";
 import ApolloTransactionPrompt from "../ApolloTransactionPrompt";
+import { formatTransactionAmount } from "../transactionAmount";
 
 const VISIBILITY_PASSWORD = "pass";
 const BASE_BALANCE = 1209518;
 
-const money = (value) => Math.round(value || 0).toLocaleString("en-US");
+const money = (value) => formatTransactionAmount(value || 0);
 const parseAmount = (value) => parseFloat(value?.toString().replace(/[^\d.-]/g, "")) || 0;
 
 const formatSmsMoney = (value) => {
   const parsed = parseAmount(value);
-  return parsed ? money(parsed) : "0.0";
+  return formatTransactionAmount(parsed);
 };
 
 const formatSmsDate = (value) => {

@@ -18,12 +18,13 @@ import {
   FaChevronRight 
 } from "react-icons/fa";
 import "./DesktopStyles.css";
+import { formatTransactionAmount } from "../transactionAmount";
 
 const SUPABASE_URL = "https://ywplzexakisliebyjtyf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_nmA6IJsDGUVki5i0smS1Tg_MLXy5_wX";
 
 const parseAmount = (value) => parseFloat(value?.toString().replace(/[^\d.-]/g, "")) || 0;
-const money = (value) => Math.round(value || 0).toLocaleString("en-US");
+const money = (value) => formatTransactionAmount(value || 0);
 
 const getCategory = (narrative) => {
   const text = (narrative || "").toLowerCase();
@@ -609,7 +610,7 @@ export default function DesktopPeople({
                         <tr key={tx.id} style={{ opacity: tx.is_custom ? 0.95 : 1 }}>
                           <td style={{ fontSize: "13px", padding: "16px 20px", whiteSpace: "nowrap" }}>{tx.date || tx.created_at}</td>
                           <td style={{ fontSize: "13px", padding: "16px 20px", fontWeight: 700, color: tx.is_withdraw === false ? "var(--desktop-color-deposit)" : "inherit" }}>
-                            ETB {tx.amount}
+                            ETB {formatTransactionAmount(tx.amount)}
                           </td>
                           <td style={{ fontSize: "13px", padding: "16px 20px" }}>
                             {tx.is_custom && <span className="desktop-badge" style={{ padding: "2px 6px", fontSize: "9px", background: "rgba(0,0,0,0.06)", marginRight: "6px" }}>DB Custom</span>}

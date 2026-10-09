@@ -39,6 +39,22 @@ function referenceValue(value) {
   return String(value || "").trim().toUpperCase();
 }
 
+function receiptReference(value) {
+  const link = receiptLink(value);
+  if (!link) return null;
+  // Reference lengths vary. Retain the full receipt identifier when the
+  // bank's canonical reference cannot be fetched, rather than guessing a cut.
+  return new URL(link).searchParams.get("trx").toUpperCase();
+}
+
+function fallbackSmsReference(event) {
+  return `SMS-${String(event.message_hash || event.id || `${event.sms_received_at}-${event.amount}`).replace(/[^a-z0-9]/gi, "").slice(0, 20).toUpperCase()}`;
+}
+
+function smsReference(event) {
+  return event.raw_reference || event.reference || receiptReference(event.receipt_url) || fallbackSmsReference(event);
+}
+
 function decodeSmsEvent(event) {
   if (!event) return null;
   const prefix = "boa-sms:v1:";
@@ -55,9 +71,10 @@ function decodeSmsEvent(event) {
 
 function matchesSmsTransaction(event, transaction) {
   if (event.message_hash && transaction.source_sms_hash === event.message_hash) return true;
-  const reference = referenceValue(event.raw_reference || event.reference);
+  const reference = referenceValue(event.raw_reference || event.reference || receiptReference(event.receipt_url));
   const savedReference = referenceValue(transaction.reference);
   if (reference && savedReference && reference === savedReference) return true;
+  if (savedReference === referenceValue(fallbackSmsReference(event))) return true;
   const eventLink = receiptLink(event.receipt_url);
   if (eventLink && eventLink === receiptLink(transaction.receipt_url)) return true;
   if (eventLink && savedReference === referenceValue(new URL(eventLink).searchParams.get("trx"))) return true;
@@ -80,7 +97,7 @@ function smsTransactionDraft(event, person = null) {
   return {
     amount: amountValue(event.amount).toFixed(2),
     date: formatTransactionDate(event.transaction_date || event.sms_received_at),
-    reference: event.raw_reference || event.reference || null,
+    reference: smsReference(event),
     narrative: event.narrative || null,
     receipt_url: receiptLink(event.receipt_url),
     is_withdraw: event.transaction_type === "withdrawal",
@@ -88,4 +105,4 @@ function smsTransactionDraft(event, person = null) {
   };
 }
 
-module.exports = { transactionDate, formatTransactionDate, receiptLink, decodeSmsEvent, matchesSmsTransaction, newestSmsEvent, smsTransactionDraft };
+module.exports = { transactionDate, formatTransactionDate, receiptLink, receiptReference, smsReference, decodeSmsEvent, matchesSmsTransaction, newestSmsEvent, smsTransactionDraft };

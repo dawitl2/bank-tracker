@@ -8,9 +8,10 @@ import {
 } from "react-icons/fa";
 import "./DesktopStyles.css";
 import ReceiptLink from "../ReceiptLink";
+import { formatTransactionAmount } from "../transactionAmount";
 
 const parseAmount = (value) => parseFloat(value?.toString().replace(/[^\d.-]/g, "")) || 0;
-const money = (value) => Math.round(value || 0).toLocaleString("en-US");
+const money = (value) => formatTransactionAmount(value || 0);
 
 export default function DesktopTransactions({
   transactions = [],
@@ -191,7 +192,7 @@ export default function DesktopTransactions({
                         <span className="desktop-badge desktop-badge-construction">—</span>
                       )}
                     </td>
-                    <td style={{ fontWeight: 800 }}>ETB {tx.amount}</td>
+                    <td style={{ fontWeight: 800 }}>ETB {formatTransactionAmount(tx.amount)}</td>
                     <td style={{ fontSize: "13px", color: "var(--desktop-dark-muted)" }}>{tx.date}</td>
                     <td style={{ fontSize: "13px", fontFamily: "monospace" }}>{tx.reference || "—"}</td>
                     <td style={{ fontSize: "13px" }}>{tx.narrative || "—"}</td>

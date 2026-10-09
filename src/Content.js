@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FaCalculator } from "react-icons/fa";
 import ReceiptLink from "./ReceiptLink";
+import { formatTransactionAmount } from "./transactionAmount";
 
 function Content({
   transactions,
@@ -70,7 +71,7 @@ function Content({
     parseFloat(value?.toString().replace(/[^\d.-]/g, "")) || 0;
 
   const formatMoney = (value) =>
-    Math.round(value || 0).toLocaleString("en-US");
+    formatTransactionAmount(value || 0);
 
   /*
   =========================
@@ -266,7 +267,7 @@ function Content({
                   <span className="transaction-person-empty">—</span>
                 )}
               </td>
-              <td className="amount">{tx.amount}</td>
+              <td className="amount">{formatTransactionAmount(tx.amount)}</td>
               <td className="date-cell">{tx.date}</td>
               <td>{tx.reference}</td>
               <td>{tx.narrative}</td>

@@ -31,6 +31,12 @@ export async function checkLatestSms(signal) {
     try {
       const response = await fetch(`/api/boa-receipt?kind=details&trx=${encodeURIComponent(new URL(link).searchParams.get("trx"))}`, { signal });
       const { data } = await readJsonResponse(response, "Bank receipt unavailable");
+      // The bank validates this exact receipt token. SMS debits can include
+      // fees, so a different transferred amount must not hide its reference.
+      const bankReference = data?.["Transaction Reference"];
+      if (!event.raw_reference && typeof bankReference === "string" && new URL(link).searchParams.get("trx").startsWith(bankReference)) {
+        event.raw_reference = bankReference;
+      }
       if (data && (!event.raw_reference || event.raw_reference === data["Transaction Reference"]) && Number(event.amount) === Number(data["Transferred Amount"])) {
         event.raw_reference = event.raw_reference || data["Transaction Reference"];
         event.transaction_date = event.transaction_date || data["Transaction Date"];

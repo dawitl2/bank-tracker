@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FaArrowLeft, FaCar, FaImage, FaLink, FaQrcode, FaTimes } from "react-icons/fa";
 import ParkingReceiptFlow from "./ParkingReceiptFlow";
 import TransactionDateField from "./TransactionDateField";
+import { formatTransactionAmount } from "./transactionAmount";
 
 const GENERATED_TRANSACTION_FIELDS = ["id", "created_at", "source_sms_hash"];
 
@@ -190,7 +191,10 @@ export default function ReceiptModal({
                 .map(([field, value]) => (
                   <label key={field} className="draft-field">
                     <span>{field}</span>
-                    {field === "date" && receiptDraft.id ? (
+                    {field === "amount" ? (
+                      <input type="text" inputMode="numeric" value={formatTransactionAmount(value)} disabled={draftSaving}
+                        onChange={(event) => handleDraftChange(field, event.target.value.replace(/,/g, "").split(".")[0])} />
+                    ) : field === "date" && receiptDraft.id ? (
                       <TransactionDateField value={value} disabled={draftSaving} onChange={next => handleDraftChange(field, next)} />
                     ) : field === "person" ? (
                       <select value={value ?? "null"} onChange={(event) => handleDraftChange(field, event.target.value)}>

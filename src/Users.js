@@ -13,12 +13,13 @@ import {
 import { FaArrowLeft, FaCamera, FaChevronRight } from "react-icons/fa";
 import "./Users.css";
 import ReceiptLink from "./ReceiptLink";
+import { formatTransactionAmount } from "./transactionAmount";
 
 const SUPABASE_URL = "https://ywplzexakisliebyjtyf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_nmA6IJsDGUVki5i0smS1Tg_MLXy5_wX";
 
 const parseAmount = (value) => parseFloat(value?.toString().replace(/[^\d.-]/g, "")) || 0;
-const money = (value) => Math.round(value || 0).toLocaleString("en-US");
+const money = (value) => formatTransactionAmount(value || 0);
 
 // Helper to parse dates from transactions
 const parseTxDate = (value) => {
@@ -1075,7 +1076,7 @@ export default function Users({
                 onTouchCancel={stopLongPress}
               >
                 <td>{idx + 1}</td>
-                <td className="amount">{subTab === "transactions" ? tx.amount : `${money(tx.amount)} ETB`}</td>
+                <td className="amount">{subTab === "transactions" ? formatTransactionAmount(tx.amount) : `${money(tx.amount)} ETB`}</td>
                 <td className="date-cell">{tx.date}</td>
                 <td>{tx.reference}</td>
                 <td>

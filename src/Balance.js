@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import useApolloViewport from "./useApolloViewport";
 import ApolloTransactionPrompt from "./ApolloTransactionPrompt";
+import { formatTransactionAmount } from "./transactionAmount";
 import {
   FaArrowLeft,
   FaBolt,
@@ -157,7 +158,7 @@ async function sbFetch(path, options = {}) {
   return res.json();
 }
 
-const money = (value) => Math.round(value || 0).toLocaleString("en-US");
+const money = (value) => formatTransactionAmount(value || 0);
 const parseAmount = (value) => parseFloat(value?.toString().replace(/[^\d.-]/g, "")) || 0;
 
 const formatWithCommas = (raw) => {
@@ -174,7 +175,7 @@ const formatWithCommas = (raw) => {
 
 const formatSmsMoney = (value) => {
   const parsed = parseAmount(value);
-  return parsed ? money(parsed) : "0.0";
+  return formatTransactionAmount(parsed);
 };
 
 const formatSmsDate = (value) => {
