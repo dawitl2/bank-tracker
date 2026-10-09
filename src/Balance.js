@@ -1248,7 +1248,7 @@ function Balance({
                   {showBalance ? <FaEye /> : <FaEyeSlash />}
                 </button>
               </div>
-              {isFlipped ? <ApolloBalanceComparison apolloBalance={boaSmsState?.current_balance} regularBalance={balance} loading={isSmsNumberLoading} locked={apolloLocked} /> : (
+              {isFlipped ? <ApolloBalanceComparison apolloBalance={boaSmsState?.current_balance} regularBalance={balance} loading={isSmsNumberLoading} locked={apolloLocked} hidden={!showBalance} /> : (
                 <div className="account-activity-row">
                   <span>{balanceMeta.label}</span>
                   <strong>{balanceMeta.amount}</strong>

@@ -7,11 +7,11 @@ const balanceValue = value => {
   return Number.isFinite(amount) ? amount : null;
 };
 
-export default function ApolloBalanceComparison({ apolloBalance, regularBalance, loading = false, locked = false }) {
+export default function ApolloBalanceComparison({ apolloBalance, regularBalance, loading = false, locked = false, hidden = true }) {
   const apollo = balanceValue(apolloBalance);
   const regular = balanceValue(regularBalance);
   let label = "Difference", amount = "—", tone = "neutral";
-  if (locked) amount = "*****";
+  if (locked || hidden) amount = "*****";
   else if (loading) amount = "...";
   else if (apollo !== null && regular !== null) {
     const difference = apollo - regular;

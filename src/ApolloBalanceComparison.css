@@ -19,11 +19,11 @@
 }
 .apollo-balance-comparison.account-activity-row > strong {
   color: var(--apollo-comparison-color);
-  font-size: 12px;
+  font-size: 9px;
   line-height: 1.2;
   text-align: right;
   white-space: nowrap;
 }
 .desktop-card .apollo-balance-comparison { margin-bottom: 16px; padding-top: 12px; }
 .desktop-card .apollo-balance-comparison > span { font-size: 11px; }
-.desktop-card .apollo-balance-comparison > strong { font-size: 14px; }
+.desktop-card .apollo-balance-comparison > strong { font-size: 11px; }

@@ -311,7 +311,7 @@ export default function DesktopDashboard({
                 </div>
               )}
               
-              <ApolloBalanceComparison apolloBalance={boaSmsState?.current_balance} regularBalance={analytics.currentBalance} loading={boaSmsLoading} locked={!apolloUnlocked} />
+              <ApolloBalanceComparison apolloBalance={boaSmsState?.current_balance} regularBalance={analytics.currentBalance} loading={boaSmsLoading} locked={!apolloUnlocked} hidden={!showApolloBalance} />
 
               {/* Only SMS withdrawal underneath */}
               <div className="desktop-balance-details-row" style={{ display: "block", background: "transparent", border: "none", padding: 0, marginTop: "16px" }}>
