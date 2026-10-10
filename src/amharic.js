@@ -147,6 +147,21 @@ const amharic = {
   "of 5. Device will lock after 5 failures.": "ከ5። ከ5 ያልተሳኩ ሙከራዎች በኋላ መሣሪያው ይታገዳል።",
   "Transactions could not be loaded.": "ግብይቶችን ማምጣት አልተቻለም።",
   "Supabase update policy is missing or this row is not visible for update.": "ይህን ግብይት ማደስ አልተቻለም።",
-  "Supabase delete policy is missing or this row is not visible for delete.": "ይህን ግብይት መሰረዝ አልተቻለም።"
+  "Supabase delete policy is missing or this row is not visible for delete.": "ይህን ግብይት መሰረዝ አልተቻለም።",
+  "Profile": "መገለጫ",
+  "Signed in": "ገብተዋል",
+  "Sign in": "ግባ",
+  "Sign out": "ውጣ",
+  "Signing in…": "በመግባት ላይ…",
+  "Checking session…": "መግባትዎን በማረጋገጥ ላይ…",
+  "Apollo password": "የአፖሎ ይለፍ ቃል",
+  "Sign in once for Apollo and Interest.": "አፖሎንና ወለድን ለመጠቀም አንድ ጊዜ ይግቡ።",
+  "Apollo and Interest are unlocked for this session.": "በዚህ ቆይታ አፖሎና ወለድ ክፍት ናቸው።",
+  "Incorrect username or password.": "የተጠቃሚ ስሙ ወይም የይለፍ ቃሉ ትክክል አይደለም።",
+  "Too many attempts. Try again in one minute.": "ብዙ ሙከራዎች። ከአንድ ደቂቃ በኋላ እንደገና ይሞክሩ።",
+  "Profile sign-in is unavailable. Please try again later.": "ወደ መገለጫ መግባት አልተቻለም። እባክዎ በኋላ ይሞክሩ።",
+  "Could not sign in. Please try again.": "መግባት አልተቻለም። እንደገና ይሞክሩ።",
+  "Could not sign in. Check your connection and try again.": "መግባት አልተቻለም። ግንኙነትዎን ያረጋግጡና እንደገና ይሞክሩ።",
+  "Signed out on this device. Could not reach the server.": "ከዚህ መሣሪያ ወጥተዋል። አገልጋዩን ማግኘት አልተቻለም።"
 };
 export default amharic;

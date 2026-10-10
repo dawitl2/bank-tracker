@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useProfile, profileAccess, PROFILE_SIGNED_OUT } from "../ProfileSession";
 import { 
   FaEye, 
   FaEyeSlash, 
@@ -99,12 +100,23 @@ export default function DesktopDashboard({
   const [smsCheckRequest, setSmsCheckRequest] = useState(0);
   const [showApolloBalance, setShowApolloBalance] = useState(false);
 
-  const [apolloUnlocked, setApolloUnlocked] = useState(
+  const { profile } = useProfile();
+  const profileApollo = profileAccess(profile, "apollo_access");
+  const [guestApolloUnlocked, setApolloUnlocked] = useState(
     () => localStorage.getItem("apollo_visibility_day") === getVisibilityDayKey()
   );
   const [unlockModalOpen, setUnlockModalOpen] = useState(false);
   const [passInput, setPassInput] = useState("");
   const [unlockError, setUnlockError] = useState(false);
+  const apolloUnlocked = profileApollo || guestApolloUnlocked;
+  useEffect(() => {
+    if (profileApollo) { setUnlockModalOpen(false); setPassInput(""); setUnlockError(false); }
+  }, [profileApollo]);
+  useEffect(() => {
+    const signedOut = () => { setApolloUnlocked(false); setShowApolloBalance(false); setUnlockModalOpen(false); setPassInput(""); };
+    window.addEventListener(PROFILE_SIGNED_OUT, signedOut);
+    return () => window.removeEventListener(PROFILE_SIGNED_OUT, signedOut);
+  }, []);
 
   // Compute calculated bank statistics
   const analytics = useMemo(() => {
@@ -223,6 +235,7 @@ export default function DesktopDashboard({
             padding: "8px 16px"
           }}
           onClick={() => {
+            if (profileApollo) { setShowApolloBalance(value => !value); return; }
             if (apolloUnlocked) {
               setApolloUnlocked(false);
               localStorage.removeItem("apollo_visibility_day");
@@ -231,7 +244,7 @@ export default function DesktopDashboard({
             }
           }}
         >
-          {apolloUnlocked ? <><FaEyeSlash /> Lock Apollo SMS</> : <><FaLock /> Unlock Apollo SMS</>}
+          {profileApollo ? <>{showApolloBalance ? <FaEyeSlash /> : <FaEye />}{showApolloBalance ? "Hide Apollo SMS" : "Show Apollo SMS"}</> : apolloUnlocked ? <><FaEyeSlash /> Lock Apollo SMS</> : <><FaLock /> Unlock Apollo SMS</>}
         </button>
       </div>
 

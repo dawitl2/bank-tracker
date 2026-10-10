@@ -1,4 +1,5 @@
 import { useLanguage } from "./Language";
+import { useProfile, profileAccess } from "./ProfileSession";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Content from "./Content";
 import Balance, { ConstructionPanel } from "./Balance";
@@ -17,7 +18,7 @@ const SUPABASE_URL = "https://ywplzexakisliebyjtyf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_nmA6IJsDGUVki5i0smS1Tg_MLXy5_wX";
 
 const BASE_BALANCE = 1209518;
-const VERSION = "1.3.4.1"; // html.css.sys.db
+const VERSION = "1.3.4.2"; // html.css.sys.db
 const PASSWORD = "dawit123";
 const API_URL =
   process.env.REACT_APP_API_URL || "https://bank-backend-anhp.onrender.com";
@@ -28,6 +29,7 @@ const mobileViewForPath = path => path.startsWith("/balance/construction") ? "co
 
 function App() {
   const { t } = useLanguage();
+  const { profile, checking: checkingProfile } = useProfile();
 
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [view, setView] = useState(() => mobileViewForPath(window.location.pathname));
@@ -213,6 +215,7 @@ function App() {
 
   // AUTH
   const [authenticated, setAuthenticated] = useState(false);
+  const appAccessible = authenticated || profileAccess(profile, "apollo_access");
   const [inputPassword, setInputPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [lockedUntil, setLockedUntil] = useState(() => localStorage.getItem("auth_locked_until"));
@@ -230,11 +233,11 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!authenticated) return undefined;
+    if (!appAccessible) return undefined;
 
     replayCalculatorButtonAnimation();
     return () => window.clearTimeout(calculatorButtonTimerRef.current);
-  }, [authenticated, view, replayCalculatorButtonAnimation]);
+  }, [appAccessible, view, replayCalculatorButtonAnimation]);
 
   const toggleCalculator = () => {
     if (!calculatorEnabled) return;
@@ -1241,7 +1244,8 @@ function App() {
   =========================
   */
 
-  if (!authenticated) {
+  if (!appAccessible && checkingProfile) return <div className="login-container"><p>{t("Checking session…")}</p></div>;
+  if (!appAccessible) {
     const isLockoutActive = lockedUntil && new Date(lockedUntil).getTime() > Date.now();
 
     return (
@@ -1390,7 +1394,7 @@ function App() {
     />
   );
 
-  if (authenticated && isDesktop) {
+  if (appAccessible && isDesktop) {
     return (
       <>
         <DesktopLayout

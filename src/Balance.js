@@ -1,4 +1,5 @@
 import { useLanguage } from "./Language";
+import { useProfile, profileAccess, PROFILE_SIGNED_OUT } from "./ProfileSession";
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import useApolloViewport from "./useApolloViewport";
 import ApolloTransactionPrompt from "./ApolloTransactionPrompt";
@@ -840,8 +841,11 @@ function Balance({
   }, [currentPath]);
   const getVisibilityDayKey = () => new Date().toISOString().slice(0, 10);
   const [showBalance, setShowBalance] = useState(false);
-  const [showInterest, setShowInterest] = useState(false);
-  const [interestUnlocked, setInterestUnlocked] = useState(
+  const { profile } = useProfile();
+  const profileApollo = profileAccess(profile, "apollo_access");
+  const profileInterest = profileAccess(profile, "interest_access");
+  const [interestVisible, setShowInterest] = useState(profileInterest);
+  const [guestInterestUnlocked, setInterestUnlocked] = useState(
     () => localStorage.getItem("interest_visibility_day") === getVisibilityDayKey()
   );
   const [visibilityPromptOpen, setVisibilityPromptOpen] = useState(false);
@@ -854,9 +858,33 @@ function Balance({
   const [isFlipped, setIsFlipped] = useState(false);
   const cardRailRef = useRef(null);
   const apolloPromptTimerRef = useRef(null);
-  const [apolloUnlocked, setApolloUnlocked] = useState(
+  const [guestApolloUnlocked, setApolloUnlocked] = useState(
     () => localStorage.getItem("apollo_visibility_day") === getVisibilityDayKey()
   );
+  const apolloUnlocked = profileApollo || guestApolloUnlocked;
+  const interestUnlocked = profileInterest || guestInterestUnlocked;
+  const showInterest = interestVisible && interestUnlocked;
+
+  useEffect(() => {
+    if (!profileApollo) return;
+    window.clearTimeout(apolloPromptTimerRef.current);
+    setApolloPromptOpen(false); setApolloPassword(""); setApolloError(false);
+  }, [profileApollo]);
+  useEffect(() => {
+    if (!profileInterest) return;
+    setShowInterest(true);
+    setVisibilityPromptOpen(false); setVisibilityPassword(""); setVisibilityError(false);
+  }, [profileInterest]);
+  useEffect(() => {
+    const signedOut = () => {
+      window.clearTimeout(apolloPromptTimerRef.current);
+      setApolloUnlocked(false); setInterestUnlocked(false); setShowInterest(false);
+      setApolloPromptOpen(false); setVisibilityPromptOpen(false);
+      setApolloPassword(""); setVisibilityPassword("");
+    };
+    window.addEventListener(PROFILE_SIGNED_OUT, signedOut);
+    return () => window.removeEventListener(PROFILE_SIGNED_OUT, signedOut);
+  }, []);
 
   useEffect(() => {
     if (isFlipped) onRefreshBoaSmsState?.();

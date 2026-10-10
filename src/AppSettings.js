@@ -1,6 +1,44 @@
-import { useLanguage } from "./Language";
+import { useLanguage, LocalizedTextInput } from "./Language";
+import { useProfile } from "./ProfileSession";
 import { useEffect, useRef, useState } from "react";
-import { FiSliders, FiUsers, FiRefreshCw, FiPlus, FiTrash2, FiChevronDown, FiGlobe } from "react-icons/fi";
+import { FiSliders, FiUsers, FiRefreshCw, FiPlus, FiTrash2, FiChevronDown, FiGlobe, FiUser, FiLogOut } from "react-icons/fi";
+
+function ProfileSettings() {
+  const { t } = useLanguage();
+  const { profile, checking, signIn, signOut } = useProfile();
+  const [username, setUsername] = useState("Dawit");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const submit = async event => {
+    event.preventDefault();
+    if (busy || checking) return;
+    setBusy(true); setError("");
+    try { await signIn(username, password); setPassword(""); }
+    catch (failure) { setError(failure.message || "Could not sign in. Please try again."); }
+    finally { setBusy(false); }
+  };
+  const leave = async () => {
+    setBusy(true); setError(""); setPassword("");
+    try { await signOut(); }
+    catch { setError("Signed out on this device. Could not reach the server."); }
+    finally { setBusy(false); }
+  };
+  return <section className="settings-card settings-profile" aria-labelledby="profile-heading">
+    <h2 id="profile-heading"><FiUser aria-hidden="true" />{t("Profile")}</h2>
+    {profile ? <>
+      <div className="settings-profile-person"><span className="settings-avatar">{t(profile.name).slice(0,1)}</span><div><strong>{t(profile.name)}</strong><small>{t("Signed in")}</small></div>
+        <button type="button" className="settings-sign-out" onClick={leave} disabled={busy}><FiLogOut aria-hidden="true" />{t("Sign out")}</button></div>
+      <p className="settings-caption">{t("Apollo and Interest are unlocked for this session.")}</p>
+    </> : <form className="settings-profile-form" onSubmit={submit}>
+      <p className="settings-caption">{t("Sign in once for Apollo and Interest.")}</p>
+      <label htmlFor="profile-username">{t("Username")}</label><LocalizedTextInput id="profile-username" name="username" autoComplete="username" value={username} onChange={event => setUsername(event.target.value)} required maxLength={60} disabled={busy || checking} />
+      <label htmlFor="profile-password">{t("Password")}</label><input id="profile-password" name="password" type="password" autoComplete="current-password" placeholder={t("Apollo password")} value={password} onChange={event => setPassword(event.target.value)} required maxLength={72} disabled={busy || checking} />
+      <button type="submit" className="settings-primary" disabled={busy || checking}>{t(checking ? "Checking session…" : busy ? "Signing in…" : "Sign in")}</button>
+    </form>}
+    {error && <p className="settings-error" role="alert">{t(error)}</p>}
+  </section>;
+}
 
 function PersonConfirmation({ action, busy, error, onCancel, onConfirm }) {
   const { t } = useLanguage();
@@ -72,6 +110,7 @@ export default function AppSettings({ preferences, onPreferenceChange, storageEr
   return (
     <section className="app-settings" aria-labelledby="settings-heading">
       <header className="settings-heading"><span>{t("MAKE IT YOURS")}</span><h1 id="settings-heading">{t("Settings")}</h1><p>{t("A few useful controls, close at hand.")}</p></header>
+      <ProfileSettings />
       <section className="settings-card" aria-labelledby="preferences-heading">
         <h2 id="preferences-heading"><FiSliders aria-hidden="true" />{t(" App preferences")}</h2>
         <p className="settings-caption">{t("For this device’s mobile app. Desktop stays the same.")}</p>

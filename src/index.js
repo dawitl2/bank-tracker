@@ -4,11 +4,12 @@ import './index.css';
 import reportWebVitals from './reportWebVitals';
 import BrowserApp from './BrowserApp';
 import { LanguageProvider } from './Language';
+import { ProfileProvider } from './ProfileSession';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <LanguageProvider><BrowserApp /></LanguageProvider>
+    <LanguageProvider><ProfileProvider><BrowserApp /></ProfileProvider></LanguageProvider>
   </React.StrictMode>
 );
 

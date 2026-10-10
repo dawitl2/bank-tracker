@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useProfile, profileAccess, PROFILE_SIGNED_OUT } from "../ProfileSession";
 import { 
   FaLock, 
   FaEye, 
@@ -57,13 +58,28 @@ export default function DesktopInterest({
   suqePayments = []
 }) {
   const getVisibilityDayKey = () => new Date().toISOString().slice(0, 10);
+  const { profile } = useProfile();
+  const profileInterest = profileAccess(profile, "interest_access");
   
-  const [showInterest, setShowInterest] = useState(
+  const [interestVisible, setShowInterest] = useState(
+    () => profileInterest || localStorage.getItem("interest_visibility_day") === getVisibilityDayKey()
+  );
+  const [guestUnlocked, setGuestUnlocked] = useState(
     () => localStorage.getItem("interest_visibility_day") === getVisibilityDayKey()
   );
+  const showInterest = interestVisible && (profileInterest || guestUnlocked);
   const [unlockModalOpen, setUnlockModalOpen] = useState(false);
   const [passInput, setPassInput] = useState("");
   const [unlockError, setUnlockError] = useState(false);
+  useEffect(() => {
+    if (!profileInterest) return;
+    setShowInterest(true); setUnlockModalOpen(false); setPassInput(""); setUnlockError(false);
+  }, [profileInterest]);
+  useEffect(() => {
+    const signedOut = () => { setGuestUnlocked(false); setShowInterest(false); setUnlockModalOpen(false); setPassInput(""); };
+    window.addEventListener(PROFILE_SIGNED_OUT, signedOut);
+    return () => window.removeEventListener(PROFILE_SIGNED_OUT, signedOut);
+  }, []);
 
   // Compute interest details
   const interestData = useMemo(() => {
@@ -142,6 +158,7 @@ export default function DesktopInterest({
   const handleUnlockSubmit = () => {
     if (passInput === VISIBILITY_PASSWORD) {
       localStorage.setItem("interest_visibility_day", getVisibilityDayKey());
+      setGuestUnlocked(true);
       setShowInterest(true);
       setUnlockModalOpen(false);
       setPassInput("");
@@ -152,6 +169,7 @@ export default function DesktopInterest({
   };
 
   const requestLockToggle = () => {
+    if (profileInterest) { setShowInterest(value => !value); return; }
     if (showInterest) {
       setShowInterest(false);
     } else {
@@ -175,7 +193,7 @@ export default function DesktopInterest({
           className={`desktop-pill ${showInterest ? "active accent" : ""}`}
           onClick={requestLockToggle}
         >
-          {showInterest ? <><FaEyeSlash /> Lock Calculations</> : <><FaEye /> Unlock Calculations</>}
+          {showInterest ? <><FaEyeSlash />{profileInterest ? "Hide Calculations" : "Lock Calculations"}</> : <><FaEye />{profileInterest ? "Show Calculations" : "Unlock Calculations"}</>}
         </button>
       </div>
 
@@ -203,7 +221,7 @@ export default function DesktopInterest({
               <button 
                 className="desktop-pill active" 
                 style={{ marginTop: "16px", background: "var(--desktop-dark)", color: "#ffffff", border: "none" }}
-                onClick={() => setUnlockModalOpen(true)}
+                onClick={() => profileInterest ? setShowInterest(true) : setUnlockModalOpen(true)}
               >
                 Unlock Calculations
               </button>
