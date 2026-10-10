@@ -35,10 +35,22 @@ Focused verification:
 4. On narrow screens the filter sits at the right and the plus is nearly level
    with the bottom tabs; the profile labels follow the device's language.
 
-The production database setup must be applied and these flows checked against
-the actual project. The setup and three database checks pass in isolated
-PostgreSQL (PGlite with pgcrypto), including repeat setup and preservation of
-synthetic legacy data/schema. This verifies the SQL and role behavior locally;
-production activation and live-project verification remain pending.
-The built frontend also passes sign-in, Apollo/Interest access and HTTP 204
-sign-out against those local PostgreSQL functions running as the `anon` role.
+Production activation was verified on 2026-10-10 against project
+`ywplzexakisliebyjtyf` and the deployed app at
+`https://bank-tracker-three.vercel.app` (version 1.3.4.3, frontend commit
+`c4d594fbccea8461de8bc84a974a19ae5227ca40`). The live app API rejects incorrect
+credentials, returns Dawit's permissions, validates the session, and revokes it
+on sign-out. A revoked token cannot restore access.
+
+The live phone layout also passes Dawit sign-in, session restoration after a
+reload, and access to Apollo and Interest without another password. Sign-out
+restores the Apollo password prompt and hides protected Interest values.
+Verification created and revoked only its own profile sessions; it did not edit
+ledger, people or construction records.
+
+The setup and three database checks also pass in isolated PostgreSQL (PGlite
+with pgcrypto), including repeat setup and preservation of synthetic legacy
+data/schema. The built frontend passes HTTP 204 sign-out against those local
+PostgreSQL functions running as the `anon` role. Private-table and API-role
+checks were verified locally; production management-tool access was unavailable
+for independently repeating those checks.
