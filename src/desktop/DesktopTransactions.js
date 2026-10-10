@@ -60,9 +60,10 @@ export default function DesktopTransactions({
       if (personFilter === "CONSTRUCTION") {
         return isWithdraw && (person === "mihret" || person === "asnake" || person === "null");
       }
-      return person === personFilter.toLowerCase();
+      const selectedPerson = people.find(entry => entry.name.toUpperCase() === personFilter.toUpperCase());
+      return person === (selectedPerson?.id || personFilter).toLowerCase();
     });
-  }, [transactions, personFilter, searchQuery]);
+  }, [transactions, personFilter, searchQuery, people]);
 
   const tableTotal = useMemo(() => {
     return filteredTransactions.reduce((sum, tx) => sum + parseAmount(tx.amount), 0);

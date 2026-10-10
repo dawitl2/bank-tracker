@@ -105,7 +105,8 @@ function Content({
     }
 
     // INDIVIDUAL PERSON FILTERS
-    return person === personFilter.toLowerCase();
+    const selectedPerson = people.find(entry => entry.name.toUpperCase() === personFilter.toUpperCase());
+    return person === (selectedPerson?.id || personFilter).toLowerCase();
   });
 
   /*
@@ -294,7 +295,7 @@ function Content({
           <span>Table Total</span>
           <strong>{formatMoney(tableTotal)}</strong>
         </div>
-        <button
+        {onSendTableTotal && <button
           type="button"
           className="table-total-send"
           onClick={() => onSendTableTotal?.(tableTotal)}
@@ -302,7 +303,7 @@ function Content({
           aria-label="Send table total to calculator"
         >
           <FaCalculator />
-        </button>
+        </button>}
       </div>
 
     </main>

@@ -1,29 +1,37 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Content from "./Content";
-import Balance from "./Balance";
+import Balance, { ConstructionPanel } from "./Balance";
 import Calculator from "./Calculator";
 import Users from "./Users";
 import ReceiptModal from "./ReceiptModal";
 import DesktopLayout from "./desktop/DesktopLayout";
+import MobileNavigation from "./MobileNavigation";
+import AppSettings from "./AppSettings";
+import useAppPreferences from "./useAppPreferences";
 import { FaCalculator } from "react-icons/fa";
 import "./App.css";
+import "./MobileApp.css";
 
 const SUPABASE_URL = "https://ywplzexakisliebyjtyf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_nmA6IJsDGUVki5i0smS1Tg_MLXy5_wX";
 
 const BASE_BALANCE = 1209518;
-const VERSION = "1.3.3.31"; // html.css.sys.db
+const VERSION = "1.3.4.0"; // html.css.sys.db
 const PASSWORD = "dawit123";
 const API_URL =
   process.env.REACT_APP_API_URL || "https://bank-backend-anhp.onrender.com";
 const BANK_RECEIPT_URL = "https://cs.bankofabyssinia.com/slip/";
 const GENERATED_TRANSACTION_FIELDS = ["id", "created_at", "source_sms_hash"];
+const mobileViewForPath = path => path.startsWith("/balance/construction") ? "construction"
+  : path.startsWith("/settings") ? "settings" : path.startsWith("/balance") ? "balance" : "transactions";
 
 function App() {
 
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
-  const [view, setView] = useState("transactions");
+  const [view, setView] = useState(() => mobileViewForPath(window.location.pathname));
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 900);
+  const { preferences, updatePreference, storageError } = useAppPreferences();
+  const calculatorEnabled = isDesktop || preferences.calculator;
 
   useEffect(() => {
     const handleResize = () => {
@@ -39,11 +47,7 @@ function App() {
     const handleLocationChange = () => {
       const path = window.location.pathname;
       setCurrentPath(path);
-      if (path.startsWith("/balance")) {
-        setView("balance");
-      } else {
-        setView("transactions");
-      }
+      setView(mobileViewForPath(path));
     };
     handleLocationChange();
     window.addEventListener("popstate", handleLocationChange);
@@ -55,20 +59,9 @@ function App() {
   const navigate = (path) => {
     window.history.pushState({}, "", path);
     setCurrentPath(path);
-    if (path.startsWith("/balance")) {
-      setView("balance");
-    } else {
-      setView("transactions");
-    }
+    setView(mobileViewForPath(path));
+    if (!isDesktop) window.scrollTo({ top: 0, behavior: "instant" });
   };
-  const DEFAULT_PEOPLE = useMemo(() => [
-    { id: "dawit", name: "Dawit", role: "Administrator", class: "avatar-dawit" },
-    { id: "mihret", name: "Mihret", role: "Construction Manager", class: "avatar-mihret" },
-    { id: "asnake", name: "Asnake", role: "Project Coordinator", class: "avatar-asnake" },
-    { id: "yiss", name: "Yiss", role: "Finance Officer", class: "avatar-yiss" },
-    { id: "enku", name: "Enku", role: "Procurement Specialist", class: "avatar-enku" }
-  ], []);
-
   const [transactions, setTransactions] = useState([]);
   const handleSmsTransactionAdded = (transaction) => {
     if (!transaction) return;
@@ -79,7 +72,9 @@ function App() {
   const [boaSmsLoading, setBoaSmsLoading] = useState(false);
   const [parkingPayments, setParkingPayments] = useState([]);
   const [suqePayments, setSuqePayments] = useState([]);
-  const [people, setPeople] = useState(DEFAULT_PEOPLE);
+  const [people, setPeople] = useState([]);
+  const [peopleReady, setPeopleReady] = useState(false);
+  const [peopleError, setPeopleError] = useState("");
 
   const [parkingDraft, setParkingDraft] = useState({
     amount: "",
@@ -97,32 +92,23 @@ function App() {
           Authorization: `Bearer ${SUPABASE_KEY}`
         }
       });
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.length > 0) {
-          setPeople(data);
-        } else {
-          setPeople(DEFAULT_PEOPLE);
-        }
-      } else {
-        setPeople(DEFAULT_PEOPLE);
-      }
+      if (!res.ok) throw new Error("People could not be loaded.");
+      const data = await res.json();
+      if (!Array.isArray(data)) throw new Error("People could not be loaded.");
+      setPeople(data);
+      setPeopleReady(true);
+      setPeopleError("");
+      return true;
     } catch (err) {
       console.error("Error fetching people in App:", err);
-      setPeople(DEFAULT_PEOPLE);
+      setPeopleError("People could not be loaded.");
+      return false;
     }
-  }, [DEFAULT_PEOPLE]);
+  }, []);
 
   const personOptions = useMemo(() => {
     return [
-      { label: "Dawit", value: "dawit" },
-      { label: "Mihret", value: "mihret" },
-      { label: "Asnake", value: "asnake" },
-      { label: "Yiss", value: "yiss" },
-      { label: "Enku", value: "enku" },
-      ...people
-        .filter(p => !["dawit", "mihret", "asnake", "yiss", "enku"].includes(p.id))
-        .map(p => ({ label: p.name, value: p.id })),
+      ...people.map(p => ({ label: p.name, value: p.id })),
       { label: "Null", value: "null" }
     ];
   }, [people]);
@@ -188,10 +174,12 @@ function App() {
         const suqeData = await suqeRes.json();
         setParkingPayments(parkingData);
         setSuqePayments(suqeData);
+        return true;
       }
     } catch (err) {
       console.error("DB FETCH ERROR IN APP:", err);
     }
+    return false;
   }, []);
 
   const [showModal, setShowModal] = useState(false);
@@ -212,6 +200,8 @@ function App() {
   const [calculatorAnimationToken, setCalculatorAnimationToken] = useState(0);
   const calculatorButtonTimerRef = useRef(null);
   const calculatorSectionRef = useRef(null);
+
+  useEffect(() => { if (!calculatorEnabled) setShowCalculator(false); }, [calculatorEnabled]);
 
   // ONLY KEEP THIS FOR BALANCE TAB
   const [constructionOnly, setConstructionOnly] = useState(false);
@@ -245,6 +235,7 @@ function App() {
   }, [authenticated, view, replayCalculatorButtonAnimation]);
 
   const toggleCalculator = () => {
+    if (!calculatorEnabled) return;
     replayCalculatorButtonAnimation();
     setShowCalculator((current) => !current);
   };
@@ -254,13 +245,13 @@ function App() {
 
     const frame = window.requestAnimationFrame(() => {
       calculatorSectionRef.current?.scrollIntoView({
-        behavior: "smooth",
+        behavior: preferences.reduceMotion ? "instant" : "smooth",
         block: "start"
       });
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [showCalculator, isDesktop]);
+  }, [showCalculator, isDesktop, preferences.reduceMotion]);
 
   useEffect(() => {
     if (!lockedUntil) {
@@ -326,12 +317,14 @@ function App() {
       const res = await fetch(`${API_URL}/transactions`);
 
       const data = await res.json();
-
+      if (!res.ok || !Array.isArray(data)) throw new Error("Transactions could not be loaded.");
       setTransactions(data);
+      return true;
 
     } catch (err) {
 
       console.error("FETCH ERROR:", err);
+      return false;
 
     } finally {
 
@@ -348,6 +341,30 @@ function App() {
         error: `Request failed with status ${res.status}`
       };
     }
+  };
+
+  const mutatePerson = async (method, person) => {
+    const path = method === "DELETE" ? `?id=eq.${encodeURIComponent(person.id)}` : "";
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/people${path}`, {
+      method,
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": "application/json", Prefer: "return=representation" },
+      ...(method === "POST" ? { body: JSON.stringify(person) } : {})
+    });
+    const data = await readApiResponse(res);
+    if (!res.ok || !Array.isArray(data) || data.length !== 1 || data[0].id !== person.id) {
+      throw new Error(res.status === 409 ? "This person already exists. Refresh the list and try again."
+        : `Could not ${method === "POST" ? "add" : "remove"} this person. Refresh the list and try again.`);
+    }
+    setPeople(current => method === "POST" ? [...current.filter(entry => entry.id !== person.id), data[0]]
+      : current.filter(entry => entry.id !== person.id));
+    if (method === "DELETE" && personFilter.toUpperCase() === person.name.toUpperCase()) setPersonFilter("ALL");
+    await fetchPeople();
+  };
+
+  const refreshAppData = async () => {
+    const results = await Promise.all([fetchTransactions(), fetchBoaSmsState(), fetchBoaSmsSummary(), fetchDbPayments(), fetchPeople()]);
+    if (results.some(result => !result)) throw new Error("Refresh incomplete.");
   };
 
   const getDraftTemplate = () => {
@@ -473,13 +490,15 @@ function App() {
 
       if (!res.ok) {
         console.error("BOA SMS STATE ERROR:", data);
-        return;
+        return false;
       }
 
       setBoaSmsState(data);
+      return true;
 
     } catch (err) {
       console.error("BOA SMS FETCH ERROR:", err);
+      return false;
     } finally {
       setBoaSmsLoading(false);
     }
@@ -492,12 +511,14 @@ function App() {
 
       if (!res.ok) {
         console.error("BOA SMS SUMMARY ERROR:", data);
-        return;
+        return false;
       }
 
       setBoaSmsSummary(Array.isArray(data.events) ? data.events : []);
+      return true;
     } catch (err) {
       console.error("BOA SMS SUMMARY FETCH ERROR:", err);
+      return false;
     }
   };
 
@@ -519,6 +540,7 @@ function App() {
   }, [view]);
 
   const sendTableTotalToCalculator = (tableTotal) => {
+    if (!calculatorEnabled) return;
     const nextValue = String(tableTotal);
     const currentNumber = Number(String(calculatorCurrentValue).replace(/,/g, ""));
     const totalNumber = Number(nextValue.replace(/,/g, ""));
@@ -1154,7 +1176,8 @@ function App() {
       );
     }
 
-    return (tx.person || "").toLowerCase() === personFilter.toLowerCase();
+    const selectedPerson = people.find(person => person.name.toUpperCase() === personFilter.toUpperCase());
+    return (tx.person || "").toLowerCase() === (selectedPerson?.id || personFilter).toLowerCase();
   });
 
   /*
@@ -1450,7 +1473,7 @@ function App() {
   }
 
   return (
-    <div className="app">
+    <div className={`app mobile-app${preferences.compactRows ? " has-compact-rows" : ""}${preferences.reduceMotion ? " has-reduced-motion" : ""}`}>
 
       {loadingMessage && (
         <div className="loading-overlay" role="status" aria-live="polite">
@@ -1507,7 +1530,7 @@ function App() {
               fetchPeople={fetchPeople}
               openParkingModal={openParkingModal}
             />
-          ) : renderBalance()}
+          ) : <ConstructionPanel currentPath={currentPath} navigate={navigate} />}
         </div>
       ) : (
         <>
@@ -1517,7 +1540,7 @@ function App() {
             alt="bank logo"
           />
 
-          <div className="toggle">
+          {(view === "transactions" || view === "balance") && <div className="toggle" aria-label="Account views">
 
             <button
               className={view === "transactions" ? "active" : ""}
@@ -1533,7 +1556,7 @@ function App() {
               Balance
             </button>
 
-          </div>
+          </div>}
 
           <div className="content">
 
@@ -1546,28 +1569,10 @@ function App() {
                   setPersonFilter={setPersonFilter}
                   onEditTransaction={handleEditTransaction}
                   onDeleteTransaction={handleDeleteTransaction}
-                  onSendTableTotal={sendTableTotalToCalculator}
+                  onSendTableTotal={calculatorEnabled ? sendTableTotalToCalculator : undefined}
                   navigate={navigate}
                   people={people}
                 />
-
-                <button
-                  className="add-btn"
-                  onClick={openReceiptModal}
-                >
-                  +
-                </button>
-
-                <button
-                  key={`calculator-transactions-${calculatorAnimationToken}`}
-                  className={`calculator-btn calculator-fab ${calculatorButtonExpanded ? "is-expanded" : "is-compact"} is-replaying${showCalculator ? " is-active" : ""}`}
-                  onClick={toggleCalculator}
-                  aria-label={showCalculator ? "Close calculator" : "Open calculator"}
-                  title={showCalculator ? "Close calculator" : "Open calculator"}
-                >
-                  <FaCalculator aria-hidden="true" />
-                  <span>Calculator</span>
-                </button>
 
               </>
             )}
@@ -1577,21 +1582,24 @@ function App() {
 
                 {renderBalance()}
 
-                <button
-                  key={`calculator-balance-${calculatorAnimationToken}`}
-                  className={`calculator-btn calculator-fab ${calculatorButtonExpanded ? "is-expanded" : "is-compact"} is-replaying${showCalculator ? " is-active" : ""}`}
-                  onClick={toggleCalculator}
-                  aria-label={showCalculator ? "Close calculator" : "Open calculator"}
-                  title={showCalculator ? "Close calculator" : "Open calculator"}
-                >
-                  <FaCalculator aria-hidden="true" />
-                  <span>Calculator</span>
-                </button>
-
               </>
             )}
 
-            {showCalculator && (
+            {view === "construction" && <ConstructionPanel currentPath={currentPath} navigate={navigate} />}
+
+            {view === "settings" && <AppSettings preferences={preferences} onPreferenceChange={updatePreference}
+              storageError={storageError} people={people} peopleReady={peopleReady} peopleError={peopleError}
+              onAddPerson={person => mutatePerson("POST", person)} onRemovePerson={person => mutatePerson("DELETE", person)}
+              onRefresh={refreshAppData} version={VERSION} />}
+
+            {calculatorEnabled && (view === "transactions" || view === "balance") && <button
+              key={`calculator-${view}-${calculatorAnimationToken}`}
+              className={`calculator-btn calculator-fab ${calculatorButtonExpanded ? "is-expanded" : "is-compact"} is-replaying${showCalculator ? " is-active" : ""}`}
+              onClick={toggleCalculator} aria-label={showCalculator ? "Close calculator" : "Open calculator"}>
+              <FaCalculator aria-hidden="true" /><span>Calculator</span>
+            </button>}
+
+            {showCalculator && calculatorEnabled && (view === "transactions" || view === "balance") && (
               <div className="calculator-scroll-target" ref={calculatorSectionRef}>
                 <Calculator
                   importValue={calculatorImportValue}
@@ -1605,9 +1613,7 @@ function App() {
         </>
       )}
 
-      <footer className="footer">
-        Version {VERSION}
-      </footer>
+      <MobileNavigation view={view} navigate={navigate} onAdd={openReceiptModal} />
 
       {renderReceiptModal()}
 

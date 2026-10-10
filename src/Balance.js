@@ -244,7 +244,7 @@ function getProgress(checkedMap) {
   return { checked, total: TOTAL_ITEMS, pct: Math.round((checked / TOTAL_ITEMS) * 100) };
 }
 
-function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
+export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
   const [houses, setHouses] = useState([]);
   const [checkedByHouse, setCheckedByHouse] = useState({});
   const [loading, setLoading] = useState(true);
@@ -980,8 +980,7 @@ function Balance({
   const panelOptions = [
     { key: "summary", label: "Summary" },
     { key: "people", label: "People" },
-    { key: "interest", label: "Interest" },
-    { key: "construction", label: "Construction" }
+    { key: "interest", label: "Interest" }
   ];
   const smsRecentRows = useMemo(() => {
     const rows = boaSmsSummary.map((event, index) => ({
