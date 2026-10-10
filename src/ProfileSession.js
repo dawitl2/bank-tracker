@@ -16,6 +16,8 @@ async function rpc(name, body) {
       body: JSON.stringify(body), signal: AbortSignal.timeout(15000)
     });
   } catch { throw new Error("Could not sign in. Check your connection and try again."); }
+  // PostgREST returns no body for a successful void RPC (sign-out).
+  if (response.ok && response.status === 204) return null;
   let data;
   try { data = await response.json(); } catch { throw new Error("Profile sign-in is unavailable. Please try again later."); }
   if (!response.ok) throw new Error("Profile sign-in is unavailable. Please try again later.");

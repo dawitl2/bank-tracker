@@ -2,7 +2,15 @@
 -- are never changed. Run as the project owner in Supabase SQL Editor.
 begin;
 create schema if not exists bank_profiles;
+create schema if not exists extensions;
 create extension if not exists pgcrypto with schema extensions;
+-- Do not relocate an existing extension or affect functions that use it.
+do $$ begin
+  if not exists (select 1 from pg_extension e join pg_namespace n on n.oid = e.extnamespace
+    where e.extname = 'pgcrypto' and n.nspname = 'extensions') then
+    raise exception 'pgcrypto is installed outside extensions. No changes applied; review its existing schema before setup.';
+  end if;
+end $$;
 
 create table if not exists bank_profiles.accounts (
   username text primary key check (username = lower(username)),
