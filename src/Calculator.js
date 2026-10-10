@@ -1,3 +1,4 @@
+import { useLanguage } from "./Language";
 import { useState, useEffect, useCallback } from "react";
 
 const opSymbol = (op) =>
@@ -29,6 +30,7 @@ function formatDisplay(s) {
 }
 
 export default function Calculator({ importValue, importToken, onStateChange }) {
+  const { t } = useLanguage();
   const [current, setCurrent] = useState("0");
   const [prev, setPrev] = useState(null);
   const [op, setOp] = useState(null);
@@ -182,10 +184,10 @@ export default function Calculator({ importValue, importToken, onStateChange }) 
       <div style={{ background: "#000", borderRadius: 36, padding: "24px 18px 26px", width: "min(340px, calc(100vw - 32px))", userSelect: "none", boxShadow: "0 24px 60px rgba(0,0,0,0.24)" }}>
         <div style={{ padding: "0 8px 16px", textAlign: "right", minHeight: 90, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
           <div style={{ fontSize: 17, color: "#8e8e93", minHeight: 24, wordBreak: "break-all", fontFamily: "-apple-system, sans-serif" }}>
-            {expr}
+            {t(expr)}
           </div>
           <div className="calculator-display" style={{ fontSize, color: "#fff", lineHeight: 1.05, fontWeight: 300, fontFamily: "-apple-system, sans-serif", wordBreak: "break-all", transition: "font-size 0.1s" }}>
-            {formatDisplay(current)}
+            {t(formatDisplay(current))}
           </div>
         </div>
 
@@ -213,7 +215,7 @@ export default function Calculator({ importValue, importToken, onStateChange }) 
                 transition: "filter 0.08s",
               }}
             >
-              {btn.label}
+              {t(btn.label)}
             </button>
           ))}
         </div>

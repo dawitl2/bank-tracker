@@ -1,3 +1,4 @@
+import { useLanguage } from "./Language";
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import useApolloViewport from "./useApolloViewport";
 import ApolloTransactionPrompt from "./ApolloTransactionPrompt";
@@ -245,6 +246,7 @@ function getProgress(checkedMap) {
 }
 
 export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
+  const { t } = useLanguage();
   const [houses, setHouses] = useState([]);
   const [checkedByHouse, setCheckedByHouse] = useState({});
   const [loading, setLoading] = useState(true);
@@ -472,8 +474,8 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
   if (loading) {
     return (
       <article className="analytics-card focus-card construction-card">
-        <span>Construction</span>
-        <p style={{ marginTop: 12, color: "var(--color-text-secondary, #666)" }}>Loading...</p>
+        <span>{t("Construction")}</span>
+        <p style={{ marginTop: 12, color: "var(--color-text-secondary, #666)" }}>{t("Loading...")}</p>
       </article>
     );
   }
@@ -481,9 +483,9 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
   if (error) {
     return (
       <article className="analytics-card focus-card construction-card">
-        <span>Construction</span>
-        <p style={{ marginTop: 12, color: "#c73939" }}>{error}</p>
-        <button className="construction-action-btn" onClick={loadHouses} style={{ marginTop: 10 }}>Retry</button>
+        <span>{t("Construction")}</span>
+        <p style={{ marginTop: 12, color: "#c73939" }}>{t(error)}</p>
+        <button className="construction-action-btn" onClick={loadHouses} style={{ marginTop: 10 }}>{t("Retry")}</button>
       </article>
     );
   }
@@ -491,8 +493,8 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
   return (
     <>
       {!selectedHouse && <article className="analytics-card focus-card construction-card">
-        <span>Construction</span>
-        <h2 style={{ marginBottom: 16 }}>Houses</h2>
+        <span>{t("Construction")}</span>
+        <h2 style={{ marginBottom: 16 }}>{t("Houses")}</h2>
 
         <div className="construction-houses-grid">
           {houses.map(house => {
@@ -507,12 +509,12 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
               >
                 <div className="construction-house-icon"><FaHome /></div>
                 <div className="construction-house-name-row">
-                  <span className="construction-house-name">{house.name}</span>
+                  <span className="construction-house-name">{t(house.name)}</span>
                 </div>
                 <div className="construction-prog-bg">
                   <div className="construction-prog-fill" style={{ width: `${prog.pct}%` }} />
                 </div>
-                <div className="construction-prog-label">{prog.checked}/{prog.total} · {prog.pct}%</div>
+                <div className="construction-prog-label">{t(prog.checked)}{t("/")}{t(prog.total)}{t(" · ")}{t(prog.pct)}{t("%")}</div>
               </button>
             );
           })}
@@ -520,8 +522,7 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
             className="construction-add-house"
             onClick={() => { setNameInput(""); setModal({ type: "add" }); }}
           >
-            <FaPlus /> Add house
-          </button>
+            <FaPlus />{t("Add house")}</button>
         </div>
       </article>}
 
@@ -533,9 +534,8 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
               type="button"
               onClick={() => navigate("/balance/construction")}
             >
-              <FaArrowLeft /> Back to Houses
-            </button>
-            <img src="/logo.png" alt="Bank Logo" />
+              <FaArrowLeft />{t("Back to Houses")}</button>
+            <img src="/logo.png" alt={t("Bank Logo")} />
           </div>
 
           {(() => {
@@ -546,8 +546,8 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
               <div className="construction-detail-title-row">
                 <span className="construction-detail-house-icon"><FaHome /></span>
                 <span className="construction-detail-title">
-                  <small>Construction project</small>
-                  <strong>{selectedHouse.name}</strong>
+                  <small>{t("Construction project")}</small>
+                  <strong>{t(selectedHouse.name)}</strong>
                 </span>
               </div>
               <div className="construction-detail-actions">
@@ -558,8 +558,8 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
                     setNameInput(selectedHouse.name);
                     setModal({ type: "edit", house: selectedHouse });
                   }}
-                  title="Edit name"
-                  aria-label="Edit name"
+                  title={t("Edit name")}
+                  aria-label={t("Edit name")}
                 >
                   <FaPen />
                 </button>
@@ -567,8 +567,8 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
                   className="construction-detail-delete-btn"
                   type="button"
                   onClick={() => handleDeleteHouse(selectedHouse)}
-                  title="Delete house"
-                  aria-label="Delete house"
+                  title={t("Delete house")}
+                  aria-label={t("Delete house")}
                 >
                   <FaTrashAlt />
                 </button>
@@ -581,16 +581,16 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
                     {selectedHouse.image_url ? (
                       <img
                         src={selectedHouse.image_url}
-                        alt={selectedHouse.name}
+                        alt={t(selectedHouse.name)}
                         className="construction-photo-img"
                         onClick={() => setLightboxUrl(selectedHouse.image_url)}
                         style={{ cursor: "zoom-in" }}
                       />
                     ) : (
-                      <div className="construction-photo-placeholder">No photo yet</div>
+                      <div className="construction-photo-placeholder">{t("No photo yet")}</div>
                     )}
                     {photoUploading && (
-                      <div className="construction-photo-uploading">Uploading...</div>
+                      <div className="construction-photo-uploading">{t("Uploading...")}</div>
                     )}
                     <button
                       className="construction-photo-replace-btn"
@@ -598,7 +598,7 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
                       disabled={photoUploading}
                       type="button"
                     >
-                      {selectedHouse.image_url ? "Replace photo" : "Add photo"}
+                      {t(selectedHouse.image_url ? "Replace photo" : "Add photo")}
                     </button>
                     <input
                       ref={cameraInputRef}
@@ -627,24 +627,24 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
 
                   <div className="construction-overall-prog">
                     <div className="construction-overall-heading">
-                      <span>Overall progress</span>
-                      <strong>{prog.pct}%</strong>
+                      <span>{t("Overall progress")}</span>
+                      <strong>{t(prog.pct)}{t("%")}</strong>
                     </div>
                     <div className="construction-overall-bg">
                       <div className="construction-overall-fill" style={{ width: `${prog.pct}%` }} />
                     </div>
-                    <div className="construction-overall-label">{prog.checked} of {prog.total} tasks completed</div>
+                    <div className="construction-overall-label">{t(prog.checked)}{t(" of ")}{t(prog.total)}{t(" tasks completed")}</div>
                   </div>
 
                   <div className="construction-money-spent">
-                    <span className="construction-money-spent-label">Money spent</span>
+                    <span className="construction-money-spent-label">{t("Money spent")}</span>
                     <div className="construction-money-spent-row">
-                      <span className="construction-money-spent-currency">ETB</span>
+                      <span className="construction-money-spent-currency">{t("ETB")}</span>
                       <input
                         className="construction-money-spent-input"
                         type="text"
                         inputMode="decimal"
-                        placeholder="0"
+                        placeholder={t("0")}
                         value={moneySpentInput}
                         onChange={e => setMoneySpentInput(formatWithCommas(e.target.value))}
                         onBlur={() => {
@@ -662,12 +662,12 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
 
               <main className="construction-checklist-content">
                 <div className="construction-checklist-heading">
-                  <span>Project checklist</span>
-                  <strong>{prog.total - prog.checked} remaining</strong>
+                  <span>{t("Project checklist")}</span>
+                  <strong>{t(prog.total - prog.checked)}{t(" remaining")}</strong>
                 </div>
                   {CONSTRUCTION_SECTIONS.map(section => (
                     <div key={section.label} className="construction-section">
-                      <div className="construction-section-label">{section.label}</div>
+                      <div className="construction-section-label">{t(section.label)}</div>
                       {section.items.map(item => {
                         const isChecked = !!checked[item.id];
                         const isLocked = !!item.locked;
@@ -681,7 +681,7 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
                             disabled={isLocked}
                           >
                             <span className="construction-item-icon"><ItemIcon /></span>
-                            <span className="construction-item-label">{item.label}</span>
+                            <span className="construction-item-label">{t(item.label)}</span>
                             <div className={`construction-checkbox${isChecked ? " checked" : ""}`}>
                               {isChecked ? <FaCheck /> : isLocked ? <FaLock /> : null}
                             </div>
@@ -701,11 +701,11 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
         <div className="construction-overlay" onClick={() => setModal(null)}>
           <div className="construction-mini-modal" onClick={e => e.stopPropagation()}>
             <div className="construction-mini-title">
-              {modal.type === "add" ? "Add house" : "Edit house"}
+              {t(modal.type === "add" ? "Add house" : "Edit house")}
             </div>
             <input
               className="construction-mini-input"
-              placeholder="House name..."
+              placeholder={t("House name...")}
               value={nameInput}
               maxLength={40}
               onChange={e => setNameInput(e.target.value)}
@@ -716,15 +716,13 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
               autoFocus
             />
             <div className="construction-mini-actions">
-              <button className="construction-mini-cancel" onClick={() => setModal(null)} disabled={saving}>
-                Cancel
-              </button>
+              <button className="construction-mini-cancel" onClick={() => setModal(null)} disabled={saving}>{t("Cancel")}</button>
               <button
                 className="construction-mini-confirm"
                 onClick={modal.type === "add" ? addHouse : renameHouse}
                 disabled={saving}
               >
-                {saving ? "..." : modal.type === "add" ? "Add" : "Save"}
+                {t(saving ? "..." : modal.type === "add" ? "Add" : "Save")}
               </button>
             </div>
           </div>
@@ -734,24 +732,20 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
       {deleteTarget && (
         <div className="confirm-overlay">
           <div className="confirm-box">
-            <h2>Delete House?</h2>
-            <p>
-              This will remove {deleteTarget.name || "this house"} and its checklist from the database.
-            </p>
+            <h2>{t("Delete House?")}</h2>
+            <p>{t("This will remove")}{t(deleteTarget.name || "this house")}{t("and its checklist from the database.")}</p>
             <div className="confirm-actions">
               <button
                 className="close-btn"
                 onClick={() => setDeleteTarget(null)}
                 disabled={deleteLoading}
-              >
-                Close
-              </button>
+              >{t("Close")}</button>
               <button
                 className="delete-confirm-btn"
                 onClick={confirmDeleteHouse}
                 disabled={deleteLoading}
               >
-                {deleteLoading ? "Deleting..." : "Yes, Delete"}
+                {t(deleteLoading ? "Deleting..." : "Yes, Delete")}
               </button>
             </div>
           </div>
@@ -761,33 +755,27 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
       {photoPromptOpen && (
         <div className="confirm-overlay" onClick={() => setPhotoPromptOpen(false)}>
           <div className="confirm-box" onClick={e => e.stopPropagation()}>
-            <h2>Add Photo</h2>
-            <p>Take a new picture or choose one from your gallery.</p>
+            <h2>{t("Add Photo")}</h2>
+            <p>{t("Take a new picture or choose one from your gallery.")}</p>
             <div className="confirm-actions">
               <button
                 className="close-btn"
                 onClick={() => setPhotoPromptOpen(false)}
-              >
-                Cancel
-              </button>
+              >{t("Cancel")}</button>
               <button
                 className="construction-photo-source-btn"
                 onClick={() => {
                   setPhotoPromptOpen(false);
                   galleryInputRef.current?.click();
                 }}
-              >
-                Gallery
-              </button>
+              >{t("Gallery")}</button>
               <button
                 className="construction-photo-source-btn"
                 onClick={() => {
                   setPhotoPromptOpen(false);
                   cameraInputRef.current?.click();
                 }}
-              >
-                Camera
-              </button>
+              >{t("Camera")}</button>
             </div>
           </div>
         </div>
@@ -797,7 +785,7 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
         <div className="construction-lightbox" onClick={() => setLightboxUrl(null)}>
           <img
             src={lightboxUrl}
-            alt="Full size"
+            alt={t("Full size")}
             className="construction-lightbox-img"
             onClick={e => e.stopPropagation()}
           />
@@ -833,6 +821,7 @@ function Balance({
   personOptions = [],
   onSmsTransactionAdded
 }) {
+  const { t } = useLanguage();
   const [activePanel, setActivePanel] = useState("summary");
   const [smsCheckRequest, setSmsCheckRequest] = useState(0);
 
@@ -1115,7 +1104,7 @@ function Balance({
     });
   }, [analytics.monthlyTrend]);
   const hiddenCardMoney = "*****";
-  const hiddenSkeleton = <span className="money-skeleton" aria-label="Hidden value"></span>;
+  const hiddenSkeleton = <span className="money-skeleton" aria-label={t("Hidden value")}></span>;
   const isSmsNumberLoading = isFlipped && (boaSmsLoading || !boaSmsState);
   const apolloLocked = isFlipped && !apolloUnlocked;
   const displayedBalance = isFlipped
@@ -1208,13 +1197,13 @@ function Balance({
           className="balance-card-rail"
           ref={cardRailRef}
           onScroll={handleCardRailScroll}
-          aria-label="Bank accounts"
+          aria-label={t("Bank accounts")}
         >
           <div className="balance-card-slide">
-            <img src="/card.png" className="card" alt="Main bank card" />
+            <img src="/card.png" className="card" alt={t("Main bank card")} />
           </div>
           <div className="balance-card-slide">
-            <img src="/card2.png" className="card" alt="Apollo bank card" />
+            <img src="/card2.png" className="card" alt={t("Apollo bank card")} />
           </div>
         </div>
 
@@ -1224,24 +1213,24 @@ function Balance({
               <div className="account-identity">
                 <span className="account-identity-mark" aria-hidden="true" />
                 <div>
-                  <span>{isFlipped ? "Apollo account" : "Primary account"}</span>
-                  <strong>Balance</strong>
+                  <span>{t(isFlipped ? "Apollo account" : "Primary account")}</span>
+                  <strong>{t("Balance")}</strong>
                 </div>
               </div>
-              {isFlipped && apolloUnlocked && activePanel !== "interest" ? <button className="apollo-check-latest" type="button" onClick={() => setSmsCheckRequest(value => value + 1)} aria-label="Check latest BOA SMS from Apollo">Check latest</button> : <span className="account-currency">ETB</span>}
+              {isFlipped && apolloUnlocked && activePanel !== "interest" ? <button className="apollo-check-latest" type="button" onClick={() => setSmsCheckRequest(value => value + 1)} aria-label={t("Check latest BOA SMS from Apollo")}>{t("Check latest")}</button> : <span className="account-currency">{t("ETB")}</span>}
             </div>
 
             <div className="account-balance-block">
-              <span className="account-balance-caption">Available balance</span>
+              <span className="account-balance-caption">{t("Available balance")}</span>
               <div className="account-balance-value-row">
                 <h1 className={isSmsNumberLoading || apolloLocked ? "money-updating" : ""}>
-                  {apolloLocked ? hiddenCardMoney : isSmsNumberLoading ? "..." : showBalance ? displayedBalance : hiddenCardMoney}
+                  {t(apolloLocked ? hiddenCardMoney : isSmsNumberLoading ? "..." : showBalance ? displayedBalance : hiddenCardMoney)}
                 </h1>
                 <button
                   className="balance-visibility-btn"
                   onClick={apolloLocked ? undefined : requestVisibility}
                   type="button"
-                  aria-label={showBalance ? "Hide account values" : "Show account values"}
+                  aria-label={t(showBalance ? "Hide account values" : "Show account values")}
                   style={apolloLocked ? { opacity: 0, pointerEvents: "none" } : {}}
                 >
                   {showBalance ? <FaEye /> : <FaEyeSlash />}
@@ -1249,7 +1238,7 @@ function Balance({
               </div>
               {isFlipped ? <ApolloBalanceComparison apolloBalance={boaSmsState?.current_balance} regularBalance={balance} loading={isSmsNumberLoading} locked={apolloLocked} hidden={!showBalance} /> : (
                 <div className="account-activity-row">
-                  <span>{balanceMeta.label}</span>
+                  <span>{t(balanceMeta.label)}</span>
                   <strong>{balanceMeta.amount}</strong>
                   <time>{balanceMeta.date}</time>
                 </div>
@@ -1260,10 +1249,10 @@ function Balance({
               <button className="account-lock-overlay" type="button" onClick={requestApolloUnlock}>
                 <span className="account-lock-mark"><FaLock aria-hidden="true" /></span>
                 <span className="account-lock-copy">
-                  <strong>Apollo is locked</strong>
-                  <small>Unlock to view your balance and latest activity.</small>
-                  <small lang="am">ቀሪ ሂሳብዎን ለማየት ይክፈቱ።</small>
-                  <span className="account-lock-action">Tap to unlock</span>
+                  <strong>{t("Apollo is locked")}</strong>
+                  <small>{t("Unlock to view your balance and latest activity.")}</small>
+                  <small lang="am">{t("ቀሪ ሂሳብዎን ለማየት ይክፈቱ።")}</small>
+                  <span className="account-lock-action">{t("Tap to unlock")}</span>
                 </span>
               </button>
             )}
@@ -1271,7 +1260,7 @@ function Balance({
         </div>
       </section>
 
-      <section className="analytics-switcher" aria-label="Balance analytics">
+      <section className="analytics-switcher" aria-label={t("Balance analytics")}>
         {panelOptions.map((option) => (
           <button
             key={option.key}
@@ -1279,7 +1268,7 @@ function Balance({
             onClick={() => navigate(`/balance/${option.key}`)}
             type="button"
           >
-            {option.label}
+            {t(option.label)}
           </button>
         ))}
       </section>
@@ -1288,14 +1277,14 @@ function Balance({
 
         {activePanel === "summary" && (
           <article className="analytics-card focus-card summary-card">
-            <span>{isFlipped ? "BOA SMS" : "Month Summary"}</span>
-            <h2>{isFlipped ? "Recent transactions" : "Recent months"}</h2>
+            <span>{t(isFlipped ? "BOA SMS" : "Month Summary")}</span>
+            <h2>{t(isFlipped ? "Recent transactions" : "Recent months")}</h2>
             <div className="summary-list">
               {isFlipped && smsRecentRows.length === 0 && (
                 <div className="summary-row">
-                  <div><strong>No BOA SMS transactions yet</strong><small>Waiting for last-month sync</small></div>
-                  <div><small>Amount</small><strong>{hiddenSkeleton}</strong></div>
-                  <div><small>Balance</small><strong>{hiddenSkeleton}</strong></div>
+                  <div><strong>{t("No BOA SMS transactions yet")}</strong><small>{t("Waiting for last-month sync")}</small></div>
+                  <div><small>{t("Amount")}</small><strong>{t(hiddenSkeleton)}</strong></div>
+                  <div><small>{t("Balance")}</small><strong>{t(hiddenSkeleton)}</strong></div>
                 </div>
               )}
               {isFlipped ? (
@@ -1305,13 +1294,13 @@ function Balance({
 
                   return (
                     <div className={`summary-row apollo-summary-row${apolloLocked ? " is-locked" : ""}`} key={event.key}>
-                      <div><strong>{event.label}</strong><small>{event.date}</small></div>
-                      <div><small>Amount</small><strong>{apolloLocked ? hiddenCardMoney : money(event.amount)}</strong></div>
-                      <div><small>Balance</small><strong>{apolloLocked ? hiddenCardMoney : event.balanceAfter ? money(event.balanceAfter) : "0.0"}</strong></div>
+                      <div><strong>{t(event.label)}</strong><small>{t(event.date)}</small></div>
+                      <div><small>{t("Amount")}</small><strong>{t(apolloLocked ? hiddenCardMoney : money(event.amount))}</strong></div>
+                      <div><small>{t("Balance")}</small><strong>{t(apolloLocked ? hiddenCardMoney : event.balanceAfter ? money(event.balanceAfter) : "0.0")}</strong></div>
                       <span
                         className={`trend-badge trend-${event.trendClass}`}
-                        title={trendLabel}
-                        aria-label={trendLabel}
+                        title={t(trendLabel)}
+                        aria-label={t(trendLabel)}
                       >
                         <svg className="trend-mini-chart" viewBox="0 0 68 32" role="img" aria-hidden="true">
                           <defs>
@@ -1328,10 +1317,10 @@ function Balance({
                           <circle className="trend-chart-point" cx={event.currentPoint.x} cy={event.currentPoint.y} r="1.8" />
                         </svg>
                         <span className="trend-copy">
-                          <small>Balance path</small>
+                          <small>{t("Balance path")}</small>
                           <span>
-                            <span className="trend-arrow">{event.trendIcon}</span>
-                            <span className="trend-val">{apolloLocked ? "Locked" : event.displayVal}</span>
+                            <span className="trend-arrow">{t(event.trendIcon)}</span>
+                            <span className="trend-val">{t(apolloLocked ? "Locked" : event.displayVal)}</span>
                           </span>
                         </span>
                       </span>
@@ -1344,13 +1333,13 @@ function Balance({
 
                   return (
                     <div className="summary-row" key={m.key}>
-                      <div><strong>{m.monthLabel}</strong><small>{m.meta}</small></div>
-                      <div><small>Withdraw</small><strong>{money(m.Withdraw)}</strong></div>
-                      <div><small>Deposit</small><strong>{money(m.Deposit)}</strong></div>
+                      <div><strong>{t(m.monthLabel)}</strong><small>{t(m.meta)}</small></div>
+                      <div><small>{t("Withdraw")}</small><strong>{t(money(m.Withdraw))}</strong></div>
+                      <div><small>{t("Deposit")}</small><strong>{t(money(m.Deposit))}</strong></div>
                       <span
                         className={`trend-badge trend-${m.trendClass}`}
-                        title={m.trendDescription}
-                        aria-label={m.trendDescription}
+                        title={t(m.trendDescription)}
+                        aria-label={t(m.trendDescription)}
                       >
                         <svg className="trend-mini-chart" viewBox="0 0 68 32" role="img" aria-hidden="true">
                           <defs>
@@ -1367,10 +1356,10 @@ function Balance({
                           <circle className="trend-chart-point" cx={m.currentPoint.x} cy={m.currentPoint.y} r="1.8" />
                         </svg>
                         <span className="trend-copy">
-                          <small>{m.chartMonthCount}-month view</small>
+                          <small>{t(m.chartMonthCount)}{t("-month view")}</small>
                           <span>
-                            <span className="trend-arrow">{m.trendIcon}</span>
-                            <span className="trend-val">{m.displayVal}</span>
+                            <span className="trend-arrow">{t(m.trendIcon)}</span>
+                            <span className="trend-val">{t(m.displayVal)}</span>
                           </span>
                         </span>
                       </span>
@@ -1402,48 +1391,48 @@ function Balance({
               <div className="interest-card-identity">
                 <span className="interest-card-mark" aria-hidden="true"><FaBolt /></span>
                 <div>
-                  <span>Credit interest</span>
-                  <strong>Interest estimate</strong>
+                  <span>{t("Credit interest")}</span>
+                  <strong>{t("Interest estimate")}</strong>
                 </div>
               </div>
-              <span className="interest-month-pill">{analytics.interest.monthLabel}</span>
+              <span className="interest-month-pill">{t(analytics.interest.monthLabel)}</span>
             </div>
 
             <div className="interest-estimate-panel">
-              <span>Estimated this month</span>
+              <span>{t("Estimated this month")}</span>
               <div className="interest-lock-row">
                 <div className="interest-estimate-value">
-                  <h2 className={!showInterest ? "masked-interest-value" : ""}>{showInterest ? money(analytics.interest.netMonthEstimate) : hiddenCardMoney}</h2>
-                  <span>ETB</span>
+                  <h2 className={!showInterest ? "masked-interest-value" : ""}>{t(showInterest ? money(analytics.interest.netMonthEstimate) : hiddenCardMoney)}</h2>
+                  <span>{t("ETB")}</span>
                 </div>
                 <button
                   className="interest-lock-btn"
                   onClick={requestInterestVisibility}
                   type="button"
-                  aria-label={showInterest ? "Hide credit interest values" : "Show credit interest values"}
+                  aria-label={t(showInterest ? "Hide credit interest values" : "Show credit interest values")}
                 >
                   {showInterest ? <FaEye /> : <FaEyeSlash />}
                 </button>
               </div>
-              <p>Calculated from the lowest balance held during the month.</p>
+              <p>{t("Calculated from the lowest balance held during the month.")}</p>
             </div>
 
             <div className="interest-grid interest-metrics">
-              <div className="interest-metric is-highlight"><small>Minimum balance</small><strong className={!showInterest ? "masked-interest-value" : ""}>{showInterest ? money(analytics.interest.minimumBalance) : hiddenCardMoney}</strong><span>ETB</span></div>
-              <div className="interest-metric is-highlight"><small>Remaining estimate</small><strong className={!showInterest ? "masked-interest-value" : ""}>{showInterest ? money(analytics.interest.remainingEstimate) : hiddenCardMoney}</strong><span>ETB</span></div>
-              <div className="interest-metric"><small>Days remaining</small><strong>{analytics.interest.remainingDays}</strong><span>days</span></div>
-              <div className="interest-metric"><small>Interest period</small><strong>{analytics.interest.elapsedDays}/{analytics.interest.monthDays}</strong><span>days</span></div>
-              <div className="interest-metric"><small>Annual rate</small><strong>{(analytics.interest.annualRate * 100).toFixed(1)}%</strong><span>per year</span></div>
-              <div className="interest-metric"><small>Tax deduction</small><strong>{(analytics.interest.taxRate * 100).toFixed(0)}%</strong><span>from interest</span></div>
+              <div className="interest-metric is-highlight"><small>{t("Minimum balance")}</small><strong className={!showInterest ? "masked-interest-value" : ""}>{t(showInterest ? money(analytics.interest.minimumBalance) : hiddenCardMoney)}</strong><span>{t("ETB")}</span></div>
+              <div className="interest-metric is-highlight"><small>{t("Remaining estimate")}</small><strong className={!showInterest ? "masked-interest-value" : ""}>{t(showInterest ? money(analytics.interest.remainingEstimate) : hiddenCardMoney)}</strong><span>{t("ETB")}</span></div>
+              <div className="interest-metric"><small>{t("Days remaining")}</small><strong>{t(analytics.interest.remainingDays)}</strong><span>{t("days")}</span></div>
+              <div className="interest-metric"><small>{t("Interest period")}</small><strong>{t(analytics.interest.elapsedDays)}{t("/")}{t(analytics.interest.monthDays)}</strong><span>{t("days")}</span></div>
+              <div className="interest-metric"><small>{t("Annual rate")}</small><strong>{t((analytics.interest.annualRate * 100).toFixed(1))}{t("%")}</strong><span>{t("per year")}</span></div>
+              <div className="interest-metric"><small>{t("Tax deduction")}</small><strong>{t((analytics.interest.taxRate * 100).toFixed(0))}{t("%")}</strong><span>{t("from interest")}</span></div>
             </div>
             {!interestUnlocked && (
               <button className="interest-locked-overlay" type="button" onClick={requestInterestVisibility}>
                 <span className="account-lock-mark"><FaLock aria-hidden="true" /></span>
                 <span className="account-lock-copy">
-                  <strong>Credit interest is locked</strong>
-                  <small>Unlock to view your estimated earnings and calculation details.</small>
-                  <small lang="am">የወለድ ግምትና ዝርዝሩን ለማየት ይክፈቱ።</small>
-                  <span className="account-lock-action">Tap to unlock</span>
+                  <strong>{t("Credit interest is locked")}</strong>
+                  <small>{t("Unlock to view your estimated earnings and calculation details.")}</small>
+                  <small lang="am">{t("የወለድ ግምትና ዝርዝሩን ለማየት ይክፈቱ።")}</small>
+                  <span className="account-lock-action">{t("Tap to unlock")}</span>
                 </span>
               </button>
             )}
@@ -1459,29 +1448,29 @@ function Balance({
       {visibilityPromptOpen && (
         <div className="password-overlay secure-password-overlay" role="dialog" aria-modal="true" aria-labelledby="interest-unlock-title">
           <div className="password-box">
-            <button className="secure-password-close" type="button" aria-label="Close interest unlock" onClick={() => { setVisibilityPromptOpen(false); setVisibilityPassword(""); setVisibilityError(false); }}>
+            <button className="secure-password-close" type="button" aria-label={t("Close interest unlock")} onClick={() => { setVisibilityPromptOpen(false); setVisibilityPassword(""); setVisibilityError(false); }}>
               <FaTimes aria-hidden="true" />
             </button>
             <div className="login-header">
-              <img src="/logo.png" alt="Bank Logo" className="login-logo" />
-              <h2 id="interest-unlock-title">Unlock Credit Interest</h2>
+              <img src="/logo.png" alt={t("Bank Logo")} className="login-logo" />
+              <h2 id="interest-unlock-title">{t("Unlock Credit Interest")}</h2>
             </div>
             <div className="login-field">
-              <label htmlFor="interest-password">Password</label>
+              <label htmlFor="interest-password">{t("Password")}</label>
               <input
                 id="interest-password"
                 type="password"
-                placeholder="Password"
+                placeholder={t("Password")}
                 value={visibilityPassword}
                 onChange={(event) => { setVisibilityPassword(event.target.value); setVisibilityError(false); }}
                 onKeyDown={(event) => { if (event.key === "Enter") unlockVisibility(); }}
                 autoFocus
               />
             </div>
-            {visibilityError && <div className="login-error-msg">Incorrect password</div>}
+            {visibilityError && <div className="login-error-msg">{t("Incorrect password")}</div>}
             <div className="secure-password-actions">
-              <button className="login-cancel-btn" type="button" onClick={() => { setVisibilityPromptOpen(false); setVisibilityPassword(""); setVisibilityError(false); }}>Close</button>
-              <button className="login-submit-btn" type="button" onClick={unlockVisibility}>Unlock</button>
+              <button className="login-cancel-btn" type="button" onClick={() => { setVisibilityPromptOpen(false); setVisibilityPassword(""); setVisibilityError(false); }}>{t("Close")}</button>
+              <button className="login-submit-btn" type="button" onClick={unlockVisibility}>{t("Unlock")}</button>
             </div>
           </div>
         </div>
@@ -1490,32 +1479,32 @@ function Balance({
       {apolloPromptOpen && (
         <div ref={apolloOverlayRef} className="password-overlay secure-password-overlay apollo-password-overlay" role="dialog" aria-modal="true" aria-labelledby="apollo-unlock-title">
           <div className="password-box apollo-password-box">
-            <button className="secure-password-close" type="button" aria-label="Close Apollo unlock" onClick={() => { setApolloPromptOpen(false); setApolloPassword(""); setApolloError(false); }}>
+            <button className="secure-password-close" type="button" aria-label={t("Close Apollo unlock")} onClick={() => { setApolloPromptOpen(false); setApolloPassword(""); setApolloError(false); }}>
               <FaTimes aria-hidden="true" />
             </button>
             <div className="login-header apollo-login-header">
               <div className="apollo-logo-frame">
-                <img src="/apollo-logo.webp" alt="Apollo" className="apollo-unlock-logo" />
+                <img src="/apollo-logo.webp" alt={t("Apollo")} className="apollo-unlock-logo" />
               </div>
-              <h2 id="apollo-unlock-title">Unlock Apollo</h2>
-              <p>Enter your password to reveal the protected account details.</p>
+              <h2 id="apollo-unlock-title">{t("Unlock Apollo")}</h2>
+              <p>{t("Enter your password to reveal the protected account details.")}</p>
             </div>
             <div className="login-field">
-              <label htmlFor="apollo-password">Password</label>
+              <label htmlFor="apollo-password">{t("Password")}</label>
               <input
                 id="apollo-password"
                 type="password"
-                placeholder="Password"
+                placeholder={t("Password")}
                 value={apolloPassword}
                 onChange={(event) => { setApolloPassword(event.target.value); setApolloError(false); }}
                 onKeyDown={(event) => { if (event.key === "Enter") unlockApollo(); }}
                 autoFocus
               />
             </div>
-            {apolloError && <div className="login-error-msg">Incorrect password</div>}
+            {apolloError && <div className="login-error-msg">{t("Incorrect password")}</div>}
             <div className="secure-password-actions">
-              <button className="login-cancel-btn" type="button" onClick={() => { setApolloPromptOpen(false); setApolloPassword(""); setApolloError(false); }}>Close</button>
-              <button className="login-submit-btn" type="button" onClick={unlockApollo}>Unlock</button>
+              <button className="login-cancel-btn" type="button" onClick={() => { setApolloPromptOpen(false); setApolloPassword(""); setApolloError(false); }}>{t("Close")}</button>
+              <button className="login-submit-btn" type="button" onClick={unlockApollo}>{t("Unlock")}</button>
             </div>
           </div>
         </div>

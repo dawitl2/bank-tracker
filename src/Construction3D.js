@@ -1,3 +1,4 @@
+import { useLanguage } from "./Language";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import {
@@ -247,6 +248,7 @@ function createTexture(source, repeatX = 1, repeatY = 1) {
 }
 
 function TextureUploader({ label, imageUrl, onChange, capture, disabled }) {
+  const { t } = useLanguage();
   const inputRef = useRef(null);
   const Icon = capture ? FaCamera : FaUpload;
 
@@ -258,9 +260,9 @@ function TextureUploader({ label, imageUrl, onChange, capture, disabled }) {
       onClick={() => inputRef.current?.click()}
     >
       <span className="construction-3d-texture-thumb">
-        {imageUrl ? <img src={imageUrl} alt="" /> : <FaImage />}
+        {imageUrl ? <img src={imageUrl} alt={t("")} /> : <FaImage />}
       </span>
-      <span>{label}</span>
+      <span>{t(label)}</span>
       <Icon />
       <input
         ref={inputRef}
@@ -279,17 +281,18 @@ function TextureUploader({ label, imageUrl, onChange, capture, disabled }) {
 }
 
 function ShapeButton({ shape, active, onClick }) {
+  const { t } = useLanguage();
   const Icon = shape.icon;
   return (
     <button
       className={active ? "active" : ""}
       type="button"
       onClick={onClick}
-      title={`Add ${shape.label}`}
-      aria-label={`Add ${shape.label}`}
+      title={t(`Add ${shape.label}`)}
+      aria-label={t(`Add ${shape.label}`)}
     >
       <Icon />
-      <span>{shape.label}</span>
+      <span>{t(shape.label)}</span>
     </button>
   );
 }
@@ -446,6 +449,7 @@ function FloorPlanEditor({ walls, selectedWallId, activeShape, onAddWall, onMove
 }
 
 function ThreeWalkthrough({ walls, materials, selectedWallId, active }) {
+  const { t } = useLanguage();
   const mountRef = useRef(null);
   const engineRef = useRef(null);
   const keysRef = useRef({});
@@ -689,20 +693,20 @@ function ThreeWalkthrough({ walls, materials, selectedWallId, active }) {
       {walls.filter(wall => wall.visible).length === 0 && (
         <div className="construction-3d-empty-render">
           <FaShapes />
-          <span>Add a shape in 2D first</span>
+          <span>{t("Add a shape in 2D first")}</span>
         </div>
       )}
       <div className="construction-3d-render-hint">
-        <span>Drag to look</span>
-        <span>WASD</span>
-        <span>Pinch or wheel</span>
+        <span>{t("Drag to look")}</span>
+        <span>{t("WASD")}</span>
+        <span>{t("Pinch or wheel")}</span>
       </div>
       <div className="construction-3d-joysticks">
         <div className="construction-3d-stick" {...bindJoystick("move")}>
-          <span>Move</span>
+          <span>{t("Move")}</span>
         </div>
         <div className="construction-3d-stick" {...bindJoystick("look")}>
-          <span>Look</span>
+          <span>{t("Look")}</span>
         </div>
       </div>
     </div>
@@ -710,6 +714,7 @@ function ThreeWalkthrough({ walls, materials, selectedWallId, active }) {
 }
 
 function Construction3D({ house, onClose }) {
+  const { t } = useLanguage();
   const houseId = house?.id || "draft";
   const initialPlan = useMemo(() => loadPlan(houseId), [houseId]);
   const [mode, setMode] = useState("plan");
@@ -773,24 +778,18 @@ function Construction3D({ house, onClose }) {
       <section className="construction-3d-panel" onClick={event => event.stopPropagation()}>
         <header className="construction-3d-header">
           <div>
-            <span className="construction-3d-kicker">Construction visualizer</span>
-            <h2>{house?.name || "House"}</h2>
+            <span className="construction-3d-kicker">{t("Construction visualizer")}</span>
+            <h2>{t(house?.name || "House")}</h2>
           </div>
           <div className="construction-3d-mode-tabs">
             <button className={activeMode === "tools" ? "active" : ""} onClick={() => setMode("tools")} type="button">
-              <FaPalette />
-              Tools
-            </button>
+              <FaPalette />{t("Tools")}</button>
             <button className={activeMode === "plan" ? "active" : ""} onClick={() => setMode("plan")} type="button">
-              <FaVectorSquare />
-              2D
-            </button>
+              <FaVectorSquare />{t("2D")}</button>
             <button className={activeMode === "walk" ? "active" : ""} onClick={() => setMode("walk")} type="button">
-              <FaCube />
-              3D
-            </button>
+              <FaCube />{t("3D")}</button>
           </div>
-          <button className="construction-3d-close" onClick={onClose} aria-label="Close visualizer" type="button">
+          <button className="construction-3d-close" onClick={onClose} aria-label={t("Close visualizer")} type="button">
             <FaTimes />
           </button>
         </header>
@@ -798,7 +797,7 @@ function Construction3D({ house, onClose }) {
         <div className={`construction-3d-body construction-3d-body-${activeMode}`}>
           <aside className="construction-3d-tools">
             <div className="construction-3d-tool-block">
-              <span className="construction-3d-tool-title">Build Shapes</span>
+              <span className="construction-3d-tool-title">{t("Build Shapes")}</span>
               <div className="construction-3d-shape-grid">
                 {SHAPES.map(shape => (
                   <ShapeButton
@@ -813,22 +812,22 @@ function Construction3D({ house, onClose }) {
                 ))}
               </div>
               <div className="construction-3d-tool-row">
-                <span><FaShapes /> Visible walls</span>
-                <strong>{visibleWallCount}</strong>
+                <span><FaShapes />{t(" Visible walls")}</span>
+                <strong>{t(visibleWallCount)}</strong>
               </div>
             </div>
 
             <div className="construction-3d-tool-block compact">
-              <span className="construction-3d-tool-title">Selected Wall</span>
+              <span className="construction-3d-tool-title">{t("Selected Wall")}</span>
               {selectedWall ? (
                 <>
                   <div className="construction-3d-selection">
                     <FaMousePointer />
-                    <span>{selectedWall.label}</span>
+                    <span>{t(selectedWall.label)}</span>
                   </div>
                   <div className="construction-3d-dimension-grid">
                     <label>
-                      <span>W</span>
+                      <span>{t("W")}</span>
                       <input
                         type="range"
                         min="0.7"
@@ -837,10 +836,10 @@ function Construction3D({ house, onClose }) {
                         value={selectedWall.width}
                         onChange={event => updateWall(selectedWall.id, { width: Number(event.target.value) })}
                       />
-                      <b>{meters(selectedWall.width)}</b>
+                      <b>{t(meters(selectedWall.width))}</b>
                     </label>
                     <label>
-                      <span>D</span>
+                      <span>{t("D")}</span>
                       <input
                         type="range"
                         min="0.7"
@@ -849,10 +848,10 @@ function Construction3D({ house, onClose }) {
                         value={selectedWall.depth}
                         onChange={event => updateWall(selectedWall.id, { depth: Number(event.target.value) })}
                       />
-                      <b>{meters(selectedWall.depth)}</b>
+                      <b>{t(meters(selectedWall.depth))}</b>
                     </label>
                     <label>
-                      <span>R</span>
+                      <span>{t("R")}</span>
                       <input
                         type="range"
                         min="-180"
@@ -861,30 +860,28 @@ function Construction3D({ house, onClose }) {
                         value={Math.round(selectedWall.rotation * 180 / Math.PI)}
                         onChange={event => updateWall(selectedWall.id, { rotation: Number(event.target.value) * Math.PI / 180 })}
                       />
-                      <b>{Math.round(selectedWall.rotation * 180 / Math.PI)} deg</b>
+                      <b>{t(Math.round(selectedWall.rotation * 180 / Math.PI))}{t(" deg")}</b>
                     </label>
                   </div>
                   <div className="construction-3d-action-row">
                     <button type="button" onClick={() => updateWall(selectedWall.id, { visible: !selectedWall.visible })}>
                       {selectedWall.visible ? <FaEyeSlash /> : <FaEye />}
-                      {selectedWall.visible ? "Hide" : "Show"}
+                      {t(selectedWall.visible ? "Hide" : "Show")}
                     </button>
                     <button type="button" onClick={deleteSelected}>
-                      <FaTrash />
-                      Delete
-                    </button>
+                      <FaTrash />{t("Delete")}</button>
                   </div>
                 </>
               ) : (
                 <div className="construction-3d-selection muted">
                   <FaMousePointer />
-                  <span>Pick a wall on 2D</span>
+                  <span>{t("Pick a wall on 2D")}</span>
                 </div>
               )}
             </div>
 
             <div className="construction-3d-tool-block">
-              <span className="construction-3d-tool-title">Wall Finish</span>
+              <span className="construction-3d-tool-title">{t("Wall Finish")}</span>
               <div className="construction-3d-swatches">
                 {COLOR_SWATCHES.map(color => (
                   <button
@@ -892,14 +889,14 @@ function Construction3D({ house, onClose }) {
                     type="button"
                     className={selectedWall?.color === color ? "active" : ""}
                     style={{ "--swatch": color }}
-                    aria-label={`Use ${color}`}
+                    aria-label={t(`Use ${color}`)}
                     disabled={!selectedWall}
                     onClick={() => selectedWall && updateWall(selectedWall.id, { color })}
                   />
                 ))}
               </div>
               <label className="construction-3d-color-row">
-                <span>Custom</span>
+                <span>{t("Custom")}</span>
                 <input
                   type="color"
                   value={selectedWall?.color || DEFAULT_WALL_COLOR}
@@ -908,13 +905,13 @@ function Construction3D({ house, onClose }) {
                 />
               </label>
               <TextureUploader
-                label="Gallery texture"
+                label={t("Gallery texture")}
                 imageUrl={selectedWall?.texture}
                 onChange={setSelectedTexture}
                 disabled={!selectedWall}
               />
               <TextureUploader
-                label="Camera texture"
+                label={t("Camera texture")}
                 imageUrl={selectedWall?.texture}
                 onChange={setSelectedTexture}
                 capture
@@ -922,16 +919,14 @@ function Construction3D({ house, onClose }) {
               />
               {house?.image_url && (
                 <button type="button" onClick={applyHousePhotoTexture} disabled={!selectedWall}>
-                  <FaImage />
-                  Use house photo
-                </button>
+                  <FaImage />{t("Use house photo")}</button>
               )}
             </div>
 
             <div className="construction-3d-tool-block">
-              <span className="construction-3d-tool-title">Floor</span>
+              <span className="construction-3d-tool-title">{t("Floor")}</span>
               <label className="construction-3d-color-row">
-                <span>Color</span>
+                <span>{t("Color")}</span>
                 <input
                   type="color"
                   value={materials.floorColor}
@@ -939,14 +934,12 @@ function Construction3D({ house, onClose }) {
                 />
               </label>
               <TextureUploader
-                label="Floor image"
+                label={t("Floor image")}
                 imageUrl={materials.floorTexture}
                 onChange={texture => setMaterials(current => ({ ...current, floorTexture: texture }))}
               />
               <button type="button" onClick={clearPlan} disabled={!walls.length}>
-                <FaTrash />
-                Empty plan
-              </button>
+                <FaTrash />{t("Empty plan")}</button>
             </div>
           </aside>
 
@@ -964,7 +957,7 @@ function Construction3D({ house, onClose }) {
                 {walls.length === 0 && (
                   <div className="construction-3d-plan-empty">
                     <FaShapes />
-                    <span>Tap the grid to place a wall shape</span>
+                    <span>{t("Tap the grid to place a wall shape")}</span>
                   </div>
                 )}
               </div>
@@ -978,11 +971,11 @@ function Construction3D({ house, onClose }) {
             )}
           </main>
 
-          <nav className="construction-3d-mobile-stepper" aria-label="Visualizer steps">
+          <nav className="construction-3d-mobile-stepper" aria-label={t("Visualizer steps")}>
             <button type="button" onClick={() => setMode(activeMode === "walk" ? "plan" : "tools")}>
               <FaChevronLeft />
             </button>
-            <span>{activeMode === "tools" ? "Tools" : activeMode === "plan" ? "2D plan" : "3D view"}</span>
+            <span>{t(activeMode === "tools" ? "Tools" : activeMode === "plan" ? "2D plan" : "3D view")}</span>
             <button type="button" onClick={() => setMode(activeMode === "tools" ? "plan" : "walk")}>
               <FaChevronRight />
             </button>

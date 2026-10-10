@@ -4,9 +4,7 @@
     padding-top: max(10px, env(safe-area-inset-top));
     padding-bottom: calc(126px + env(safe-area-inset-bottom));
   }
-  .app.mobile-app > .logo { width: min(240px, 65vw); margin: 4px auto 12px; }
-  .mobile-app > .toggle { margin: 0 0 16px; min-height: 46px; padding: 3px; }
-  .mobile-app > .toggle button { min-height: 40px; padding: 10px 14px; }
+  .app.mobile-app > .logo { width: min(240px, 65vw); margin: 16px auto 28px; }
   .mobile-app .card { margin-top: 8px; }
   .mobile-bottom-nav {
     position: fixed;
@@ -60,7 +58,7 @@
     align-self: start;
     width: 64px;
     height: 64px;
-    transform: translateY(-24px);
+    transform: translateY(-16px);
     display: grid;
     place-items: center;
     border: 4px solid #fff;
@@ -102,7 +100,8 @@
   .settings-people summary > span:first-child { display: flex; align-items: center; gap: 10px; }
   .settings-people summary small { background: #f4f3ee; color: #8a8e84; padding: 3px 7px; border-radius: 7px; font-size: 10px; }
   .settings-people[open] summary { margin-bottom: 14px; }
-  .settings-chevron { color: #8a8e84; }
+  .settings-chevron { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; background: #f5f5f0; color: #797e72; transition: transform .2s ease; }
+  .settings-chevron svg { width: 16px; height: 16px; }
   .settings-people[open] .settings-chevron { transform: rotate(180deg); }
   .settings-people-list { list-style: none; margin: 8px 0 12px; padding: 0; }
   .settings-people-list li { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid #f0f0eb; }
@@ -135,4 +134,43 @@
   .settings-confirm p { font-size: 13px; line-height: 1.65; color: #7b8078; }
   .settings-confirm p.settings-error { color: #b63a30; }
   .settings-confirm-actions { margin-top: 24px; }
+  .settings-language { display: flex; align-items: center; gap: 12px; justify-content: space-between; }
+  .settings-language label { min-width: 0; }
+  .settings-language strong { display: flex; gap: 10px; align-items: center; font-size: 14px; }
+  .settings-language strong svg { color: #b87b00; width: 18px; height: 18px; }
+  .settings-language small { display: block; margin-top: 6px; color: #7b8078; font-size: 11px; line-height: 1.5; }
+  .settings-language select { border: 1px solid #e6e6de; border-radius: 10px; padding: 10px 8px; background: #fafaf6; font: inherit; font-size: 13px; max-width: 45%; }
+  .mobile-app .transactions-header { align-items: center; }
+  .mobile-app .transaction-filter .dropdown-btn { gap: 8px; min-width: 0; max-width: 170px; min-height: 36px; padding: 8px 10px; font: inherit; font-size: 11px; border: 1px solid #e9eae4; background: #f4f5f1; color: #888d82; border-radius: 11px; transition: border-color .2s, color .2s, background .2s; }
+  .transaction-filter .dropdown-btn > span:first-of-type { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .transaction-filter .dropdown-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+  .mobile-app .transaction-filter .dropdown-btn:is(.is-filtered,.is-open) { border-color: #f4a300; background: #fff8e8; color: #ad7400; }
+  .mobile-app .transaction-filter .dropdown-menu { left: auto; right: 0; min-width: 185px; width: max-content; max-width: min(240px, calc(100vw - 32px)); max-height: min(430px, 60vh); overflow-y: auto; border: 1px solid #eddcb7; border-radius: 15px; box-shadow: 0 14px 38px #20231f17; }
+  .mobile-app .transaction-filter .dropdown-item { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 14px; border: 0; border-bottom: 1px solid #f1f0e9; background: #fff; text-align: left; font: inherit; font-size: 12px; min-height: 42px; padding: 12px 14px; }
+  .mobile-app .transaction-filter .dropdown-item.selected { background: #fff3d6; color: #ad7400; }
+  .mobile-app .transaction-filter .dropdown-item svg { width: 15px; height: 15px; }
+  .mobile-app .transaction-filter button:focus-visible { outline: 2px solid #b87b00; outline-offset: -3px; }
+  .mobile-app .receipt-modal { border: 1px solid #eeeae2; border-radius: 24px; padding: 22px; background: #fff; box-shadow: 0 24px 90px #12191030; }
+  .mobile-app .receipt-picker .receipt-modal-title-row { border: 0; align-items: flex-start; padding-bottom: 0; margin-bottom: 22px; }
+  .mobile-app .receipt-picker .receipt-modal-title-copy > span { color: #b67b00; font-size: 9px; letter-spacing: .14em; }
+  .mobile-app .receipt-picker .receipt-modal-title-copy h2 { font-size: 24px; margin-top: 8px; }
+  .receipt-modal-title-copy p { margin: 8px 0 0; font-size: 12px; color: #8b8f87; line-height: 1.5; }
+  .mobile-app .receipt-picker .receipt-modal-icon-button { width: 32px; height: 32px; border: 0; border-radius: 50%; background: #f5f5ef; }
+  .mobile-app .receipt-picker .receipt-choice-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .mobile-app .receipt-picker .receipt-choice-card { display: grid; grid-template-columns: 44px 1fr 18px; align-items: center; gap: 13px; min-height: 78px; padding: 14px; border: 1px solid #eaeae2; border-radius: 15px; background: #fcfcf9; box-shadow: none; text-align: left; }
+  .mobile-app .receipt-picker .receipt-choice-card:hover { border-color: #f4a300; background: #fffbf0; transform: none; }
+  .receipt-choice-mark { grid-column: 1; grid-row: 1; width: 42px; height: 42px; display: grid; place-items: center; border-radius: 12px; background: #fff0cd; color: #ad7500; }
+  .receipt-choice-mark svg { width: 20px; height: 20px; }
+  .mobile-app .receipt-picker .receipt-choice-details { grid-column: 2; grid-row: 1; gap: 4px; }
+  .mobile-app .receipt-picker .receipt-choice-details span { font-size: 14px; font-weight: 650; }
+  .mobile-app .receipt-picker .receipt-choice-details small { font-size: 11px; font-weight: 400; color: #85897f; }
+  .receipt-choice-arrow { grid-column: 3; grid-row: 1; width: 17px; height: 17px; color: #969c8f; }
+  .mobile-app:lang(am) { font-family: "Noto Sans Ethiopic", "Nyala", "Segoe UI", sans-serif; }
+  .mobile-app:lang(am) :is(h1,h2,h3,strong,button,span) { letter-spacing: normal; }
+  .mobile-app:lang(am) .mobile-nav-tab { font-size: 11px; }
+  .mobile-app:lang(am) .account-lock-copy small[lang="am"], .mobile-app:lang(am) .loading-copy-amharic { display: none; }
+}
+@media (min-width: 900px) {
+  .receipt-choice-mark svg { width: 22px; height: 22px; color: #8c9287; }
+  .receipt-choice-arrow, .receipt-modal-title-copy p { display: none; }
 }

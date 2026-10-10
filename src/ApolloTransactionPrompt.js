@@ -1,3 +1,4 @@
+import { useLanguage } from "./Language";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { smsTransactionDraft } from "./boaSmsImport";
 import { API_URL, checkLatestSms, readJsonResponse } from "./boaSmsClient";
@@ -7,6 +8,7 @@ import "./ApolloTransactionPrompt.css";
 
 
 export default function ApolloTransactionPrompt({ requestId = 0, enabled = false, personOptions = [], onAdded }) {
+  const { t } = useLanguage();
   const [event, setEvent] = useState(null);
   const [person, setPerson] = useState("");
   const [narrative, setNarrative] = useState("Materials");
@@ -122,38 +124,38 @@ export default function ApolloTransactionPrompt({ requestId = 0, enabled = false
   return (
     <div ref={overlay} className="apollo-transaction-overlay apollo-password-overlay" onKeyDown={onKeyDown}>
       <form ref={dialog} className="apollo-transaction-dialog" role="dialog" aria-modal="true" aria-labelledby="apollo-transaction-title" onSubmit={add} aria-busy={saving || stage === "checking"}>
-        <div className="apollo-logo-frame"><img className="apollo-unlock-logo" src="/apollo-logo.webp" alt="Apollo" /></div>
-        {stage === "transaction" && <span className="apollo-transaction-source">BOA SMS</span>}
-        <h2 id="apollo-transaction-title" aria-live="polite">{titles[stage]}</h2>
-        {stage === "checking" && <p role="status">Comparing your latest BOA SMS with saved transactions.</p>}
-        {stage === "empty" && <p>Sync your messages, then try again.</p>}
-        {stage === "matched" && <><p>Your latest SMS is already saved.</p><dl><div><dt>Reference</dt><dd>{draft?.reference}</dd></div></dl></>}
+        <div className="apollo-logo-frame"><img className="apollo-unlock-logo" src="/apollo-logo.webp" alt={t("Apollo")} /></div>
+        {stage === "transaction" && <span className="apollo-transaction-source">{t("BOA SMS")}</span>}
+        <h2 id="apollo-transaction-title" aria-live="polite">{t(titles[stage])}</h2>
+        {stage === "checking" && <p role="status">{t("Comparing your latest BOA SMS with saved transactions.")}</p>}
+        {stage === "empty" && <p>{t("Sync your messages, then try again.")}</p>}
+        {stage === "matched" && <><p>{t("Your latest SMS is already saved.")}</p><dl><div><dt>{t("Reference")}</dt><dd>{t(draft?.reference)}</dd></div></dl></>}
         {stage === "transaction" && <>
-          <p>Select a person to add this transaction.</p>
+          <p>{t("Select a person to add this transaction.")}</p>
           <dl>
-            <div><dt>{draft.is_withdraw ? "Withdrawal" : "Deposit"}</dt><dd>ETB {formatTransactionAmount(draft.amount)}</dd></div>
-            <div><dt>Date</dt><dd>{draft.date}</dd></div>
-            <div><dt>Narrative</dt><dd>
-              {editingNarrative ? <input aria-label="Narrative" className="apollo-narrative-input" value={narrative} maxLength={2000} autoFocus disabled={saving} onChange={change => setNarrative(change.target.value)} onBlur={() => setEditingNarrative(false)} onKeyDown={keyEvent => { if (keyEvent.key === "Enter") keyEvent.preventDefault(); }} />
-                : <button type="button" className="apollo-narrative-edit" aria-label="Edit narrative" disabled={saving} onClick={() => setEditingNarrative(true)}>{narrative || "Add narrative"}<svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15z" /></svg></button>}
+            <div><dt>{t(draft.is_withdraw ? "Withdrawal" : "Deposit")}</dt><dd>{t("ETB ")}{t(formatTransactionAmount(draft.amount))}</dd></div>
+            <div><dt>{t("Date")}</dt><dd>{draft.date}</dd></div>
+            <div><dt>{t("Narrative")}</dt><dd>
+              {editingNarrative ? <input aria-label={t("Narrative")} className="apollo-narrative-input" value={narrative} maxLength={2000} autoFocus disabled={saving} onChange={change => setNarrative(change.target.value)} onBlur={() => setEditingNarrative(false)} onKeyDown={keyEvent => { if (keyEvent.key === "Enter") keyEvent.preventDefault(); }} />
+                : <button type="button" className="apollo-narrative-edit" aria-label={t("Edit narrative")} disabled={saving} onClick={() => setEditingNarrative(true)}>{t(narrative || "Add narrative")}<svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15z" /></svg></button>}
             </dd></div>
           </dl>
-          <label htmlFor="apollo-transaction-person">Person</label>
+          <label htmlFor="apollo-transaction-person">{t("Person")}</label>
           <select id="apollo-transaction-person" value={person} onChange={change => setPerson(change.target.value)} required disabled={saving}>
-            <option value="" disabled>Select person</option>
-            {personOptions.map(option => <option key={option.value} value={option.value}>{option.value === "null" ? "Unassigned" : option.label}</option>)}
+            <option value="" disabled>{t("Select person")}</option>
+            {personOptions.map(option => <option key={option.value} value={option.value}>{t(option.value === "null" ? "Unassigned" : option.label)}</option>)}
           </select>
           <details className="apollo-transaction-details">
-            <summary>Details</summary>
-            <dl><div><dt>Reference</dt><dd>{draft.reference || "Unavailable"}</dd></div></dl>
-            {draft.receipt_url && <a href={draft.receipt_url} target="_blank" rel="noreferrer">View receipt</a>}
+            <summary>{t("Details")}</summary>
+            <dl><div><dt>{t("Reference")}</dt><dd>{t(draft.reference || "Unavailable")}</dd></div></dl>
+            {draft.receipt_url && <a href={draft.receipt_url} target="_blank" rel="noreferrer">{t("View receipt")}</a>}
           </details>
         </>}
-        {error && <p className="apollo-transaction-error" role="alert">{error}</p>}
+        {error && <p className="apollo-transaction-error" role="alert">{t(error)}</p>}
         <div className="apollo-transaction-actions">
-          <button type="button" onClick={close} disabled={saving}>{stage === "transaction" ? "Later" : "Close"}</button>
-          {stage === "transaction" && <button type="submit" disabled={saving || !person}>{saving ? "Adding..." : "Add transaction"}</button>}
-          {["error", "empty"].includes(stage) && <button type="button" className="apollo-transaction-primary" onClick={checkLatest}>Try again</button>}
+          <button type="button" onClick={close} disabled={saving}>{t(stage === "transaction" ? "Later" : "Close")}</button>
+          {stage === "transaction" && <button type="submit" disabled={saving || !person}>{t(saving ? "Adding..." : "Add transaction")}</button>}
+          {["error", "empty"].includes(stage) && <button type="button" className="apollo-transaction-primary" onClick={checkLatest}>{t("Try again")}</button>}
         </div>
       </form>
     </div>

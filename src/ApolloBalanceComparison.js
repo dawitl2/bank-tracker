@@ -1,3 +1,4 @@
+import { useLanguage } from "./Language";
 import { formatTransactionAmount } from "./transactionAmount";
 import "./ApolloBalanceComparison.css";
 
@@ -8,6 +9,7 @@ const balanceValue = value => {
 };
 
 export default function ApolloBalanceComparison({ apolloBalance, regularBalance, loading = false, locked = false, hidden = true }) {
+  const { t } = useLanguage();
   const apollo = balanceValue(apolloBalance);
   const regular = balanceValue(regularBalance);
   let label = "Difference", amount = "—", tone = "neutral";
@@ -25,9 +27,9 @@ export default function ApolloBalanceComparison({ apolloBalance, regularBalance,
     }
   }
   return (
-    <div className={`account-activity-row apollo-balance-comparison is-${tone}`} role="group" aria-label="Apollo balance compared with regular balance">
-      <span>{label}</span>
-      <strong>{amount} ETB</strong>
+    <div className={`account-activity-row apollo-balance-comparison is-${tone}`} role="group" aria-label={t("Apollo balance compared with regular balance")}>
+      <span>{t(label)}</span>
+      <strong>{t(amount)}{t(" ETB")}</strong>
     </div>
   );
 }

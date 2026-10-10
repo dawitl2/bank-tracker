@@ -1,3 +1,4 @@
+import { useLanguage } from "./Language";
 import { useEffect, useRef, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { QRCodeSVG } from "qrcode.react";
@@ -18,52 +19,55 @@ const socials = [
   ["TikTok", "https://www.tiktok.com/@abyssinia_bank", FaTiktok]
 ];
 
-function receiptDocument(rows, bankLink) {
+function receiptDocument(rows, bankLink, t, language) {
   const assets = `${window.location.origin}${process.env.PUBLIC_URL || ""}/boa-receipt`;
   const markup = renderToStaticMarkup(
-    <html lang="en"><head><meta charSet="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-      <title>Receipt</title><link rel="stylesheet" href={`${assets}/bank.css`} />
+    <html lang={language}><head><meta charSet="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>{t("Receipt")}</title><link rel="stylesheet" href={`${assets}/bank.css`} />
       <link rel="stylesheet" href={`${assets}/saved.css`} />
     </head><body><div id="root"><div id="invoice" style={{ width: "100%", margin: "0 auto" }}>
       <div className="flex flex-col justify-center">
-        <div><img src={`${assets}/logo.png`} className="md:w-80 w-60" alt="Bank of Abyssinia" /></div>
-        <div className="border-t-2 border-b-2 w-full border-[#f1ab15] my-2"><h1 className="text-center text-base font-bold">Receipt</h1></div>
+        <div><img src={`${assets}/logo.png`} className="md:w-80 w-60" alt={t("Bank of Abyssinia")} /></div>
+        <div className="border-t-2 border-b-2 w-full border-[#f1ab15] my-2"><h1 className="text-center text-base font-bold">{t("Receipt")}</h1></div>
       </div>
       <div className="saved-receipt-details" style={{ backgroundImage: `url(${assets}/watermark.png)` }}>
         <table className="my-5 md:w-4/5 w-full mx-auto text-sm"><tbody>
           {rows.map(([label, value]) => <tr key={label}>
-            <td style={{ borderBottom: "1px solid black", borderLeft: "none", borderRight: "none", textAlign: "left" }}>{label}</td>
-            <td title={value === "—" ? "Not recorded in the saved transaction" : undefined} style={{ borderBottom: "1px solid black", borderLeft: "none", borderRight: "none", textAlign: "right" }}>{String(value)} </td>
+            <td style={{ borderBottom: "1px solid black", borderLeft: "none", borderRight: "none", textAlign: "left" }}>{t(label)}</td>
+            <td title={t(value === "—" ? "Not recorded in the saved transaction" : undefined)} style={{ borderBottom: "1px solid black", borderLeft: "none", borderRight: "none", textAlign: "right" }}>{t(String(value))} </td>
           </tr>)}
         </tbody></table>
       </div>
       <div className="saved-receipt-verification flex justify-center py-1">
-        <QRCodeSVG size={120} value={bankLink.url} level="L" title="Open the original bank receipt" />
-        <img className="saved-receipt-stamp" src={`${assets}/stamp.png`} alt="" aria-hidden="true" />
+        <QRCodeSVG size={120} value={bankLink.url} level="L" title={t("Open the original bank receipt")} />
+        <img className="saved-receipt-stamp" src={`${assets}/stamp.png`} alt={t("")} aria-hidden="true" />
       </div>
-      <div className="flex justify-center"><p>Scan the QR to open the bank receipt</p></div>
-      <div className="flex justify-center"><button type="button" data-download-pdf="true" data-html2canvas-ignore="true" className="my-1 bg-[#f1ab15] py-0.5 px-20">Download PDF</button></div>
+      <div className="flex justify-center"><p>{t("Scan the QR to open the bank receipt")}</p></div>
+      <div className="flex justify-center"><button type="button" data-download-pdf="true" data-html2canvas-ignore="true" className="my-1 bg-[#f1ab15] py-0.5 px-20">{t("Download PDF")}</button></div>
       <div className="saved-receipt-contacts p-3 border-b-4 border-[#f1ab15] mx-auto"><div className="flex justify-center">
-        <div className="flex items-center"><h2 className="md:px-2 px-2"><CiPhone /></h2><h2 className="md:px-2 text-left">8397</h2></div>
-        <div className="flex items-center"><h2 className="md:px-2 px-2"><AiTwotoneMail /></h2><h2 className="md:px-2 text-left">Contactcenter</h2></div>
-        <div className="flex items-center"><h2 className="md:px-2 px-2"><img src={`${assets}/swift.png`} width={15} alt="SWIFT" /></h2><h2 className="md:px-2 text-left">ABYSETAA</h2></div>
+        <div className="flex items-center"><h2 className="md:px-2 px-2"><CiPhone /></h2><h2 className="md:px-2 text-left">{t("8397")}</h2></div>
+        <div className="flex items-center"><h2 className="md:px-2 px-2"><AiTwotoneMail /></h2><h2 className="md:px-2 text-left">{t("Contactcenter")}</h2></div>
+        <div className="flex items-center"><h2 className="md:px-2 px-2"><img src={`${assets}/swift.png`} width={15} alt={t("SWIFT")} /></h2><h2 className="md:px-2 text-left">{t("ABYSETAA")}</h2></div>
       </div></div>
       <div className="w-2/4 flex justify-between mx-auto my-4">
-        {socials.map(([name, href, Icon, color]) => <a key={name} href={href} target="_blank" rel="noopener noreferrer" aria-label={name}><Icon color={color} /></a>)}
+        {socials.map(([name, href, Icon, color]) => <a key={name} href={href} target="_blank" rel="noopener noreferrer" aria-label={t(name)}><Icon color={color} /></a>)}
       </div>
-      <p className="saved-receipt-copy-label">Saved transaction copy</p>
+      <p className="saved-receipt-copy-label">{t("Saved transaction copy")}</p>
     </div></div></body></html>
   );
   return `<!doctype html>${markup}`;
 }
 
 export default function BoaReceiptViewer({ transaction: providedTransaction }) {
+  const { t, language } = useLanguage();
   const frameRef = useRef(null);
   const pdfPendingRef = useRef(false);
   const attemptRef = useRef(0);
   const [attempt, setAttempt] = useState(0);
   const [pdfError, setPdfError] = useState("");
   const [failed, setFailed] = useState(false);
+  const [frameDocument, setFrameDocument] = useState(null);
+  const frameCopy = useRef(new WeakMap());
   const token = new URLSearchParams(window.location.search).get("trx");
   const bankLink = getBoaReceiptLink(`https://cs.bankofabyssinia.com/slip/?trx=${encodeURIComponent(token || "")}`);
   const bankToken = bankLink?.token;
@@ -72,8 +76,30 @@ export default function BoaReceiptViewer({ transaction: providedTransaction }) {
     return providedTransaction || saved;
   });
 
+  // The bank page is isolated in its iframe. Translate its visible copy only;
+  // retain original text so switching back to English restores the document.
   useEffect(() => {
-    document.title = "Receipt";
+    if (!frameDocument?.body) return undefined;
+    const translate = () => {
+      const walker = frameDocument.createTreeWalker(frameDocument.body, 4);
+      let node;
+      while ((node = walker.nextNode())) {
+        if (node.parentElement?.closest("script, style, textarea")) continue;
+        const previous = frameCopy.current.get(node);
+        const original = previous && node.textContent === previous.display ? previous.original : node.textContent;
+        const display = t(original);
+        frameCopy.current.set(node, { original, display });
+        if (node.textContent !== display) node.textContent = display;
+      }
+      frameDocument.documentElement.lang = language;
+    };
+    translate();
+    const observer = new MutationObserver(translate);
+    observer.observe(frameDocument.body, { childList: true, characterData: true, subtree: true });
+    return () => observer.disconnect();
+  }, [frameDocument, t, language]);
+
+  useEffect(() => {
     if (!bankToken) return undefined;
     const timeout = setTimeout(() => setFailed(true), 30000);
     const receive = event => {
@@ -127,18 +153,19 @@ export default function BoaReceiptViewer({ transaction: providedTransaction }) {
   }
 
 
-  if (!bankLink) return <main className="receipt-empty">Receipt not found.</main>;
+  if (!bankLink) return <main className="receipt-empty">{t("Receipt not found.")}</main>;
   const isDawit = isDawitTransaction(transaction);
-  if (failed && !isDawit) return <main className="receipt-empty">Receipt unavailable.</main>;
+  if (failed && !isDawit) return <main className="receipt-empty">{t("Receipt unavailable.")}</main>;
   const fallback = failed && isDawit;
   return <main className="boa-receipt-page">
-    {pdfError && <p role="alert" className="receipt-pdf-error">{pdfError}</p>}
-    <iframe key={fallback ? "saved" : `bank-${attempt}`} ref={frameRef} title="Receipt"
+    {pdfError && <p role="alert" className="receipt-pdf-error">{t(pdfError)}</p>}
+    <iframe key={fallback ? "saved" : `bank-${attempt}`} ref={frameRef} title={t("Receipt")}
       sandbox="allow-scripts allow-same-origin allow-modals allow-popups allow-popups-to-escape-sandbox allow-downloads"
       src={fallback ? undefined : `${RECEIPT_API}?kind=page&trx=${encodeURIComponent(bankLink.token)}`}
-      srcDoc={fallback ? receiptDocument(savedReceiptRows(transaction || {}), bankLink) : undefined}
+      srcDoc={fallback ? receiptDocument(savedReceiptRows(transaction || {}), bankLink, t, language) : undefined}
       onError={() => setFailed(true)}
       onLoad={() => {
+        try { setFrameDocument(frameRef.current?.contentDocument); } catch { /* A bank error page may be cross-origin. */ }
         if (!fallback) return;
         const button = frameRef.current?.contentDocument?.querySelector("[data-download-pdf]");
         if (button) button.onclick = downloadPdf;

@@ -1,5 +1,7 @@
+import { LocalizedTextInput, useLanguage } from "./Language";
 import { useEffect, useState } from "react";
-import { FaArrowLeft, FaCar, FaImage, FaLink, FaQrcode, FaTimes } from "react-icons/fa";
+import { FaArrowLeft, FaTimes } from "react-icons/fa";
+import { FiChevronRight, FiLink, FiGrid, FiImage, FiTruck } from "react-icons/fi";
 import ParkingReceiptFlow from "./ParkingReceiptFlow";
 import TransactionDateField from "./TransactionDateField";
 import { formatTransactionAmount } from "./transactionAmount";
@@ -40,6 +42,7 @@ export default function ReceiptModal({
   setQrStatus,
   handleCloseModal
 }) {
+  const { t } = useLanguage();
   const [imageFileName, setImageFileName] = useState("");
 
   useEffect(() => {
@@ -56,19 +59,20 @@ export default function ReceiptModal({
 
   return (
     <div className="modal-overlay receipt-modal-overlay">
-      <div className={`modal receipt-modal ${receiptMode === "parking" ? "parking-modal" : ""}`}>
+      <div className={`modal receipt-modal${!receiptDraft && !receiptMode ? " receipt-picker" : ""} ${receiptMode === "parking" ? "parking-modal" : ""}`}>
         <div className="receipt-modal-title-row">
           <div className="receipt-modal-title-copy">
-            <span>{receiptMode === "parking" ? "Abrihot Library" : "Bank tracker"}</span>
-            <h2>{receiptDraft?.id ? "Edit transaction" : receiptMode === "parking" ? "Add parking payment" : "Add receipt"}</h2>
+            <span>{t(receiptMode === "parking" ? "Abrihot Library" : "Bank tracker")}</span>
+            <h2>{t(receiptDraft?.id ? "Edit transaction" : receiptMode === "parking" ? "Add parking payment" : "Add receipt")}</h2>
+            {!receiptDraft && !receiptMode && <p>{t("Choose how to add your receipt.")}</p>}
           </div>
           <div className="receipt-modal-header-actions">
             {!receiptDraft && receiptMode === "parking" && (
-              <button type="button" className="receipt-modal-icon-button" onClick={goBack} aria-label="Back to receipt options" disabled={scrapeLoading || draftSaving}>
+              <button type="button" className="receipt-modal-icon-button" onClick={goBack} aria-label={t("Back to receipt options")} disabled={scrapeLoading || draftSaving}>
                 <FaArrowLeft />
               </button>
             )}
-            <button type="button" className="receipt-modal-icon-button" onClick={handleCloseModal} aria-label="Close" disabled={scrapeLoading || draftSaving}>
+            <button type="button" className="receipt-modal-icon-button" onClick={handleCloseModal} aria-label={t("Close")} disabled={scrapeLoading || draftSaving}>
               <FaTimes />
             </button>
           </div>
@@ -77,23 +81,23 @@ export default function ReceiptModal({
         {!receiptDraft && !receiptMode && (
           <div className="receipt-choice-grid">
             <button className="receipt-choice-card" onClick={() => setReceiptMode("link")}>
-              <div className="receipt-choice-details"><span>Link</span><small>Paste a receipt link</small></div>
-              <FaLink className="receipt-choice-icon" />
+              <div className="receipt-choice-details"><span>{t("Link")}</span><small>{t("Paste a receipt link")}</small></div>
+              <span className="receipt-choice-mark"><FiLink aria-hidden="true" /></span><FiChevronRight className="receipt-choice-arrow" aria-hidden="true" />
             </button>
             <button className="receipt-choice-card" onClick={() => setReceiptMode("qr")}>
-              <div className="receipt-choice-details"><span>QR</span><small>Scan from camera</small></div>
-              <FaQrcode className="receipt-choice-icon" />
+              <div className="receipt-choice-details"><span>{t("QR")}</span><small>{t("Scan from camera")}</small></div>
+              <span className="receipt-choice-mark"><FiGrid aria-hidden="true" /></span><FiChevronRight className="receipt-choice-arrow" aria-hidden="true" />
             </button>
             <button className="receipt-choice-card" onClick={() => setReceiptMode("image")}>
-              <div className="receipt-choice-details"><span>Image</span><small>Read a screenshot</small></div>
-              <FaImage className="receipt-choice-icon" />
+              <div className="receipt-choice-details"><span>{t("Image")}</span><small>{t("Read a screenshot")}</small></div>
+              <span className="receipt-choice-mark"><FiImage aria-hidden="true" /></span><FiChevronRight className="receipt-choice-arrow" aria-hidden="true" />
             </button>
             <button className="receipt-choice-card parking-choice-card" onClick={openParkingModal}>
               <div className="receipt-choice-details">
-                <span>Parking</span>
-                <small>Scan an Abrihot ticket</small>
+                <span>{t("Parking")}</span>
+                <small>{t("Scan an Abrihot ticket")}</small>
               </div>
-              <FaCar className="receipt-choice-icon" />
+              <span className="receipt-choice-mark"><FiTruck aria-hidden="true" /></span><FiChevronRight className="receipt-choice-arrow" aria-hidden="true" />
             </button>
           </div>
         )}
@@ -101,7 +105,7 @@ export default function ReceiptModal({
         {!receiptDraft?.id && receiptMode === "link" && (
           <input
             type="text"
-            placeholder="Paste receipt link..."
+            placeholder={t("Paste receipt link...")}
             value={url}
             disabled={scrapeLoading || draftSaving}
             onChange={(event) => setUrl(event.target.value)}
@@ -112,7 +116,7 @@ export default function ReceiptModal({
           <div className="qr-scanner-panel">
             {cameraDevices.length > 1 && (
               <label className="qr-control-field qr-zoom-field">
-                <span>Camera</span>
+                <span>{t("Camera")}</span>
                 <select
                   value={selectedCameraId}
                   onChange={(event) => {
@@ -122,7 +126,7 @@ export default function ReceiptModal({
                 >
                   {cameraDevices.map((device, index) => (
                     <option key={device.deviceId || index} value={device.deviceId}>
-                      {device.label || `Camera ${index + 1}`}
+                      {t(device.label || `Camera ${index + 1}`)}
                     </option>
                   ))}
                 </select>
@@ -131,7 +135,7 @@ export default function ReceiptModal({
             <video ref={videoRef} className="qr-video" playsInline muted></video>
             {zoomRange && (
               <label className="qr-control-field">
-                <span>Zoom {cameraZoom.toFixed(1)}x</span>
+                <span>{t("Zoom ")}{t(cameraZoom.toFixed(1))}{t("x")}</span>
                 <input
                   type="range"
                   min={zoomRange.min}
@@ -142,7 +146,7 @@ export default function ReceiptModal({
                 />
               </label>
             )}
-            <p>{qrStatus || "Preparing camera..."}</p>
+            <p>{t(qrStatus || "Preparing camera...")}</p>
           </div>
         )}
 
@@ -158,15 +162,15 @@ export default function ReceiptModal({
                 }}
                 disabled={scrapeLoading || draftSaving}
               />
-              <span className="image-upload-icon"><FaImage /></span>
+              <span className="image-upload-icon"><FiImage /></span>
               <span className="image-upload-copy">
-                <strong>{imageFileName || "Choose receipt image"}</strong>
-                <small>JPG, PNG or a screenshot</small>
+                <strong>{t(imageFileName || "Choose receipt image")}</strong>
+                <small>{t("JPG, PNG or a screenshot")}</small>
               </span>
-              <span className="image-upload-action">Browse</span>
+              <span className="image-upload-action">{t("Browse")}</span>
             </label>
             <div className={`image-receipt-status ${scrapeLoading ? "is-reading" : ""}`}>
-              <span>{imageStatus ? `${imageStatus}${imageProgress ? ` ${imageProgress}%` : ""}` : "Use a clear image with the full receipt visible."}</span>
+              <span>{t(imageStatus ? `${imageStatus}${imageProgress ? ` ${imageProgress}%` : ""}` : "Use a clear image with the full receipt visible.")}</span>
               {scrapeLoading && <div className="image-receipt-progress"><i style={{ width: `${imageProgress}%` }}></i></div>}
             </div>
           </div>
@@ -184,13 +188,13 @@ export default function ReceiptModal({
 
         {receiptDraft && (
           <div className="receipt-draft-box">
-            <h3>Review Receipt</h3>
+            <h3>{t("Review Receipt")}</h3>
             <div className="receipt-draft-grid">
               {Object.entries(receiptDraft)
                 .filter(([field]) => !GENERATED_TRANSACTION_FIELDS.includes(field))
                 .map(([field, value]) => (
                   <label key={field} className="draft-field">
-                    <span>{field}</span>
+                    <span>{t(field)}</span>
                     {field === "amount" ? (
                       <input type="text" inputMode="numeric" value={formatTransactionAmount(value)} disabled={draftSaving}
                         onChange={(event) => handleDraftChange(field, event.target.value.replace(/,/g, "").split(".")[0])} />
@@ -198,12 +202,14 @@ export default function ReceiptModal({
                       <TransactionDateField value={value} disabled={draftSaving} onChange={next => handleDraftChange(field, next)} />
                     ) : field === "person" ? (
                       <select value={value ?? "null"} onChange={(event) => handleDraftChange(field, event.target.value)}>
-                        {personOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                        {personOptions.map((option) => <option key={option.value} value={option.value}>{t(option.label)}</option>)}
                       </select>
                     ) : typeof value === "boolean" ? (
                       <select value={String(value)} onChange={(event) => handleDraftChange(field, event.target.value)}>
-                        <option value="true">true</option><option value="false">false</option>
+                        <option value="true">{t(field === "is_withdraw" ? "Withdrawal" : "Yes")}</option><option value="false">{t(field === "is_withdraw" ? "Deposit" : "No")}</option>
                       </select>
+                    ) : field === "narrative" ? (
+                      <LocalizedTextInput type="text" value={value ?? ""} disabled={draftSaving} onChange={(event) => handleDraftChange(field, event.target.value)} />
                     ) : value === null ? (
                       <input type="text" value="null" onChange={(event) => handleDraftChange(field, event.target.value)} />
                     ) : (
@@ -219,15 +225,15 @@ export default function ReceiptModal({
           <div className="modal-buttons receipt-modal-actions">
             {!receiptDraft?.id && receiptMode === "link" && (
               <button className="scrape-btn" onClick={() => handleScrape()} disabled={scrapeLoading || draftSaving}>
-                {receiptDraft ? "Scrape Again" : "Scrape"}
+                {t(receiptDraft ? "Scrape Again" : "Scrape")}
               </button>
             )}
             {!receiptDraft && receiptMode && (
-              <button className="close-btn" onClick={goBack} disabled={scrapeLoading || draftSaving}>Back</button>
+              <button className="close-btn" onClick={goBack} disabled={scrapeLoading || draftSaving}>{t("Back")}</button>
             )}
             {receiptDraft && (
               <button className="save-draft-btn" onClick={handleSaveDraft} disabled={draftSaving}>
-                {draftSaving ? "Saving..." : receiptDraft.id ? "Save Changes" : "Approve & Save"}
+                {t(draftSaving ? "Saving..." : receiptDraft.id ? "Save Changes" : "Approve & Save")}
               </button>
             )}
           </div>

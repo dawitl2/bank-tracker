@@ -1,3 +1,4 @@
+import { useLanguage } from "./Language";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FaCamera, FaCheck, FaChevronRight, FaClock, FaImages, FaRedo } from "react-icons/fa";
 import {
@@ -72,6 +73,7 @@ export default function ParkingReceiptFlow({
   saving,
   saveSuccess
 }) {
+  const { t } = useLanguage();
   const cameraInputRef = useRef(null);
   const fileInputRef = useRef(null);
   const previewUrlRef = useRef("");
@@ -235,7 +237,7 @@ export default function ParkingReceiptFlow({
     return (
       <div className="parking-success" role="status" aria-live="polite">
         <span className="parking-success-check"><FaCheck /></span>
-        <div><strong>Parking saved</strong><small>{amountText} ETB added · Abrihot</small></div>
+        <div><strong>{t("Parking saved")}</strong><small>{t(amountText)}{t(" ETB added · Abrihot")}</small></div>
       </div>
     );
   }
@@ -247,42 +249,38 @@ export default function ParkingReceiptFlow({
   return (
     <div className="parking-flow">
       <div className="parking-context-row">
-        <span>Abrihot Library</span>
-        <span>{PARKING_RATE_PER_HOUR} ETB / started hour</span>
+        <span>{t("Abrihot Library")}</span>
+        <span>{t(PARKING_RATE_PER_HOUR)}{t(" ETB / started hour")}</span>
       </div>
 
-      <div className="parking-mode-toggle" role="group" aria-label="Parking entry method">
+      <div className="parking-mode-toggle" role="group" aria-label={t("Parking entry method")}>
         <button
           type="button"
           className={entryMode === "scan" ? "active" : ""}
           aria-pressed={entryMode === "scan"}
           onClick={() => changeEntryMode("scan")}
-        >
-          Scan ticket
-        </button>
+        >{t("Scan ticket")}</button>
         <button
           type="button"
           className={entryMode === "duration" ? "active" : ""}
           aria-pressed={entryMode === "duration"}
           onClick={() => changeEntryMode("duration")}
-        >
-          Enter duration
-        </button>
+        >{t("Enter duration")}</button>
       </div>
 
       {entryMode === "scan" && (
         <>
           {!previewUrl && (
-            <section className="parking-source-panel" aria-label="Choose parking receipt source">
+            <section className="parking-source-panel" aria-label={t("Choose parking receipt source")}>
               <div className="parking-source-actions">
                 <button className="parking-source-camera" type="button" onClick={() => cameraInputRef.current?.click()}>
                   <span className="parking-source-icon" aria-hidden="true"><FaCamera /></span>
-                  <span className="parking-source-copy"><strong>Take a ticket photo</strong><small>Open your phone’s camera</small></span>
+                  <span className="parking-source-copy"><strong>{t("Take a ticket photo")}</strong><small>{t("Open your phone’s camera")}</small></span>
                   <FaChevronRight className="parking-source-arrow" aria-hidden="true" />
                 </button>
                 <button type="button" onClick={() => fileInputRef.current?.click()}>
                   <span className="parking-source-icon" aria-hidden="true"><FaImages /></span>
-                  <span className="parking-source-copy"><strong>Choose from gallery</strong><small>Use a photo you already have</small></span>
+                  <span className="parking-source-copy"><strong>{t("Choose from gallery")}</strong><small>{t("Use a photo you already have")}</small></span>
                   <FaChevronRight className="parking-source-arrow" aria-hidden="true" />
                 </button>
               </div>
@@ -291,16 +289,16 @@ export default function ParkingReceiptFlow({
 
           {previewUrl && (
             <section className={`parking-ticket-preview ${scanState === "error" ? "has-error" : scanState === "success" ? "has-success" : ""}`}>
-              <img src={previewUrl} alt="Selected Abrihot parking ticket" />
+              <img src={previewUrl} alt={t("Selected Abrihot parking ticket")} />
               <div className="parking-ticket-status">
-                <strong>{scanState === "reading" ? "Reading ticket" : "Ticket added"}</strong>
-                <small>{scanMessage}</small>
+                <strong>{t(scanState === "reading" ? "Reading ticket" : "Ticket added")}</strong>
+                <small>{t(scanMessage)}</small>
                 {scanState === "reading" && (
                   <div className="parking-progress"><i style={{ width: `${scanProgress}%` }}></i></div>
                 )}
               </div>
               {scanState !== "reading" && (
-                <button type="button" className="parking-icon-button" onClick={resetScan} aria-label="Choose another ticket"><FaRedo /></button>
+                <button type="button" className="parking-icon-button" onClick={resetScan} aria-label={t("Choose another ticket")}><FaRedo /></button>
               )}
             </section>
           )}
@@ -313,7 +311,7 @@ export default function ParkingReceiptFlow({
             type="file"
             accept="image/*"
             capture="environment"
-            aria-label="Take parking ticket photo"
+            aria-label={t("Take parking ticket photo")}
             onChange={(event) => {
               scanReceipt(event.target.files?.[0]);
               event.target.value = "";
@@ -324,42 +322,42 @@ export default function ParkingReceiptFlow({
             className="parking-file-input"
             type="file"
             accept="image/*"
-            aria-label="Choose parking ticket from gallery"
+            aria-label={t("Choose parking ticket from gallery")}
             onChange={(event) => {
               scanReceipt(event.target.files?.[0]);
               event.target.value = "";
             }}
           />
 
-          {scanState === "error" && !previewUrl && <p className="parking-inline-error">{scanMessage}</p>}
+          {scanState === "error" && !previewUrl && <p className="parking-inline-error">{t(scanMessage)}</p>}
 
           {parkingDraft.date && (
             <section className="parking-review-panel">
               <div className="parking-review-heading">
-                <strong>Entry time</strong>
-                <small>Check it against the ticket.</small>
+                <strong>{t("Entry time")}</strong>
+                <small>{t("Check it against the ticket.")}</small>
               </div>
               <label className="parking-entry-field">
-                <span><FaClock /> Date and time</span>
+                <span><FaClock />{t(" Date and time")}</span>
                 <input
                   type="text"
                   value={parkingDraft.date}
                   onChange={(event) => setParkingDraft((current) => ({ ...current, date: event.target.value }))}
-                  placeholder="DD/MM/YYYY HH:MM:SS"
+                  placeholder={t("DD/MM/YYYY HH:MM:SS")}
                   disabled={saving}
                 />
               </label>
 
               {!charge.error && (
                 <div className="parking-payment-row">
-                  <div><small>{formatParkingDuration(charge.elapsedMinutes)}</small><span>Parking total</span></div>
-                  <strong>{amountText} <small>ETB</small></strong>
+                  <div><small>{t(formatParkingDuration(charge.elapsedMinutes))}</small><span>{t("Parking total")}</span></div>
+                  <strong>{t(amountText)} <small>{t("ETB")}</small></strong>
                 </div>
               )}
-              {charge.error && <p className="parking-inline-error">{charge.error}</p>}
+              {charge.error && <p className="parking-inline-error">{t(charge.error)}</p>}
 
               <button type="button" className="parking-save-btn" onClick={onSave} disabled={!canSave}>
-                {saving ? "Saving..." : `Save ${charge.error ? "payment" : `${amountText} ETB`}`}
+                {t(saving ? "Saving..." : `Save ${charge.error ? "payment" : `${amountText} ETB`}`)}
               </button>
             </section>
           )}
@@ -369,24 +367,24 @@ export default function ParkingReceiptFlow({
       {entryMode === "duration" && (
         <section className="parking-review-panel parking-duration-panel">
           <div className="parking-review-heading">
-            <strong>Parking duration</strong>
-            <small>Enter how long the vehicle was parked.</small>
+            <strong>{t("Parking duration")}</strong>
+            <small>{t("Enter how long the vehicle was parked.")}</small>
           </div>
           <div className="parking-duration-inputs">
             <label className="parking-entry-field">
-              <span>Hours</span>
+              <span>{t("Hours")}</span>
               <input
                 type="number"
                 min="0"
                 inputMode="numeric"
                 value={durationHours}
                 onChange={(event) => setDurationHours(event.target.value.replace(/\D/g, "").slice(0, 3))}
-                placeholder="0"
+                placeholder={t("0")}
                 disabled={saving}
               />
             </label>
             <label className="parking-entry-field">
-              <span>Minutes</span>
+              <span>{t("Minutes")}</span>
               <input
                 type="number"
                 min="0"
@@ -397,7 +395,7 @@ export default function ParkingReceiptFlow({
                   const value = event.target.value.replace(/\D/g, "");
                   setDurationMinutes(value === "" ? "" : String(Math.min(59, Number(value))));
                 }}
-                placeholder="0"
+                placeholder={t("0")}
                 disabled={saving}
               />
             </label>
@@ -405,13 +403,13 @@ export default function ParkingReceiptFlow({
 
           {enteredDurationMinutes > 0 && (
             <div className="parking-payment-row">
-              <div><small>{formatParkingDuration(enteredDurationMinutes)}</small><span>Parking total</span></div>
-              <strong>{amountText} <small>ETB</small></strong>
+              <div><small>{t(formatParkingDuration(enteredDurationMinutes))}</small><span>{t("Parking total")}</span></div>
+              <strong>{t(amountText)} <small>{t("ETB")}</small></strong>
             </div>
           )}
 
           <button type="button" className="parking-save-btn" onClick={onSave} disabled={!canSave}>
-            {saving ? "Saving..." : enteredDurationMinutes > 0 ? `Save ${amountText} ETB` : "Enter parking duration"}
+            {t(saving ? "Saving..." : enteredDurationMinutes > 0 ? `Save ${amountText} ETB` : "Enter parking duration")}
           </button>
         </section>
       )}

@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useLanguage } from "./Language";
+import { useEffect, useRef, useState } from "react";
 import { FaCalculator } from "react-icons/fa";
+import { FiCheck, FiChevronDown, FiFilter } from "react-icons/fi";
 import ReceiptLink from "./ReceiptLink";
 import { formatTransactionAmount } from "./transactionAmount";
 
@@ -13,7 +15,16 @@ function Content({
   navigate,
   people = []
 }) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
+  const filterRef = useRef(null);
+  const filterActive = personFilter && personFilter !== "ALL";
+  useEffect(() => {
+    if (!open) return undefined;
+    const dismiss = event => { if (!filterRef.current?.contains(event.target)) setOpen(false); };
+    document.addEventListener("pointerdown", dismiss);
+    return () => document.removeEventListener("pointerdown", dismiss);
+  }, [open]);
   const [actionMenu, setActionMenu] = useState(null);
   const [longPressTimer, setLongPressTimer] = useState(null);
 
@@ -161,20 +172,14 @@ function Content({
             }}
             onClick={(event) => event.stopPropagation()}
           >
-            <button onClick={handleEdit}>
-              Edit
-            </button>
+            <button onClick={handleEdit}>{t("Edit")}</button>
 
             <button
               className="danger"
               onClick={handleDelete}
-            >
-              Delete
-            </button>
+            >{t("Delete")}</button>
 
-            <button onClick={() => setActionMenu(null)}>
-              Close
-            </button>
+            <button onClick={() => setActionMenu(null)}>{t("Close")}</button>
           </div>
         </div>
       )}
@@ -182,33 +187,37 @@ function Content({
       {/* HEADER */}
       <div className="transactions-header">
 
-        <h1>Transactions</h1>
+        <h1>{t("Transactions")}</h1>
 
         {/* CUSTOM DROPDOWN */}
-        <div className="filter-dropdown">
+        <div className="filter-dropdown transaction-filter" ref={filterRef} onKeyDown={event => {
+          if (event.key === "Escape") { setOpen(false); filterRef.current?.querySelector("button")?.focus(); }
+        }}>
 
-          <div
-            className="dropdown-btn"
+          <button type="button"
+            className={`dropdown-btn${filterActive ? " is-filtered" : " is-default"}${open ? " is-open" : ""}`}
+            aria-label={t("Filter transactions")} aria-expanded={open} aria-controls="transaction-filter-options"
             onClick={() => setOpen(!open)}
           >
-            {personFilter || "ALL"}
+            <FiFilter aria-hidden="true" />
+            <span>{t(filterActive ? personFilter : "All")}</span>
 
             <span className={`dropdown-arrow ${open ? "open" : ""}`}>
-              ▼
+              <FiChevronDown aria-hidden="true" />
             </span>
-          </div>
+          </button>
 
-          <div className={`dropdown-menu ${open ? "open" : ""}`}>
+          <div id="transaction-filter-options" className={`dropdown-menu ${open ? "open" : ""}`} inert={!open}>
             {options.map((opt) => (
-              <div
+              <button type="button" aria-pressed={personFilter === opt}
                 key={opt}
                 className={`dropdown-item ${
                   personFilter === opt ? "selected" : ""
                 }`}
                 onClick={() => handleSelect(opt)}
               >
-                {opt}
-              </div>
+                <span>{t(opt)}</span>{personFilter === opt && <FiCheck aria-hidden="true" />}
+              </button>
             ))}
           </div>
 
@@ -217,19 +226,18 @@ function Content({
       </div>
 
       {/* TABLE */}
-      <div className="transaction-scroll-hint" aria-hidden="true">
-        Swipe to see more <span>→</span>
+      <div className="transaction-scroll-hint" aria-hidden="true">{t("Swipe to see more")}<span>{t("→")}</span>
       </div>
       <table className="transaction-table">
 
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Person</th>
-            <th>Amount</th>
-            <th>Date / Time</th>
-            <th>Reference no</th>
-            <th>Narrative</th>
+            <th>{t("ID")}</th>
+            <th>{t("Person")}</th>
+            <th>{t("Amount")}</th>
+            <th>{t("Date / Time")}</th>
+            <th>{t("Reference no")}</th>
+            <th>{t("Narrative")}</th>
             <th></th>
           </tr>
         </thead>
@@ -247,12 +255,10 @@ function Content({
               onTouchCancel={stopLongPress}
             >
 
-              <td>{index + 1}</td>
+              <td>{t(index + 1)}</td>
               <td className="person-cell">
                 {tx.is_withdraw === false ? (
-                  <span className="user-inline-badge badge-deposit">
-                    Deposit
-                  </span>
+                  <span className="user-inline-badge badge-deposit">{t("Deposit")}</span>
                 ) : tx.person ? (
                   <button
                     type="button"
@@ -262,22 +268,20 @@ function Content({
                       navigate(`/balance/people/${tx.person.toLowerCase()}`);
                     }}
                   >
-                    {tx.person}
+                    {t(tx.person)}
                   </button>
                 ) : (
-                  <span className="transaction-person-empty">—</span>
+                  <span className="transaction-person-empty">{t("—")}</span>
                 )}
               </td>
-              <td className="amount">{formatTransactionAmount(tx.amount)}</td>
+              <td className="amount">{t(formatTransactionAmount(tx.amount))}</td>
               <td className="date-cell">{tx.date}</td>
               <td>{tx.reference}</td>
-              <td>{tx.narrative}</td>
+              <td>{t(tx.narrative)}</td>
 
               <td className="action">
                 {tx.receipt_url ? (
-                  <ReceiptLink transaction={tx}>
-                    More
-                  </ReceiptLink>
+                  <ReceiptLink transaction={tx}>{t("More")}</ReceiptLink>
                 ) : (
                   "-"
                 )}
@@ -292,15 +296,15 @@ function Content({
 
       <div className="table-total-panel">
         <div className="table-total-main">
-          <span>Table Total</span>
-          <strong>{formatMoney(tableTotal)}</strong>
+          <span>{t("Table Total")}</span>
+          <strong>{t(formatMoney(tableTotal))}</strong>
         </div>
         {onSendTableTotal && <button
           type="button"
           className="table-total-send"
           onClick={() => onSendTableTotal?.(tableTotal)}
-          title="Send table total to calculator"
-          aria-label="Send table total to calculator"
+          title={t("Send table total to calculator")}
+          aria-label={t("Send table total to calculator")}
         >
           <FaCalculator />
         </button>}

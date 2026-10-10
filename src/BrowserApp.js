@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from "react";
+import { useLanguage } from "./Language";
 
 const App = lazy(() => import("./App"));
 const Receipt = lazy(() => import("./BoaReceiptViewer"));
@@ -9,6 +10,7 @@ export function isReceiptLocation() {
 }
 
 export default function BrowserApp({ AppComponent = App, ReceiptComponent = Receipt }) {
+  const { t } = useLanguage();
   const [route, setRoute] = useState(() => ({ receipt: isReceiptLocation(), search: window.location.search }));
   const [appStarted, setAppStarted] = useState(() => !isReceiptLocation());
 
@@ -26,7 +28,7 @@ export default function BrowserApp({ AppComponent = App, ReceiptComponent = Rece
     };
   }, []);
 
-  useEffect(() => { document.title = route.receipt ? "Receipt" : "Bank Tracker"; }, [route.receipt]);
+  useEffect(() => { document.title = t(route.receipt ? "Receipt" : "Bank Tracker"); }, [route.receipt, t]);
 
   return <>
     {/* Keep filters, transaction data, and the user's current app view mounted

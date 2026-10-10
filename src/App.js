@@ -1,3 +1,4 @@
+import { useLanguage } from "./Language";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Content from "./Content";
 import Balance, { ConstructionPanel } from "./Balance";
@@ -16,7 +17,7 @@ const SUPABASE_URL = "https://ywplzexakisliebyjtyf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_nmA6IJsDGUVki5i0smS1Tg_MLXy5_wX";
 
 const BASE_BALANCE = 1209518;
-const VERSION = "1.3.4.0"; // html.css.sys.db
+const VERSION = "1.3.4.1"; // html.css.sys.db
 const PASSWORD = "dawit123";
 const API_URL =
   process.env.REACT_APP_API_URL || "https://bank-backend-anhp.onrender.com";
@@ -26,6 +27,7 @@ const mobileViewForPath = path => path.startsWith("/balance/construction") ? "co
   : path.startsWith("/settings") ? "settings" : path.startsWith("/balance") ? "balance" : "transactions";
 
 function App() {
+  const { t } = useLanguage();
 
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [view, setView] = useState(() => mobileViewForPath(window.location.pathname));
@@ -115,7 +117,7 @@ function App() {
 
   const handleParkingDraftSubmit = async () => {
     if (!parkingDraft.amount || !parkingDraft.date) {
-      alert("Please fill in amount and date fields!");
+      alert(t("Please fill in amount and date fields!"));
       return;
     }
     setDraftSaving(true);
@@ -149,11 +151,11 @@ function App() {
           setParkingDraft({ amount: "", date: "", reference: "", narrative: "Abrihot" });
         }, 1900);
       } else {
-        alert("Failed to save parking payment to Supabase.");
+        alert(t("Failed to save parking payment to Supabase."));
       }
     } catch (err) {
       console.error(err);
-      alert("An error occurred while saving parking payment.");
+      alert(t("An error occurred while saving parking payment."));
     } finally {
       setDraftSaving(false);
     }
@@ -440,7 +442,7 @@ function App() {
       typeof nextUrl === "string" ? nextUrl.trim() : url.trim();
 
     if (!receiptUrl) {
-      alert("Paste or scan receipt link!");
+      alert(t("Paste or scan receipt link!"));
       return;
     }
 
@@ -463,7 +465,7 @@ function App() {
       const data = await readApiResponse(res);
 
       if (!res.ok) {
-        alert(data.error || "Scraping failed");
+        alert(t(data.error || "Scraping failed"));
         return;
       }
 
@@ -472,7 +474,7 @@ function App() {
     } catch (err) {
 
       console.error("SCRAPE ERROR:", err);
-      alert("Scraping failed.");
+      alert(t("Scraping failed."));
 
     } finally {
 
@@ -727,7 +729,7 @@ function App() {
       const parsed = parseReceiptText(result.data.text || "");
 
       if (!parsed.amount && !parsed.reference && !parsed.date) {
-        alert("Could not read receipt details from this image. Try a clearer screenshot.");
+        alert(t("Could not read receipt details from this image. Try a clearer screenshot."));
         return;
       }
 
@@ -735,7 +737,7 @@ function App() {
 
     } catch (err) {
       console.error("IMAGE OCR ERROR:", err);
-      alert("Image reading failed.");
+      alert(t("Image reading failed."));
 
     } finally {
       setScrapeLoading(false);
@@ -966,7 +968,7 @@ function App() {
             return;
           }
 
-          alert(data.details || data.error || "Update failed");
+          alert(t(data.details || data.error || "Update failed"));
           return;
         }
 
@@ -989,11 +991,11 @@ function App() {
 
       if (!res.ok) {
         if (res.status === 404) {
-          alert("Save endpoint is missing on the backend, and this draft was not auto-saved with an id.");
+          alert(t("Save endpoint is missing on the backend, and this draft was not auto-saved with an id."));
           return;
         }
 
-        alert(data.details || data.error || "Save failed");
+        alert(t(data.details || data.error || "Save failed"));
         return;
       }
 
@@ -1004,7 +1006,7 @@ function App() {
 
     } catch (err) {
       console.error("SAVE ERROR:", err);
-      alert(err.message || "Save failed.");
+      alert(t(err.message || "Save failed."));
 
     } finally {
       setDraftSaving(false);
@@ -1094,7 +1096,7 @@ function App() {
           return;
         }
 
-        alert(data.details || data.error || "Delete failed");
+        alert(t(data.details || data.error || "Delete failed"));
         return;
       }
 
@@ -1103,7 +1105,7 @@ function App() {
 
     } catch (err) {
       console.error("DELETE ERROR:", err);
-      alert(err.message || "Delete failed.");
+      alert(t(err.message || "Delete failed."));
     } finally {
       setDeleteLoading(false);
     }
@@ -1246,43 +1248,43 @@ function App() {
       <div className="password-overlay">
         <div className="password-box">
           <div className="login-header">
-            <img 
-              src="/logo.png" 
-              alt="Bank Logo" 
-              className="login-logo" 
+            <img
+              src="/logo.png"
+              alt={t("Bank Logo")}
+              className="login-logo"
               onError={(e) => {
                 e.target.style.display = "none";
               }}
             />
-            <h2>Welcome Back</h2>
+            <h2>{t("Welcome Back")}</h2>
           </div>
 
           <div className="login-field">
-            <label>Username</label>
-            <input 
-              type="text" 
-              value="Dawit Enku" 
-              disabled 
-              placeholder="Username" 
+            <label>{t("Username")}</label>
+            <input
+              type="text"
+              value={t("Dawit Enku")}
+              disabled
+              placeholder={t("Username")}
             />
           </div>
 
           {isLockoutActive ? (
             <div className="login-field">
-              <label>Password</label>
+              <label>{t("Password")}</label>
               <input
                 type="password"
-                placeholder="Device Locked Out"
+                placeholder={t("Device Locked Out")}
                 value=""
                 disabled
               />
             </div>
           ) : (
             <div className="login-field">
-              <label>Password</label>
+              <label>{t("Password")}</label>
               <input
                 type="password"
-                placeholder="Password"
+                placeholder={t("Password")}
                 value={inputPassword}
                 onChange={(e) => setInputPassword(e.target.value)}
                 onKeyDown={(e) => {
@@ -1297,25 +1299,20 @@ function App() {
 
           {passwordError && (
             <div className="login-error-msg" style={{ whiteSpace: "pre-line" }}>
-              {passwordError}
+              {t(passwordError)}
             </div>
           )}
 
           {isLockoutActive && lockoutCountdown && (
-            <div className="login-error-msg" style={{ background: "rgba(199,57,57,0.08)", color: "#c73939", border: "1px solid rgba(199,57,57,0.15)", borderRadius: "6px", padding: "10px", textAlign: "center", fontSize: "13px", margin: "10px 0" }}>
-              Locked out. Remaining time:<br/>
-              <strong style={{ fontSize: "16px", display: "inline-block", marginTop: "4px" }}>{lockoutCountdown}</strong>
+            <div className="login-error-msg" style={{ background: "rgba(199,57,57,0.08)", color: "#c73939", border: "1px solid rgba(199,57,57,0.15)", borderRadius: "6px", padding: "10px", textAlign: "center", fontSize: "13px", margin: "10px 0" }}>{t("Locked out. Remaining time:")}<br/>
+              <strong style={{ fontSize: "16px", display: "inline-block", marginTop: "4px" }}>{t(lockoutCountdown)}</strong>
             </div>
           )}
 
           {!isLockoutActive ? (
-            <button className="login-submit-btn" onClick={handlePasswordSubmit}>
-              Submit
-            </button>
+            <button className="login-submit-btn" onClick={handlePasswordSubmit}>{t("Submit")}</button>
           ) : (
-            <button className="login-submit-btn" disabled style={{ background: "#ccc", color: "#666", cursor: "not-allowed" }}>
-              Locked Out
-            </button>
+            <button className="login-submit-btn" disabled style={{ background: "#ccc", color: "#666", cursor: "not-allowed" }}>{t("Locked Out")}</button>
           )}
         </div>
       </div>
@@ -1467,7 +1464,7 @@ function App() {
           openReceiptModal={openReceiptModal}
           openParkingModal={openParkingModal}
         />
-        {renderReceiptModal()}
+        {t(renderReceiptModal())}
       </>
     );
   }
@@ -1482,24 +1479,18 @@ function App() {
               className="loading-close"
               onClick={() => setLoadingMessage(false)}
               type="button"
-              aria-label="Dismiss data update notification"
-            >
-              ✕
-            </button>
+              aria-label={t("Dismiss data update notification")}
+            >{t("✕")}</button>
 
             <div className="loading-brand-mark">
-              <img src="/logo.png" alt="Bank of Abyssinia" />
+              <img src="/logo.png" alt={t("Bank of Abyssinia")} />
             </div>
 
             <div className="loading-copy">
-              <span>Account update</span>
-              <h2>Getting your latest bank data</h2>
-              <p>
-                This may take a few seconds. This message will close automatically when your transactions arrive.
-              </p>
-              <p className="loading-copy-amharic">
-                ከባንኩ መረጃ ለመውሰድ ጥቂት ሰከንዶች ሊወስድ ይችላል።
-              </p>
+              <span>{t("Account update")}</span>
+              <h2>{t("Getting your latest bank data")}</h2>
+              <p>{t("This may take a few seconds. This message will close automatically when your transactions arrive.")}</p>
+              <p className="loading-copy-amharic">{t("ከባንኩ መረጃ ለመውሰድ ጥቂት ሰከንዶች ሊወስድ ይችላል።")}</p>
             </div>
 
             <div className="loading-progress" aria-hidden="true">
@@ -1512,7 +1503,7 @@ function App() {
       {scrapeLoading && (
         <div className="scrape-loading-overlay">
           <div className="spinner"></div>
-          <p>Scraping receipt...</p>
+          <p>{t("Scraping receipt...")}</p>
         </div>
       )}
 
@@ -1537,26 +1528,8 @@ function App() {
           <img
             src="/logo.png"
             className="logo"
-            alt="bank logo"
+            alt={t("bank logo")}
           />
-
-          {(view === "transactions" || view === "balance") && <div className="toggle" aria-label="Account views">
-
-            <button
-              className={view === "transactions" ? "active" : ""}
-              onClick={() => navigate("/transactions")}
-            >
-              Transactions
-            </button>
-
-            <button
-              className={view === "balance" ? "active" : ""}
-              onClick={() => navigate("/balance")}
-            >
-              Balance
-            </button>
-
-          </div>}
 
           <div className="content">
 
@@ -1580,7 +1553,7 @@ function App() {
             {view === "balance" && (
               <>
 
-                {renderBalance()}
+                {t(renderBalance())}
 
               </>
             )}
@@ -1595,8 +1568,8 @@ function App() {
             {calculatorEnabled && (view === "transactions" || view === "balance") && <button
               key={`calculator-${view}-${calculatorAnimationToken}`}
               className={`calculator-btn calculator-fab ${calculatorButtonExpanded ? "is-expanded" : "is-compact"} is-replaying${showCalculator ? " is-active" : ""}`}
-              onClick={toggleCalculator} aria-label={showCalculator ? "Close calculator" : "Open calculator"}>
-              <FaCalculator aria-hidden="true" /><span>Calculator</span>
+              onClick={toggleCalculator} aria-label={t(showCalculator ? "Close calculator" : "Open calculator")}>
+              <FaCalculator aria-hidden="true" /><span>{t("Calculator")}</span>
             </button>}
 
             {showCalculator && calculatorEnabled && (view === "transactions" || view === "balance") && (
@@ -1615,32 +1588,28 @@ function App() {
 
       <MobileNavigation view={view} navigate={navigate} onAdd={openReceiptModal} />
 
-      {renderReceiptModal()}
+      {t(renderReceiptModal())}
 
       {deleteTarget && (
         <div className="confirm-overlay">
           <div className="confirm-box">
-            <h2>Delete Transaction?</h2>
+            <h2>{t("Delete Transaction?")}</h2>
 
-            <p>
-              This will remove {deleteTarget.amount || "this transaction"} from the database.
-            </p>
+            <p>{t("This will remove")}{t(deleteTarget.amount || "this transaction")}{t("from the database.")}</p>
 
             <div className="confirm-actions">
               <button
                 className="close-btn"
                 onClick={() => setDeleteTarget(null)}
                 disabled={deleteLoading}
-              >
-                Close
-              </button>
+              >{t("Close")}</button>
 
               <button
                 className="delete-confirm-btn"
                 onClick={confirmDeleteTransaction}
                 disabled={deleteLoading}
               >
-                {deleteLoading ? "Deleting..." : "Yes, Delete"}
+                {t(deleteLoading ? "Deleting..." : "Yes, Delete")}
               </button>
             </div>
           </div>

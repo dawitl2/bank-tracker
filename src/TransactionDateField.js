@@ -1,3 +1,4 @@
+import { useLanguage } from "./Language";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { FaCalendarAlt, FaTimes } from "react-icons/fa";
@@ -34,6 +35,7 @@ export function replaceTransactionDate(value, date) {
 }
 
 function DateWheel({ label, values, value, onChange, format = String }) {
+  const { t } = useLanguage();
   const wheelRef = useRef(null);
   const initializedRef = useRef(false);
   const programmaticRef = useRef(null);
@@ -62,9 +64,9 @@ function DateWheel({ label, values, value, onChange, format = String }) {
   };
 
   return <div className="transaction-date-column">
-    <span className="transaction-date-column-label">{label}</span>
+    <span className="transaction-date-column-label">{t(label)}</span>
     <div className="transaction-date-wheel" ref={wheelRef} role="spinbutton" tabIndex={0}
-      aria-label={label} aria-valuemin={start} aria-valuemax={end} aria-valuenow={value} aria-valuetext={format(value)}
+      aria-label={t(label)} aria-valuemin={start} aria-valuemax={end} aria-valuenow={value} aria-valuetext={t(format(value))}
       onPointerDown={() => { programmaticRef.current = null; }} onWheel={() => { programmaticRef.current = null; }}
       onKeyDown={event => {
         const next = { ArrowUp: value - 1, ArrowDown: value + 1, PageUp: value - 5, PageDown: value + 5, Home: start, End: end }[event.key];
@@ -83,12 +85,13 @@ function DateWheel({ label, values, value, onChange, format = String }) {
       }}>
       {values.map(option => <button type="button" key={option} tabIndex={-1} aria-hidden="true"
         className={`transaction-date-option ${option === highlight ? "is-selected" : ""}`}
-        onClick={() => choose(option)}>{format(option)}</button>)}
+        onClick={() => choose(option)}>{t(format(option))}</button>)}
     </div>
   </div>;
 }
 
 function DatePicker({ value, onApply, onClose }) {
+  const { t } = useLanguage();
   const [draft, setDraft] = useState(() => parseTransactionDate(value));
   const dialogRef = useRef(null);
   const headingId = useId();
@@ -125,31 +128,32 @@ function DatePicker({ value, onApply, onClose }) {
         if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
       }}>
       <div className="transaction-date-heading">
-        <div><span>TRANSACTION DATE</span><h3 id={headingId}>Choose a date</h3></div>
-        <button type="button" className="transaction-date-dismiss" onClick={onClose} aria-label="Close date picker"><FaTimes /></button>
+        <div><span>{t("TRANSACTION DATE")}</span><h3 id={headingId}>{t("Choose a date")}</h3></div>
+        <button type="button" className="transaction-date-dismiss" onClick={onClose} aria-label={t("Close date picker")}><FaTimes /></button>
       </div>
       <div className="transaction-date-summary">
-        <span aria-live="polite">{draft.day} {MONTHS[draft.month - 1]} {draft.year}</span>
-        <button type="button" className="transaction-date-today" onClick={() => setDraft(today())}>Today</button>
+        <span aria-live="polite">{t(draft.day)} {t(MONTHS[draft.month - 1])} {t(draft.year)}</span>
+        <button type="button" className="transaction-date-today" onClick={() => setDraft(today())}>{t("Today")}</button>
       </div>
       <div className="transaction-date-wheels">
-        <DateWheel label="Day" values={range(1, daysInMonth(draft.year, draft.month))} value={draft.day} onChange={next => change("day", next)} format={pad} />
-        <DateWheel label="Month" values={range(1, 12)} value={draft.month} onChange={next => change("month", next)} format={next => MONTHS[next - 1]} />
-        <DateWheel label="Year" values={range(1900, yearLimit)} value={draft.year} onChange={next => change("year", next)} />
+        <DateWheel label={t("Day")} values={range(1, daysInMonth(draft.year, draft.month))} value={draft.day} onChange={next => change("day", next)} format={pad} />
+        <DateWheel label={t("Month")} values={range(1, 12)} value={draft.month} onChange={next => change("month", next)} format={next => MONTHS[next - 1]} />
+        <DateWheel label={t("Year")} values={range(1900, yearLimit)} value={draft.year} onChange={next => change("year", next)} />
       </div>
       <div className="transaction-date-actions">
-        <button type="button" className="transaction-date-cancel" onClick={onClose}>Cancel</button>
-        <button type="button" className="transaction-date-apply" onClick={() => onApply(replaceTransactionDate(value, draft))}>Set date</button>
+        <button type="button" className="transaction-date-cancel" onClick={onClose}>{t("Cancel")}</button>
+        <button type="button" className="transaction-date-apply" onClick={() => onApply(replaceTransactionDate(value, draft))}>{t("Set date")}</button>
       </div>
     </div>
   </div>, document.body);
 }
 
 export default function TransactionDateField({ value, onChange, disabled = false }) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   return <div className="transaction-date-field">
-    <input type="text" aria-label="date" value={value ?? ""} disabled={disabled} onChange={event => onChange(event.target.value)} />
-    <button type="button" className="transaction-date-trigger" aria-label="Choose transaction date" aria-haspopup="dialog" aria-expanded={open}
+    <input type="text" aria-label={t("date")} value={value ?? ""} disabled={disabled} onChange={event => onChange(event.target.value)} />
+    <button type="button" className="transaction-date-trigger" aria-label={t("Choose transaction date")} aria-haspopup="dialog" aria-expanded={open}
       disabled={disabled} onClick={event => { event.preventDefault(); event.currentTarget.focus(); setOpen(true); }}><FaCalendarAlt /></button>
     {open && <DatePicker value={value} onClose={() => setOpen(false)} onApply={next => { onChange(next); setOpen(false); }} />}
   </div>;

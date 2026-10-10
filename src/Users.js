@@ -1,3 +1,4 @@
+import { useLanguage } from "./Language";
 import { useMemo, useState, useEffect, useLayoutEffect } from "react";
 import {
   AreaChart,
@@ -88,6 +89,7 @@ export default function Users({
   fetchPeople,
   openParkingModal
 }) {
+  const { t } = useLanguage();
   const [dbSaving, setDbSaving] = useState(false);
   const [subTab, setSubTab] = useState("transactions");
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -222,7 +224,7 @@ export default function Users({
     if (!targetTable) return;
 
     if (!newPayment.amount || !newPayment.date) {
-      alert("Please fill in the amount and date!");
+      alert(t("Please fill in the amount and date!"));
       return;
     }
 
@@ -274,11 +276,11 @@ export default function Users({
       } else {
         const errorText = await res.text();
         console.error("Save error:", errorText);
-        alert("Failed to save payment to Supabase.");
+        alert(t("Failed to save payment to Supabase."));
       }
     } catch (err) {
       console.error("SAVE ERROR:", err);
-      alert("An error occurred during save.");
+      alert(t("An error occurred during save."));
     } finally {
       setDbSaving(false);
     }
@@ -310,11 +312,11 @@ export default function Users({
       setActionMenu(null);
 
       // Confirmation 1
-      const confirm1 = window.confirm(`Are you sure you want to delete ${p.name}?`);
+      const confirm1 = window.confirm(t(`Are you sure you want to delete ${p.name}?`));
       if (!confirm1) return;
 
       // Confirmation 2
-      const confirm2 = window.confirm(`WARNING: This will permanently delete ${p.name} and decouple their tracked data. Are you ABSOLUTELY sure?`);
+      const confirm2 = window.confirm(t(`WARNING: This will permanently delete ${p.name} and decouple their tracked data. Are you ABSOLUTELY sure?`));
       if (!confirm2) return;
 
       setDbSaving(true);
@@ -330,11 +332,11 @@ export default function Users({
         if (res.ok) {
           await fetchPeople();
         } else {
-          alert("Failed to delete person from Supabase.");
+          alert(t("Failed to delete person from Supabase."));
         }
       } catch (err) {
         console.error("DELETE PERSON ERROR:", err);
-        alert("An error occurred during delete.");
+        alert(t("An error occurred during delete."));
       } finally {
         setDbSaving(false);
       }
@@ -343,7 +345,7 @@ export default function Users({
       const targetTable = selectedUserId === "dawit" ? "parking" : selectedUserId === "yiss" ? "suqe" : null;
       if (!targetTable) return;
 
-      if (!window.confirm("Are you sure you want to delete this payment?")) {
+      if (!window.confirm(t("Are you sure you want to delete this payment?"))) {
         setActionMenu(null);
         return;
       }
@@ -362,11 +364,11 @@ export default function Users({
           await fetchDbPayments();
           setActionMenu(null);
         } else {
-          alert("Failed to delete payment from Supabase.");
+          alert(t("Failed to delete payment from Supabase."));
         }
       } catch (err) {
         console.error("DELETE ERROR:", err);
-        alert("An error occurred during delete.");
+        alert(t("An error occurred during delete."));
       } finally {
         setDbSaving(false);
       }
@@ -376,19 +378,19 @@ export default function Users({
   // Add a new person in Supabase
   const handleAddPersonSubmit = async () => {
     if (!newPerson.name || !newPerson.role) {
-      alert("Please fill in Name and Role!");
+      alert(t("Please fill in Name and Role!"));
       return;
     }
 
     const generatedId = newPerson.name.toLowerCase().trim().replace(/[^a-z0-9]/g, "");
     if (!generatedId) {
-      alert("Invalid Name!");
+      alert(t("Invalid Name!"));
       return;
     }
 
     // Check if ID already exists
     if (people.some(p => p.id === generatedId)) {
-      alert("A person with this name already exists!");
+      alert(t("A person with this name already exists!"));
       return;
     }
 
@@ -417,11 +419,11 @@ export default function Users({
         setShowAddPersonModal(false);
         setNewPerson({ name: "", role: "" });
       } else {
-        alert("Failed to add person to Supabase.");
+        alert(t("Failed to add person to Supabase."));
       }
     } catch (err) {
       console.error("ADD PERSON ERROR:", err);
-      alert("An error occurred while adding person.");
+      alert(t("An error occurred while adding person."));
     } finally {
       setDbSaving(false);
     }
@@ -430,7 +432,7 @@ export default function Users({
   // Edit a person's profile details
   const handleEditPersonSubmit = async () => {
     if (!newPerson.name || !newPerson.role) {
-      alert("Please fill in Name and Role!");
+      alert(t("Please fill in Name and Role!"));
       return;
     }
 
@@ -454,11 +456,11 @@ export default function Users({
         await fetchPeople();
         setShowEditPersonModal(false);
       } else {
-        alert("Failed to update profile details in Supabase.");
+        alert(t("Failed to update profile details in Supabase."));
       }
     } catch (err) {
       console.error("EDIT PERSON ERROR:", err);
-      alert("An error occurred while updating profile.");
+      alert(t("An error occurred while updating profile."));
     } finally {
       setDbSaving(false);
     }
@@ -658,9 +660,9 @@ export default function Users({
       <div className="users-container">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
           <div className="analytics-card focus-card" style={{ flexGrow: 1, margin: 0 }}>
-            <span>People</span>
-            <h2>Spending by person</h2>
-            <p>See how <b>{money(totalOutflowTracked)} ETB</b> is distributed across your team.</p>
+            <span>{t("People")}</span>
+            <h2>{t("Spending by person")}</h2>
+            <p>{t("See how ")}<b>{t(money(totalOutflowTracked))}{t(" ETB")}</b>{t(" is distributed across your team.")}</p>
           </div>
         </div>
 
@@ -682,18 +684,18 @@ export default function Users({
               >
 
                 <div className={`avatar-placeholder ${avatarClass}`}>
-                  {user.name.charAt(0)}
+                  {t(user.name).charAt(0)}
                 </div>
 
                 <div className="user-card-info">
-                  <h3>{user.name}</h3>
-                  <div className="user-role">{user.role}</div>
+                  <h3>{t(user.name)}</h3>
+                  <div className="user-role">{t(user.role)}</div>
                 </div>
 
                 <div className="user-card-progress-wrapper" style={{ flexGrow: 1, width: "100%", margin: "10px 0 15px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#74796e", marginBottom: "4px" }}>
-                    <span>Share of outflow</span>
-                    <strong>{userPercent}%</strong>
+                    <span>{t("Share of outflow")}</span>
+                    <strong>{t(userPercent)}{t("%")}</strong>
                   </div>
                   <div className="category-progress-track">
                     <div
@@ -708,12 +710,12 @@ export default function Users({
 
                 <div className="user-card-stats">
                   <div className="user-card-stat">
-                    <span>Spent</span>
-                    <strong>{money(user.spent)}</strong>
+                    <span>{t("Spent")}</span>
+                    <strong>{t(money(user.spent))}</strong>
                   </div>
                   <div className="user-card-stat">
-                    <span>Tx Count</span>
-                    <strong>{user.txCount}</strong>
+                    <span>{t("Tx Count")}</span>
+                    <strong>{t(user.txCount)}</strong>
                   </div>
                 </div>
 
@@ -730,23 +732,21 @@ export default function Users({
             className="back-btn"
             onClick={() => setShowAddPersonModal(true)}
             style={{ background: "#eeb833", borderColor: "#eeb833", color: "#000" }}
-          >
-            + Add Person
-          </button>
+          >{t("+ Add Person")}</button>
         </div>
 
         {/* Modal for adding a person */}
         {showAddPersonModal && (
           <div className="modal-overlay" style={{ zIndex: 2000 }}>
             <div className="modal" style={{ maxWidth: "420px" }}>
-              <h2>Add New Person</h2>
+              <h2>{t("Add New Person")}</h2>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "20px" }}>
                 <label className="draft-field">
-                  <span>Name</span>
+                  <span>{t("Name")}</span>
                   <input
                     type="text"
-                    placeholder="Enter full name..."
+                    placeholder={t("Enter full name...")}
                     value={newPerson.name}
                     onChange={(e) => setNewPerson({ ...newPerson, name: e.target.value })}
                     disabled={dbSaving}
@@ -755,10 +755,10 @@ export default function Users({
                 </label>
 
                 <label className="draft-field">
-                  <span>Role</span>
+                  <span>{t("Role")}</span>
                   <input
                     type="text"
-                    placeholder="e.g. Project Coordinator"
+                    placeholder={t("e.g. Project Coordinator")}
                     value={newPerson.role}
                     onChange={(e) => setNewPerson({ ...newPerson, role: e.target.value })}
                     disabled={dbSaving}
@@ -773,7 +773,7 @@ export default function Users({
                   onClick={handleAddPersonSubmit}
                   disabled={dbSaving}
                 >
-                  {dbSaving ? "Saving..." : "Add Person"}
+                  {t(dbSaving ? "Saving..." : "Add Person")}
                 </button>
                 <button
                   className="close-btn"
@@ -782,9 +782,7 @@ export default function Users({
                     setNewPerson({ name: "", role: "" });
                   }}
                   disabled={dbSaving}
-                >
-                  Cancel
-                </button>
+                >{t("Cancel")}</button>
               </div>
             </div>
           </div>
@@ -792,9 +790,7 @@ export default function Users({
 
         {/* Floating Scroll to Top button */}
         {showScrollTop && (
-          <button className="scroll-top-btn" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label="Scroll to top">
-            &uarr;
-          </button>
+          <button className="scroll-top-btn" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label={t("Scroll to top")}>{t("↑")}</button>
         )}
       </div>
     );
@@ -838,9 +834,8 @@ export default function Users({
       {/* Top Header Bar with Back Button & Mini Logo */}
       <div className="user-page-top-bar">
         <button className="back-btn" onClick={() => navigate("/balance/people")}>
-          <FaArrowLeft /> Back to People
-        </button>
-        <img src="/logo.png" alt="Bank Logo" style={{ height: "32px", width: "auto" }} />
+          <FaArrowLeft />{t("Back to People")}</button>
+        <img src="/logo.png" alt={t("Bank Logo")} style={{ height: "32px", width: "auto" }} />
       </div>
 
       {/* User Profile Header Section */}
@@ -848,17 +843,15 @@ export default function Users({
         <div className="user-profile-summary" style={{ width: "100%", justifyContent: "space-between", flexWrap: "wrap", gap: "15px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
             <div className={`avatar-placeholder avatar-large ${avatarClass}`}>
-              {selectedUser.name.charAt(0)}
+              {t(selectedUser.name).charAt(0)}
             </div>
             <div className="user-profile-info">
-              <h2>{selectedUser.name}</h2>
+              <h2>{t(selectedUser.name)}</h2>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginTop: "4px" }}>
                 <span className="user-badge" style={{ background: "#eeb833", color: "#000", fontWeight: "700", fontSize: "11px", padding: "2px 8px", borderRadius: "4px", textTransform: "uppercase" }}>
-                  {selectedUser.role}
+                  {t(selectedUser.role)}
                 </span>
-                <span style={{ color: "#74796e", fontSize: "13px" }}>
-                  &bull; {allTransactions.length} Total Payments Tracked
-                </span>
+                <span style={{ color: "#74796e", fontSize: "13px" }}>{t("•")}{t(allTransactions.length)}{t("Total Payments Tracked")}</span>
               </div>
             </div>
           </div>
@@ -869,31 +862,28 @@ export default function Users({
               setShowEditPersonModal(true);
             }}
             style={{ fontSize: "13px", height: "fit-content", padding: "8px 16px" }}
-          >
-            Edit Profile
-          </button>
+          >{t("Edit Profile")}</button>
         </div>
       </div>
 
       {/* Metric Cards Grid */}
       <div className="detail-metrics-grid">
         <div className="metric-card spent-card">
-          <span>Total Outflow</span>
-          <strong>{money(totalSpent)} ETB</strong>
+          <span>{t("Total Outflow")}</span>
+          <strong>{t(money(totalSpent))}{t(" ETB")}</strong>
         </div>
         <div className="metric-card received-card">
-          <span>Total Inflow</span>
-          <strong>{money(totalReceived)} ETB</strong>
+          <span>{t("Total Inflow")}</span>
+          <strong>{t(money(totalReceived))}{t(" ETB")}</strong>
         </div>
         <div className="metric-card">
-          <span>Net Balance</span>
+          <span>{t("Net Balance")}</span>
           <strong style={{ color: netFlow >= 0 ? "#53a460" : "#c73939" }}>
-            {netFlow >= 0 ? "+" : ""}{money(netFlow)} ETB
-          </strong>
+            {t(netFlow >= 0 ? "+" : "")}{t(money(netFlow))}{t("ETB")}</strong>
         </div>
         <div className="metric-card">
-          <span>Avg. Ticket Size</span>
-          <strong>{money(avgTransaction)} ETB</strong>
+          <span>{t("Avg. Ticket Size")}</span>
+          <strong>{t(money(avgTransaction))}{t(" ETB")}</strong>
         </div>
       </div>
 
@@ -904,8 +894,8 @@ export default function Users({
           <article className="analytics-card">
             <div className="chart-heading">
               <div>
-                <span>Outflow History Curve</span>
-                <h2>Monthly Spending Trend</h2>
+                <span>{t("Outflow History Curve")}</span>
+                <h2>{t("Monthly Spending Trend")}</h2>
               </div>
             </div>
             <div className="chart-panel" style={{ height: "240px", marginTop: "16px" }}>
@@ -919,16 +909,14 @@ export default function Users({
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(24, 24, 22, 0.05)" />
-                    <XAxis dataKey="name" stroke="#74796e" fontSize={11} tickLine={false} />
+                    <XAxis dataKey="name" stroke="#74796e" fontSize={11} tickLine={false} tickFormatter={t} />
                     <YAxis stroke="#74796e" fontSize={11} tickLine={false} tickFormatter={(val) => money(val)} />
-                    <Tooltip formatter={(value) => [`${money(value)} ETB`, "Spent"]} />
-                    <Area type="monotone" dataKey="Spent" stroke="#f4a300" strokeWidth={3} fill="url(#userSpendGradient)" />
+                    <Tooltip labelFormatter={t} formatter={(value) => [`${money(value)} ETB`, t("Spent")]} />
+                    <Area type="monotone" dataKey="Spent" name={t("Spent")} stroke="#f4a300" strokeWidth={3} fill="url(#userSpendGradient)" />
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
-                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", color: "#74796e", fontSize: "13px" }}>
-                  No historical trend data available
-                </div>
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", color: "#74796e", fontSize: "13px" }}>{t("No historical trend data available")}</div>
               )}
             </div>
           </article>
@@ -936,8 +924,8 @@ export default function Users({
           <article className="analytics-card">
             <div className="chart-heading">
               <div>
-                <span>Outflow Breakdown</span>
-                <h2>Category Distribution</h2>
+                <span>{t("Outflow Breakdown")}</span>
+                <h2>{t("Category Distribution")}</h2>
               </div>
             </div>
             <div className="chart-panel" style={{ height: "240px", marginTop: "16px" }}>
@@ -945,16 +933,14 @@ export default function Users({
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={categories.filter((c) => c.value > 0)} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(24, 24, 22, 0.05)" />
-                    <XAxis dataKey="name" stroke="#74796e" fontSize={10} tickLine={false} />
+                    <XAxis dataKey="name" stroke="#74796e" fontSize={10} tickLine={false} tickFormatter={t} />
                     <YAxis stroke="#74796e" fontSize={11} tickLine={false} tickFormatter={(val) => money(val)} />
-                    <Tooltip formatter={(value) => [`${money(value)} ETB`, "Spent"]} />
-                    <Bar dataKey="value" name="Amount Spent" fill="#20231f" radius={[4, 4, 0, 0]} />
+                    <Tooltip labelFormatter={t} formatter={(value) => [`${money(value)} ETB`, t("Spent")]} />
+                    <Bar dataKey="value" name={t("Amount Spent")} fill="#20231f" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", color: "#74796e", fontSize: "13px" }}>
-                  No spending categories data available
-                </div>
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", color: "#74796e", fontSize: "13px" }}>{t("No spending categories data available")}</div>
               )}
             </div>
           </article>
@@ -962,16 +948,16 @@ export default function Users({
 
         {/* Right Side: Detailed Category Progress Lists */}
         <div className="categories-card">
-          <h3>Spending Breakdown</h3>
+          <h3>{t("Spending Breakdown")}</h3>
           <div className="categories-list">
             {categories.map((cat) => (
               <div key={cat.name} style={{ display: "flex", flexDirection: "column", gap: "6px", borderBottom: "1px solid rgba(24, 24, 22, 0.04)", paddingBottom: "12px" }}>
                 <div className="category-item">
                   <div className="category-info">
-                    <span className="category-name">{cat.name}</span>
-                    <span className="category-count">{cat.count} transactions</span>
+                    <span className="category-name">{t(cat.name)}</span>
+                    <span className="category-count">{t(cat.count)}{t(" transactions")}</span>
                   </div>
-                  <strong className="category-amount">{money(cat.value)} ETB</strong>
+                  <strong className="category-amount">{t(money(cat.value))}{t(" ETB")}</strong>
                 </div>
 
                 <div className="category-progress-track">
@@ -984,22 +970,19 @@ export default function Users({
                   ></div>
                 </div>
                 <div style={{ display: "flex", justifyContent: "flex-end", fontSize: "10px", color: "#74796e" }}>
-                  <span>{cat.percent}% of outflow</span>
+                  <span>{t(cat.percent)}{t("% of outflow")}</span>
                 </div>
               </div>
             ))}
           </div>
 
           <div style={{ marginTop: "20px", paddingTop: "15px", borderTop: "1px solid rgba(24, 24, 22, 0.06)" }}>
-            <span style={{ fontSize: "11px", textTransform: "uppercase", color: "#74796e", fontWeight: "700" }}>
-              Largest Single Expense
-            </span>
+            <span style={{ fontSize: "11px", textTransform: "uppercase", color: "#74796e", fontWeight: "700" }}>{t("Largest Single Expense")}</span>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: "8px" }}>
               <strong style={{ fontSize: "18px", fontWeight: "800", color: "#c73939" }}>
-                {money(maxSpent)} ETB
-              </strong>
+                {t(money(maxSpent))}{t("ETB")}</strong>
               <small style={{ color: "#74796e", fontSize: "12px" }}>
-                {maxSpentDate}
+                {t(maxSpentDate)}
               </small>
             </div>
           </div>
@@ -1009,30 +992,22 @@ export default function Users({
       {/* Choice Toggle Switcher for Dawit and Yiss */}
       {selectedUser.id === "dawit" && (
         <div className="sub-toggle-bar">
-          <button className={subTab === "transactions" ? "active" : ""} onClick={() => setSubTab("transactions")}>
-            Transactions History
-          </button>
-          <button className={subTab === "parking" ? "active" : ""} onClick={() => setSubTab("parking")}>
-            Parking Payments
-          </button>
+          <button className={subTab === "transactions" ? "active" : ""} onClick={() => setSubTab("transactions")}>{t("Transactions History")}</button>
+          <button className={subTab === "parking" ? "active" : ""} onClick={() => setSubTab("parking")}>{t("Parking Payments")}</button>
         </div>
       )}
 
       {selectedUser.id === "yiss" && (
         <div className="sub-toggle-bar">
-          <button className={subTab === "transactions" ? "active" : ""} onClick={() => setSubTab("transactions")}>
-            Transactions History
-          </button>
-          <button className={subTab === "suqe" ? "active" : ""} onClick={() => setSubTab("suqe")}>
-            Suqe Payments
-          </button>
+          <button className={subTab === "transactions" ? "active" : ""} onClick={() => setSubTab("transactions")}>{t("Transactions History")}</button>
+          <button className={subTab === "suqe" ? "active" : ""} onClick={() => setSubTab("suqe")}>{t("Suqe Payments")}</button>
         </div>
       )}
 
       {/* Transactions List Table / Custom Table */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "25px", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
         <h2 style={{ fontSize: "20px", fontWeight: "600", color: "#20231f", margin: 0 }}>
-          {subTab === "transactions" ? "Transactions History" : selectedUser.id === "dawit" ? "Parking Payments" : "Suqe Payments"}
+          {t(subTab === "transactions" ? "Transactions History" : selectedUser.id === "dawit" ? "Parking Payments" : "Suqe Payments")}
         </h2>
         {subTab !== "transactions" && (
           <button
@@ -1040,7 +1015,7 @@ export default function Users({
             onClick={() => selectedUser.id === "dawit" ? openParkingModal() : setShowAddPaymentModal(true)}
             style={{ background: "#eeb833", borderColor: "#eeb833", color: "#000" }}
           >
-            {selectedUser.id === "dawit" ? <><FaCamera /> Add Parking</> : "+ Add Payment"}
+            {selectedUser.id === "dawit" ? <><FaCamera />{t(" Add Parking")}</> : "+ Add Payment"}
           </button>
         )}
       </div>
@@ -1049,19 +1024,19 @@ export default function Users({
         <table className="transaction-table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Amount</th>
-              <th>Date / Time</th>
+              <th>{t("ID")}</th>
+              <th>{t("Amount")}</th>
+              <th>{t("Date / Time")}</th>
               <th>
-                {subTab === "transactions"
+                {t(subTab === "transactions"
                   ? "Reference no"
                   : selectedUser.id === "dawit"
                     ? "Plate Number / Ref"
-                    : "Shop / Grocery Name"
+                    : "Shop / Grocery Name")
                 }
               </th>
-              <th>Narrative</th>
-              <th>Receipt</th>
+              <th>{t("Narrative")}</th>
+              <th>{t("Receipt")}</th>
             </tr>
           </thead>
           <tbody>
@@ -1075,21 +1050,19 @@ export default function Users({
                 onTouchMove={stopLongPress}
                 onTouchCancel={stopLongPress}
               >
-                <td>{idx + 1}</td>
-                <td className="amount">{subTab === "transactions" ? formatTransactionAmount(tx.amount) : `${money(tx.amount)} ETB`}</td>
+                <td>{t(idx + 1)}</td>
+                <td className="amount">{t(subTab === "transactions" ? formatTransactionAmount(tx.amount) : `${money(tx.amount)} ETB`)}</td>
                 <td className="date-cell">{tx.date}</td>
                 <td>{tx.reference}</td>
                 <td>
                   <span className={`user-inline-badge badge-${selectedUser.id}`} style={{ marginLeft: 0, marginRight: "8px" }}>
-                    {tx.category}
+                    {t(tx.category)}
                   </span>
-                  {tx.narrative}
+                  {t(tx.narrative)}
                 </td>
                 <td className="action">
                   {!tx.is_custom && tx.receipt_url ? (
-                    <ReceiptLink transaction={tx}>
-                      View
-                    </ReceiptLink>
+                    <ReceiptLink transaction={tx}>{t("View")}</ReceiptLink>
                   ) : (
                     "-"
                   )}
@@ -1100,7 +1073,7 @@ export default function Users({
         </table>
       ) : (
         <div className="analytics-card" style={{ textAlign: "center", padding: "40px", color: "#74796e" }}>
-          {dbSaving ? "Processing..." : `No ${subTab === "transactions" ? "receipt transactions" : subTab === "parking" ? "parking payments" : "suqe payments"} registered`}
+          {t(dbSaving ? "Processing..." : `No ${subTab === "transactions" ? "receipt transactions" : subTab === "parking" ? "parking payments" : "suqe payments"} registered`)}
         </div>
       )}
 
@@ -1108,14 +1081,14 @@ export default function Users({
       {showAddPaymentModal && (
         <div className="modal-overlay" style={{ zIndex: 2000 }}>
           <div className="modal" style={{ maxWidth: "420px" }}>
-            <h2>{editPaymentTarget ? "Edit" : "Add"} {selectedUser.id === "dawit" ? "Parking" : "Suqe"} Payment</h2>
+            <h2>{t(editPaymentTarget ? "Edit" : "Add")} {t(selectedUser.id === "dawit" ? "Parking" : "Suqe")}{t(" Payment")}</h2>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "20px" }}>
               <label className="draft-field">
-                <span>Amount (ETB)</span>
+                <span>{t("Amount (ETB)")}</span>
                 <input
                   type="number"
-                  placeholder="0.00"
+                  placeholder={t("0.00")}
                   value={newPayment.amount}
                   onChange={(e) => setNewPayment({ ...newPayment, amount: e.target.value })}
                   disabled={dbSaving}
@@ -1124,7 +1097,7 @@ export default function Users({
               </label>
 
               <label className="draft-field">
-                <span>Date / Time</span>
+                <span>{t("Date / Time")}</span>
                 <input
                   type="text"
                   value={newPayment.date}
@@ -1135,10 +1108,10 @@ export default function Users({
               </label>
 
               <label className="draft-field">
-                <span>{selectedUser.id === "dawit" ? "Plate Number / Ref" : "Shop / Grocery Name"}</span>
+                <span>{t(selectedUser.id === "dawit" ? "Plate Number / Ref" : "Shop / Grocery Name")}</span>
                 <input
                   type="text"
-                  placeholder={selectedUser.id === "dawit" ? "e.g. Code 3 - AA 12345" : "e.g. Merkato Shop #2"}
+                  placeholder={t(selectedUser.id === "dawit" ? "e.g. Code 3 - AA 12345" : "e.g. Merkato Shop #2")}
                   value={newPayment.reference}
                   onChange={(e) => setNewPayment({ ...newPayment, reference: e.target.value })}
                   disabled={dbSaving}
@@ -1146,10 +1119,10 @@ export default function Users({
               </label>
 
               <label className="draft-field">
-                <span>Narrative</span>
+                <span>{t("Narrative")}</span>
                 <input
                   type="text"
-                  placeholder="Payment description..."
+                  placeholder={t("Payment description...")}
                   value={newPayment.narrative}
                   onChange={(e) => setNewPayment({ ...newPayment, narrative: e.target.value })}
                   disabled={dbSaving}
@@ -1163,7 +1136,7 @@ export default function Users({
                 onClick={handleAddPaymentSubmit}
                 disabled={dbSaving}
               >
-                {dbSaving ? "Saving..." : editPaymentTarget ? "Save Changes" : "Save Payment"}
+                {t(dbSaving ? "Saving..." : editPaymentTarget ? "Save Changes" : "Save Payment")}
               </button>
               <button
                 className="close-btn"
@@ -1172,9 +1145,7 @@ export default function Users({
                   setEditPaymentTarget(null);
                 }}
                 disabled={dbSaving}
-              >
-                Cancel
-              </button>
+              >{t("Cancel")}</button>
             </div>
           </div>
         </div>
@@ -1184,14 +1155,14 @@ export default function Users({
       {showEditPersonModal && (
         <div className="modal-overlay" style={{ zIndex: 2000 }}>
           <div className="modal" style={{ maxWidth: "420px" }}>
-            <h2>Edit Profile Details</h2>
+            <h2>{t("Edit Profile Details")}</h2>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "20px" }}>
               <label className="draft-field">
-                <span>Name</span>
+                <span>{t("Name")}</span>
                 <input
                   type="text"
-                  placeholder="Enter name..."
+                  placeholder={t("Enter name...")}
                   value={newPerson.name}
                   onChange={(e) => setNewPerson({ ...newPerson, name: e.target.value })}
                   disabled={dbSaving}
@@ -1200,10 +1171,10 @@ export default function Users({
               </label>
 
               <label className="draft-field">
-                <span>Role</span>
+                <span>{t("Role")}</span>
                 <input
                   type="text"
-                  placeholder="Enter role..."
+                  placeholder={t("Enter role...")}
                   value={newPerson.role}
                   onChange={(e) => setNewPerson({ ...newPerson, role: e.target.value })}
                   disabled={dbSaving}
@@ -1218,7 +1189,7 @@ export default function Users({
                 onClick={handleEditPersonSubmit}
                 disabled={dbSaving}
               >
-                {dbSaving ? "Saving..." : "Save Changes"}
+                {t(dbSaving ? "Saving..." : "Save Changes")}
               </button>
               <button
                 className="close-btn"
@@ -1227,9 +1198,7 @@ export default function Users({
                   setNewPerson({ name: "", role: "" });
                 }}
                 disabled={dbSaving}
-              >
-                Cancel
-              </button>
+              >{t("Cancel")}</button>
             </div>
           </div>
         </div>
@@ -1249,29 +1218,21 @@ export default function Users({
             }}
             onClick={(event) => event.stopPropagation()}
           >
-            <button onClick={handleEditClick}>
-              Edit
-            </button>
+            <button onClick={handleEditClick}>{t("Edit")}</button>
 
             <button
               className="danger"
               onClick={handleDeleteClick}
-            >
-              Delete
-            </button>
+            >{t("Delete")}</button>
 
-            <button onClick={() => setActionMenu(null)}>
-              Close
-            </button>
+            <button onClick={() => setActionMenu(null)}>{t("Close")}</button>
           </div>
         </div>
       )}
 
       {/* Floating Scroll to Top button */}
       {showScrollTop && (
-        <button className="scroll-top-btn" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label="Scroll to top">
-          &uarr;
-        </button>
+        <button className="scroll-top-btn" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label={t("Scroll to top")}>{t("↑")}</button>
       )}
     </div>
   );
