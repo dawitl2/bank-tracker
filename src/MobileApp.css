@@ -80,7 +80,7 @@
   .settings-heading > span { font-size: 10px; letter-spacing: .16em; color: #aa7500; font-weight: 750; }
   .settings-heading h1 { font-size: 30px; line-height: 1.2; margin: 6px 0; letter-spacing: -.8px; }
   .settings-heading p { font-size: 13px; color: #777b76; margin: 0; }
-  .settings-card { background: #fff; border: 1px solid #e8e9e4; border-radius: 20px; padding: 18px; margin-bottom: 14px; box-shadow: 0 4px 18px rgba(32, 35, 31, .025); }
+  .settings-card { background: transparent; border: 0; border-bottom: 1px solid #e3e5dc; border-radius: 0; padding: 8px 0 22px; margin-bottom: 22px; box-shadow: none; }
   .settings-card h2 { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 750; margin: 0 0 8px; }
   .settings-card h2 svg, .settings-people summary svg { width: 18px; height: 18px; color: #b87b00; }
   .settings-caption { font-size: 11px; line-height: 1.65; color: #7b8078; margin: 0 0 6px; }
@@ -127,7 +127,7 @@
   .settings-error { font-size: 12px; line-height: 1.6; color: #b63a30; }
   .settings-notice { min-height: 18px; font-size: 12px; color: #25804c; text-align: center; }
   .settings-version { font-size: 10px; text-align: center; color: #9ca194; margin: 20px 0 0; }
-  .settings-confirm { width: min(340px, calc(100vw - 48px)); box-sizing: border-box; padding: 24px; border: 1px solid #eeeae2; border-radius: 22px; box-shadow: 0 24px 80px #0003; color: #20231f; }
+  .settings-confirm { margin: auto; width: min(340px, calc(100vw - 48px)); box-sizing: border-box; padding: 24px; border: 1px solid #eeeae2; border-radius: 22px; box-shadow: 0 24px 80px #0003; color: #20231f; }
   .settings-confirm::backdrop { background: rgba(26, 30, 25, .45); backdrop-filter: blur(5px); }
   .settings-dialog-icon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; background: #fff4d9; color: #ad7500; font-size: 21px; }
   .settings-confirm h2 { font-size: 20px; margin: 16px 0 8px; overflow-wrap: anywhere; }

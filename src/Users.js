@@ -1,4 +1,6 @@
 import { useLanguage } from "./Language";
+import { useProfile } from "./ProfileSession";
+import { ProfilePhoto } from "./AccountSettings";
 import { useMemo, useState, useEffect, useLayoutEffect } from "react";
 import {
   AreaChart,
@@ -90,6 +92,7 @@ export default function Users({
   openParkingModal
 }) {
   const { t } = useLanguage();
+  const { profile } = useProfile();
   const [dbSaving, setDbSaving] = useState(false);
   const [subTab, setSubTab] = useState("transactions");
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -289,6 +292,7 @@ export default function Users({
   const handleEditClick = () => {
     if (actionMenu.type === "person") {
       const p = actionMenu.person;
+      if (p.id === "dawit" && profile?.username === "dawit") { setActionMenu(null); navigate("/settings/accounts"); return; }
       setNewPerson({ name: p.name, role: p.role || "" });
       setShowEditPersonModal(true);
       setActionMenu(null);
@@ -683,12 +687,10 @@ export default function Users({
                 onTouchCancel={stopLongPress}
               >
 
-                <div className={`avatar-placeholder ${avatarClass}`}>
-                  {t(user.name).charAt(0)}
-                </div>
+                <ProfilePhoto personId={user.id} name={user.name} className={`avatar-placeholder ${avatarClass}`} />
 
                 <div className="user-card-info">
-                  <h3>{t(user.name)}</h3>
+                  <h3>{t(user.id === profile?.person_id ? profile.name : user.name)}</h3>
                   <div className="user-role">{t(user.role)}</div>
                 </div>
 
@@ -842,11 +844,9 @@ export default function Users({
       <div className="user-detail-header" style={{ marginBottom: "30px" }}>
         <div className="user-profile-summary" style={{ width: "100%", justifyContent: "space-between", flexWrap: "wrap", gap: "15px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-            <div className={`avatar-placeholder avatar-large ${avatarClass}`}>
-              {t(selectedUser.name).charAt(0)}
-            </div>
+            <ProfilePhoto personId={selectedUser.id} name={selectedUser.name} className={`avatar-placeholder avatar-large ${avatarClass}`} />
             <div className="user-profile-info">
-              <h2>{t(selectedUser.name)}</h2>
+              <h2>{t(selectedUser.id === profile?.person_id ? profile.name : selectedUser.name)}</h2>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginTop: "4px" }}>
                 <span className="user-badge" style={{ background: "#eeb833", color: "#000", fontWeight: "700", fontSize: "11px", padding: "2px 8px", borderRadius: "4px", textTransform: "uppercase" }}>
                   {t(selectedUser.role)}
@@ -858,6 +858,7 @@ export default function Users({
           <button
             className="back-btn"
             onClick={() => {
+              if (selectedUser.id === "dawit" && profile?.username === "dawit") { navigate("/settings/accounts"); return; }
               setNewPerson({ name: selectedUser.name, role: selectedUser.role || "" });
               setShowEditPersonModal(true);
             }}

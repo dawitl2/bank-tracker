@@ -9,6 +9,7 @@ import ReceiptModal from "./ReceiptModal";
 import DesktopLayout from "./desktop/DesktopLayout";
 import MobileNavigation from "./MobileNavigation";
 import AppSettings from "./AppSettings";
+import AccountSettings from "./AccountSettings";
 import useAppPreferences from "./useAppPreferences";
 import { FaCalculator } from "react-icons/fa";
 import "./App.css";
@@ -18,7 +19,7 @@ const SUPABASE_URL = "https://ywplzexakisliebyjtyf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_nmA6IJsDGUVki5i0smS1Tg_MLXy5_wX";
 
 const BASE_BALANCE = 1209518;
-const VERSION = "1.3.4.3"; // html.css.sys.db
+const VERSION = "1.3.5.0"; // html.css.sys.db
 const PASSWORD = "dawit123";
 const API_URL =
   process.env.REACT_APP_API_URL || "https://bank-backend-anhp.onrender.com";
@@ -1245,6 +1246,10 @@ function App() {
   */
 
   if (!appAccessible && checkingProfile) return <div className="login-container"><p>{t("Checking session…")}</p></div>;
+  if (!appAccessible && !isDesktop && currentPath === "/settings/accounts") return <div className="app mobile-app">
+    <img src="/logo.png" alt={t("Bank Logo")} className="logo" />
+    <AccountSettings onBack={() => navigate("/settings")} />
+  </div>;
   if (!appAccessible) {
     const isLockoutActive = lockedUntil && new Date(lockedUntil).getTime() > Date.now();
 
@@ -1263,15 +1268,7 @@ function App() {
             <h2>{t("Welcome Back")}</h2>
           </div>
 
-          <div className="login-field">
-            <label>{t("Username")}</label>
-            <input
-              type="text"
-              value={t("Dawit Enku")}
-              disabled
-              placeholder={t("Username")}
-            />
-          </div>
+          {!isDesktop && <button type="button" className="account-row-button" onClick={() => navigate("/settings/accounts")}>{t("Accounts")}</button>}
 
           {isLockoutActive ? (
             <div className="login-field">
@@ -1564,10 +1561,10 @@ function App() {
 
             {view === "construction" && <ConstructionPanel currentPath={currentPath} navigate={navigate} />}
 
-            {view === "settings" && <AppSettings preferences={preferences} onPreferenceChange={updatePreference}
+            {view === "settings" && (currentPath === "/settings/accounts" ? <AccountSettings onBack={() => navigate("/settings")} /> : <AppSettings preferences={preferences} onPreferenceChange={updatePreference}
               storageError={storageError} people={people} peopleReady={peopleReady} peopleError={peopleError}
               onAddPerson={person => mutatePerson("POST", person)} onRemovePerson={person => mutatePerson("DELETE", person)}
-              onRefresh={refreshAppData} version={VERSION} />}
+              onRefresh={refreshAppData} version={VERSION} onOpenAccounts={() => navigate("/settings/accounts")} />)}
 
             {calculatorEnabled && (view === "transactions" || view === "balance") && <button
               key={`calculator-${view}-${calculatorAnimationToken}`}
