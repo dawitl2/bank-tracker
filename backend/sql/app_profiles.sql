@@ -47,7 +47,8 @@ returns jsonb language plpgsql security definer set search_path = '' as $$
 declare
   account bank_profiles.accounts%rowtype;
   session_token text;
-  expiry timestamptz := now() + interval '8 hours';
+  -- Device sessions have no time limit; sign-out deletes the token hash.
+  expiry timestamptz := 'infinity';
 begin
   if p_username is null or length(p_username) > 60 or p_password is null or octet_length(p_password) > 72 then
     return jsonb_build_object('error', 'incorrect');
@@ -67,7 +68,7 @@ begin
   session_token := encode(extensions.gen_random_bytes(32), 'hex');
   insert into bank_profiles.sessions(token_hash, username, expires_at)
   values (encode(extensions.digest(session_token, 'sha256'), 'hex'), account.username, expiry);
-  return jsonb_build_object('token', session_token, 'expires_at', expiry, 'profile',
+  return jsonb_build_object('token', session_token, 'persistent', true, 'expires_at', expiry, 'profile',
     jsonb_build_object('username', account.username, 'name', account.display_name,
       'apollo_access', account.apollo_access, 'interest_access', account.interest_access));
 end;
@@ -75,7 +76,7 @@ $$;
 
 create or replace function bank_profiles.session(p_token text)
 returns jsonb language sql security definer set search_path = '' as $$
-  select jsonb_build_object('expires_at', s.expires_at, 'profile',
+  select jsonb_build_object('persistent', s.expires_at = 'infinity'::timestamptz, 'expires_at', s.expires_at, 'profile',
     jsonb_build_object('username', a.username, 'name', a.display_name,
       'apollo_access', a.apollo_access, 'interest_access', a.interest_access))
   from bank_profiles.sessions s join bank_profiles.accounts a on a.username = s.username

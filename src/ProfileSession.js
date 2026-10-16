@@ -85,7 +85,11 @@ export function ProfileProvider({ children }) {
       try {
         const data = await rpc("app_profile_session", { p_token: token.current });
         if (active && version === generation.current) install(data);
-      } catch { if (active && version === generation.current) setProfile(null); }
+      } catch {
+        // A failed request is not a revoked session. Keep an already-verified
+        // account signed in and retry on focus/reconnect. A cold start still
+        // waits for server verification before granting profile access.
+      }
       finally { if (active && version === generation.current) setChecking(false); }
     };
     const storageChanged = event => {

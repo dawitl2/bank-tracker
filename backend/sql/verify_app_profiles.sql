@@ -27,9 +27,11 @@ do $$
 declare login jsonb; other_login jsonb; restored jsonb; session_token text;
 begin
   login := public.app_profile_sign_in(' Dawit ', 'pass');
+  if login->>'persistent' is distinct from 'true' then raise exception 'Sign-in still has a time limit'; end if;
   session_token := login->>'token';
   if session_token is null or session_token !~ '^[a-f0-9]{64}$' then raise exception 'Invalid session token'; end if;
   restored := public.app_profile_session(session_token);
+  if restored->>'persistent' is distinct from 'true' then raise exception 'Restored device session is not persistent'; end if;
   if restored->'profile'->>'username' is distinct from 'dawit'
     or restored->'profile'->>'apollo_access' is distinct from 'true'
     or restored->'profile'->>'interest_access' is distinct from 'true' then

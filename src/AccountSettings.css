@@ -26,7 +26,8 @@
 .account-access { display: flex; align-items: flex-start; gap: 12px; font-size: 12px; line-height: 1.6; margin: 24px 0; color: #59644f; }
 .account-access svg { flex: 0 0 18px; height: 18px; margin-top: 2px; }
 .account-access small { display: block; color: #808778; font-size: 11px; margin-top: 4px; }
-.account-signout { display: flex; align-items: center; gap: 8px; padding: 12px 0; background: transparent; border: 0; color: #a33c30; font-size: 13px !important; }
+.account-signout { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 50px; margin-top: 32px; padding: 14px 20px; border: 0; border-radius: 12px; background: #b74335; color: #fff; font-size: 14px !important; font-weight: 650 !important; }
+.account-signout:hover:not(:disabled) { background: #9e3529; }
 .account-empty { padding: 20px 12px 32px; text-align: center; }
 .account-empty .account-empty-avatar { margin: 0 auto 22px; width: 76px; height: 76px; }
 .account-empty h2 { font-size: 22px; font-weight: 600; margin: 0 0 8px; }

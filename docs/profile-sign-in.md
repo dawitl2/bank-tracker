@@ -28,8 +28,10 @@ a new project; apply only this upgrade on an already-configured project.
 The device stores an opaque token in local storage; it never stores the profile
 password or permission flags. Existing session-storage tokens are migrated.
 The database stores bcrypt password hashes and SHA-256 session-token hashes.
-Sessions are verified on startup, focus and reconnect. An unavailable verification
-hides protected views until it succeeds, while keeping the saved token for retry.
+Sessions are verified on startup, focus and reconnect. A temporary network/server
+failure keeps an already-verified account signed in. On a cold start, protected
+views wait for successful verification while the saved token is kept for retry.
+Only a successful server response rejecting the session clears invalid access.
 Sign-out clears the local token, revokes the server session, resets guest unlocks,
 and signs out other tabs on the same device. Failed server revocation is queued
 for retry on reconnect or the next app start.
@@ -81,3 +83,36 @@ The built phone UI passes blank sign-in fields and account rejection, photo/emai
 editing with confirmation, matching display details in People, closing/reopening
 without a password, cancelled sign-out, and confirmed sign-out across two tabs
 against the local PostgreSQL RPCs. The production build passes.
+
+## Persistent-session regression checks
+
+The base setup now also creates non-expiring sessions, so reapplying it cannot
+restore the old eight-hour limit. Existing installations still need
+`backend/sql/profile_devices.sql` applied to upgrade valid saved devices and
+activate the profile editor. Already-expired tokens require one fresh sign-in.
+Clearing browser site data or using another browser/profile requires signing in
+again; passwords are never saved on the device.
+
+Run `npm test -- --watchAll=false --runInBand src/ProfileSession.test.js` for
+device restart, long-term persistence, temporary connection failures, logout,
+queued offline revocation and cross-tab logout races. Run
+`node backend/sql/verify-profile-devices.cjs <path-to-pglite-package>` with
+`@electric-sql/pglite` 0.5.10 for isolated PostgreSQL coverage of the base setup,
+legacy-device upgrade, repeat setup, revoked/expired token rejection and logout.
+
+Live API inspection on 2026-10-14 confirmed that production still issues
+eight-hour sessions. Applying the upgrade is required before permanent login
+works there; a frontend Git push alone does not change the database functions.
+The Supabase connector returned no accessible projects and denied the project
+query, so production activation could not be completed in that session.
+
+Validation: all eight frontend session tests and the isolated PostgreSQL checks
+pass. The full frontend suite has 70 passing and 12 failing tests; the same 12
+failures occur on the unchanged baseline in ApolloTransactionPrompt,
+BoaReceiptViewer and boaSmsImport tests.
+
+On 2026-10-16, all eight session tests and the isolated PostgreSQL device
+checks passed again. The Accounts sign-out action is now a full-width red
+button below the account details. The Supabase connector still returned no
+accessible projects, so applying `backend/sql/profile_devices.sql` to production
+remains required to activate permanent device sessions there.
