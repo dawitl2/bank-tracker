@@ -1,5 +1,20 @@
 # Dawit profile sign-in
 
+Production persistence activated on 2026-10-17 through the authenticated
+Supabase SQL dashboard, after confirming the live sign-in function still issued
+eight-hour sessions. The exact repair is recorded in
+`backend/sql/persistent_sessions_activation.sql`. It updates sign-in and restore
+responses and upgrades still-valid sessions; expired/revoked tokens stay invalid.
+The optional profile editor upgrade remains separate.
+
+Live public API verification passed: two independent non-expiring device logins,
+session restoration, revocation of one device without affecting the other, and
+rejection of an unknown token. Both test sessions were revoked afterward.
+All eight `ProfileSession.test.js` tests passed. The deployed frontend already
+supports the persistent response and device-local storage, so no frontend
+deployment was needed for this repair. An already-expired login needs one fresh
+sign-in. Earlier pending-activation notes below describe the historical state.
+
 Apply `backend/sql/app_profiles.sql` in the SQL Editor for project
 `ywplzexakisliebyjtyf` before using profile sign-in. The script adds a private
 `bank_profiles` schema with accounts and sessions, plus three public RPC wrappers.
