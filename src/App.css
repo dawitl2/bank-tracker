@@ -5078,107 +5078,78 @@ a {
   }
 
   
-  .account-activity-dual-row {
-    min-width: 0;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    align-items: stretch;
-    gap: 10px;
-    padding: 9px 1px 0;
-    border-top: 1px solid rgba(32, 35, 31, 0.065);
-  }
-
-  .account-activity-cell,
-  .account-number-cell {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-
-  .account-activity-cell {
-    border-right: 1px solid rgba(32, 35, 31, 0.08);
-    padding-right: 8px;
-  }
-
-  .account-activity-cell > span,
-  .account-number-cell > span {
-    color: #858a82;
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: 0.055em;
-    line-height: 1.25;
-    text-transform: uppercase;
-  }
-
-  .account-activity-cell strong {
-    color: #3d423a;
-    font-size: 12px;
-    font-weight: 800;
-    line-height: 1.2;
-    margin: 2px 0 1px;
-  }
-
-  .account-activity-cell time {
-    color: #969b93;
-    font-size: 9px;
-    line-height: 1.2;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .account-number-action-row,
-  .account-number-inline-wrap {
+  .primary-account-external-bar {
     display: flex;
     align-items: center;
-    gap: 5px;
-    margin-top: 2px;
-    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 8px 0 16px;
+    padding: 11px 16px;
+    background: #ffffff;
+    border: 1px solid rgba(244, 163, 0, 0.28);
+    border-radius: 16px;
+    box-shadow: 0 4px 18px rgba(32, 35, 31, 0.05);
+    box-sizing: border-box;
   }
 
-  .account-number-action-row strong,
-  .account-number-val {
-    color: #20231f;
-    font-size: 12px;
+  .account-external-content {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .account-external-caption {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #8a6a1c;
+    margin-bottom: 2px;
+  }
+
+  .account-external-number {
+    font-size: 15px;
     font-weight: 800;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.05em;
+    color: #20231f;
     font-family: inherit;
   }
 
-  .account-copy-inline-btn {
+  .account-external-copy-btn {
     display: inline-flex;
     align-items: center;
-    gap: 3px;
+    gap: 6px;
+    padding: 7px 14px;
+    border: 1px solid rgba(244, 163, 0, 0.35);
+    border-radius: 999px;
     background: rgba(244, 163, 0, 0.12);
-    border: 1px solid rgba(244, 163, 0, 0.28);
-    border-radius: 5px;
-    padding: 1px 5px;
-    font-size: 10px;
-    font-weight: 750;
     color: #8a5a00;
+    font-size: 12px;
+    font-weight: 750;
     cursor: pointer;
-    transition: all 0.15s ease;
-    line-height: 1.2;
+    transition: all 0.18s ease;
+    flex-shrink: 0;
   }
 
-  .account-copy-inline-btn:hover {
+  .account-external-copy-btn:hover {
     background: rgba(244, 163, 0, 0.22);
+    transform: translateY(-1px);
   }
 
-  .account-copy-inline-btn.is-copied {
-    background: rgba(16, 185, 129, 0.12);
-    border-color: rgba(16, 185, 129, 0.35);
+  .account-external-copy-btn.is-copied {
+    background: rgba(16, 185, 129, 0.14);
+    border-color: rgba(16, 185, 129, 0.4);
     color: #059669;
   }
 
   .logo-nav-slot {
     position: relative;
     display: block;
-    width: min(260px, 72vw);
+    width: 184px;
+    max-width: 60vw;
     aspect-ratio: 606 / 179;
     height: auto;
-    margin: 16px auto 28px;
+    margin: 12px auto 22px;
   }
 
   .logo-nav-slot .logo {

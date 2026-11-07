@@ -1482,28 +1482,10 @@ function Balance({
                   <time>{t("Electronic money")}</time>
                 </div>
               ) : (
-                <div className="account-activity-dual-row">
-                  <div className="account-activity-cell">
-                    <span>{t(balanceMeta.label)}</span>
-                    <strong>{balanceMeta.amount}</strong>
-                    <time>{balanceMeta.date}</time>
-                  </div>
-                  <div className="account-activity-cell account-number-cell">
-                    <span>{t("Account Number")}</span>
-                    <div className="account-number-inline-wrap">
-                      <strong className="account-number-val">157741349</strong>
-                      <button
-                        type="button"
-                        className={`account-copy-inline-btn${copiedAccount ? " is-copied" : ""}`}
-                        onClick={() => handleCopyAccountNumber("157741349")}
-                        title={t("Copy account number")}
-                        aria-label={t("Copy account number")}
-                      >
-                        {copiedAccount ? <FiCheck className="copy-check-icon" /> : <FiCopy />}
-                      </button>
-                    </div>
-                    <time>{copiedAccount ? t("Copied to clipboard!") : t("Primary BOA")}</time>
-                  </div>
+                <div className="account-activity-row">
+                  <span>{t(balanceMeta.label)}</span>
+                  <strong>{balanceMeta.amount}</strong>
+                  <time>{balanceMeta.date}</time>
                 </div>
               )}
             </div>
@@ -1522,6 +1504,25 @@ function Balance({
           </section>
         </div>
       </section>
+
+      {currentCard?.id === "primary" && (
+        <div className="primary-account-external-bar">
+          <div className="account-external-content">
+            <span className="account-external-caption">{t("Bank Account Number")}</span>
+            <strong className="account-external-number">157741349</strong>
+          </div>
+          <button
+            type="button"
+            className={`account-external-copy-btn${copiedAccount ? " is-copied" : ""}`}
+            onClick={() => handleCopyAccountNumber("157741349")}
+            title={t("Copy account number")}
+            aria-label={t("Copy account number")}
+          >
+            {copiedAccount ? <FiCheck className="copy-check-icon" /> : <FiCopy />}
+            <span>{t(copiedAccount ? "Copied" : "Copy")}</span>
+          </button>
+        </div>
+      )}
 
       {effectivePanelOptions.length > 0 && (
         <section className="analytics-switcher" aria-label={t("Balance analytics")}>
