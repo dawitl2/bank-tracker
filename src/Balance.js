@@ -1019,6 +1019,7 @@ function Balance({
   const [isFlipped, setIsFlipped] = useState(false);
   const cardRailRef = useRef(null);
   const apolloPromptTimerRef = useRef(null);
+  const cardRailScrollTimeout = useRef(null);
   const [guestApolloUnlocked, setApolloUnlocked] = useState(
     () => localStorage.getItem("apollo_visibility_day") === getVisibilityDayKey()
   );
@@ -1052,7 +1053,7 @@ function Balance({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFlipped]);
 
-  useEffect(() => () => window.clearTimeout(apolloPromptTimerRef.current), []);
+  useEffect(() => () => { window.clearTimeout(apolloPromptTimerRef.current); window.clearTimeout(cardRailScrollTimeout.current); }, []);
 
   const analytics = useMemo(() => {
     const enriched = transactions.map((tx) => ({

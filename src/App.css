@@ -4793,18 +4793,21 @@ a {
   }
 
   .balance-card-rail {
+    --card-slide-width: calc(100% - 48px);
+    --card-rail-pad: 24px;
     display: flex;
-    gap: 10px;
+    gap: 14px;
     width: calc(100% + 24px);
     margin-left: -12px;
-    padding: 4px 14px 18px;
+    padding: 6px var(--card-rail-pad) 20px;
     overflow-x: auto;
     overscroll-behavior-x: contain;
     scroll-snap-type: x mandatory;
-    scroll-padding-inline: 14px;
+    scroll-padding-inline: 0;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-x;
+    box-sizing: border-box;
   }
 
   .balance-card-rail::-webkit-scrollbar {
@@ -4812,15 +4815,23 @@ a {
   }
 
   .balance-card-slide {
-    flex: 0 0 calc(100% - 32px);
-    scroll-snap-align: start;
+    flex: 0 0 var(--card-slide-width);
+    width: var(--card-slide-width);
+    scroll-snap-align: center;
     scroll-snap-stop: always;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.22s ease;
   }
 
   .balance-card-slide .card {
     display: block;
     width: 100%;
-    margin: 0 !important;
+    height: auto;
+    margin: 0 auto !important;
     border-radius: 18px;
     box-shadow: 0 12px 25px rgba(34, 39, 34, 0.12);
   }
