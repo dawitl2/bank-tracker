@@ -50,7 +50,7 @@ function PersonConfirmation({ action, busy, error, onCancel, onConfirm }) {
   );
 }
 
-function EditPersonDialog({ person, busy, error, onCancel, onSave }) {
+export function EditPersonDialog({ person, busy, error, onCancel, onSave }) {
   const { t } = useLanguage();
   const dialogRef = useRef(null);
   const customs = getPersonCustomizations()[person.id] || {};

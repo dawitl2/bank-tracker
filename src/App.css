@@ -6119,58 +6119,69 @@ a {
   transform: scale(0.98);
 }
 
-/* 2. Primary Account Number Banner with Copy Button */
+/* 2. Primary Account Number Banner with Copy Button (Refined & Sleek) */
 .primary-account-number-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.09);
-  border-radius: 12px;
-  padding: 10px 16px;
-  margin: 12px 0 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(244, 163, 0, 0.22);
+  border-radius: 10px;
+  padding: 6px 12px;
+  margin: 6px 0 12px;
+  box-shadow: 0 2px 7px rgba(244, 163, 0, 0.05);
 }
 
 .primary-account-number-content {
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .account-number-caption {
-  font-size: 11px;
+  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #6b7280;
-  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #858a82;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .account-number-text {
-  font-size: 17px;
-  font-weight: 800;
-  color: #111827;
-  letter-spacing: 0.5px;
-  font-family: monospace;
+  font-size: 13px;
+  font-weight: 750;
+  color: #20231f;
+  letter-spacing: 0.04em;
+  font-family: inherit;
 }
 
 .account-number-copy-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: #f3f4f6;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 8px;
-  padding: 6px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #374151;
+  gap: 5px;
+  background: rgba(244, 163, 0, 0.1);
+  border: 1px solid rgba(244, 163, 0, 0.24);
+  border-radius: 7px;
+  padding: 4px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #8a5a00;
   cursor: pointer;
   transition: all 0.18s ease;
+  flex-shrink: 0;
 }
 
 .account-number-copy-btn:hover {
-  background: #e5e7eb;
-  color: #111827;
+  background: rgba(244, 163, 0, 0.18);
+  color: #634000;
+}
+
+.account-number-copy-btn.is-copied {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #059669;
 }
 
 .account-number-copy-btn .copy-check-icon {
@@ -6363,4 +6374,121 @@ a {
 .construction-gallery-add-slide:hover {
   border-color: #f4a300;
   background: rgba(244, 163, 0, 0.08);
+}
+
+/* 7. Active Card Theme Propagation (Apollo & Telebirr matching switcher and fonts) */
+.theme-apollo .analytics-switcher button.active {
+  border-color: #791636 !important;
+  background: #791636 !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 18px rgba(121, 22, 54, 0.28) !important;
+}
+
+.theme-telebirr .analytics-switcher button.active {
+  border-color: #0284c7 !important;
+  background: #0284c7 !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 18px rgba(2, 132, 199, 0.28) !important;
+}
+
+.theme-apollo .analytics-card > span,
+.theme-apollo .chart-heading span {
+  color: #8a3048;
+}
+
+.theme-apollo .interest-card-mark {
+  border-color: rgba(121, 22, 54, 0.18);
+  background: rgba(121, 22, 54, 0.09);
+  color: #791636;
+}
+
+.theme-apollo .interest-month-pill {
+  background: rgba(121, 22, 54, 0.08);
+  color: #791636;
+}
+
+.theme-apollo .interest-estimate-value span {
+  color: #791636;
+}
+
+.theme-apollo .interest-metric.is-highlight strong {
+  color: #791636;
+}
+
+.theme-apollo .add-person-btn-container .back-btn {
+  background: #791636 !important;
+  border-color: #791636 !important;
+  color: #ffffff !important;
+}
+
+.theme-apollo .user-badge {
+  background: #791636 !important;
+  color: #ffffff !important;
+}
+
+.theme-apollo .construction-add-house {
+  border-color: #791636;
+  color: #791636;
+}
+
+.theme-telebirr .analytics-card > span,
+.theme-telebirr .chart-heading span {
+  color: #0284c7;
+}
+
+.theme-telebirr .interest-card-mark {
+  border-color: rgba(2, 132, 199, 0.18);
+  background: rgba(2, 132, 199, 0.09);
+  color: #0284c7;
+}
+
+.theme-telebirr .interest-month-pill {
+  background: rgba(2, 132, 199, 0.08);
+  color: #0369a1;
+}
+
+.theme-telebirr .interest-estimate-value span {
+  color: #0284c7;
+}
+
+.theme-telebirr .interest-metric.is-highlight strong {
+  color: #0284c7;
+}
+
+.theme-telebirr .add-person-btn-container .back-btn {
+  background: #0284c7 !important;
+  border-color: #0284c7 !important;
+  color: #ffffff !important;
+}
+
+.theme-telebirr .user-badge {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+}
+
+.theme-telebirr .category-progress-track {
+  background: rgba(2, 132, 199, 0.1);
+}
+
+.theme-telebirr .construction-add-house {
+  border-color: #0284c7;
+  color: #0284c7;
+}
+
+/* Construction Gallery Cover Tag */
+.construction-cover-tag {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  backdrop-filter: blur(4px);
+  z-index: 2;
+  pointer-events: none;
 }

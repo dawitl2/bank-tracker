@@ -279,6 +279,17 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
     return house.cover_image || house.image_url || "/house-cover-default.svg";
   }, []);
 
+  const selectedHouseCover = selectedHouse ? getHouseCover(selectedHouse) : null;
+  const displayPhotos = useMemo(() => {
+    if (!selectedHouse) return [];
+    const validCover = selectedHouseCover && selectedHouseCover !== "/house-cover-default.svg" ? selectedHouseCover : null;
+    const internalList = galleryPhotos.filter(p => p && p !== validCover);
+    if (validCover) {
+      return [...internalList, validCover];
+    }
+    return internalList.length > 0 ? internalList : (selectedHouseCover ? [selectedHouseCover] : []);
+  }, [selectedHouse, selectedHouseCover, galleryPhotos]);
+
   const getHouseGallery = useCallback((houseId, defaultImg) => {
     try {
       const raw = localStorage.getItem(`construction_gallery_${houseId}`);
@@ -338,9 +349,16 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
     }
   };
 
-  const handleDeleteGalleryPhoto = (indexToDelete) => {
+  const handleDeleteGalleryPhoto = (indexToDelete, isCover) => {
     if (!selectedHouse) return;
-    const updated = galleryPhotos.filter((_, idx) => idx !== indexToDelete);
+    if (isCover) {
+      try { localStorage.removeItem(`construction_cover_${selectedHouse.id}`); } catch {}
+      setHouses(prev => prev.map(h => h.id === selectedHouse.id ? { ...h, cover_image: null } : h));
+      setGalleryVersion(v => v + 1);
+      return;
+    }
+    const targetUrl = displayPhotos[indexToDelete];
+    const updated = galleryPhotos.filter(p => p !== targetUrl);
     saveHouseGallery(selectedHouse.id, updated);
   };
 
@@ -688,29 +706,35 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
               <aside className="construction-project-overview">
                   <div className="construction-gallery-section">
                     <div className="construction-gallery-heading">
-                      <span>{t("Project photos")} ({galleryPhotos.length})</span>
+                      <span>{t("Project photos")} ({displayPhotos.length})</span>
                       <small>{t("Swipe to see more")}</small>
                     </div>
                     <div className="construction-gallery-carousel">
-                      {galleryPhotos.map((photoUrl, idx) => (
-                        <div key={idx} className="construction-gallery-slide">
-                          <img
-                            src={photoUrl}
-                            alt={`${selectedHouse.name} ${idx + 1}`}
-                            className="construction-gallery-img"
-                            onClick={() => setLightboxUrl(photoUrl)}
-                          />
-                          <button
-                            type="button"
-                            className="construction-gallery-delete-btn"
-                            onClick={() => handleDeleteGalleryPhoto(idx)}
-                            title={t("Delete")}
-                            aria-label={t("Delete")}
-                          >
-                            <FiTrash2 size={16} />
-                          </button>
-                        </div>
-                      ))}
+                      {displayPhotos.map((photoUrl, idx) => {
+                        const isCover = photoUrl === selectedHouseCover && idx === displayPhotos.length - 1;
+                        return (
+                          <div key={idx} className="construction-gallery-slide">
+                            <img
+                              src={photoUrl}
+                              alt={`${selectedHouse.name} ${idx + 1}`}
+                              className="construction-gallery-img"
+                              onClick={() => setLightboxUrl(photoUrl)}
+                            />
+                            {isCover && (
+                              <span className="construction-cover-tag">{t("Cover")}</span>
+                            )}
+                            <button
+                              type="button"
+                              className="construction-gallery-delete-btn"
+                              onClick={() => handleDeleteGalleryPhoto(idx, isCover)}
+                              title={t("Delete")}
+                              aria-label={t("Delete")}
+                            >
+                              <FiTrash2 size={16} />
+                            </button>
+                          </div>
+                        );
+                      })}
                       <label className="construction-gallery-add-slide">
                         <FiPlusIcon size={24} />
                         <span>{t("Add photos")}</span>
@@ -1292,14 +1316,23 @@ function Balance({
 
   const handleCardRailScroll = () => {
     const rail = cardRailRef.current;
-    const firstCard = rail?.firstElementChild;
-    if (!rail || !firstCard) return;
+    if (!rail || !rail.children.length) return;
 
-    const cardWidth = firstCard.clientWidth || rail.clientWidth;
-    const idx = Math.min(
-      effectiveCards.length - 1,
-      Math.max(0, Math.round(rail.scrollLeft / cardWidth))
-    );
+    const railCenter = rail.scrollLeft + rail.clientWidth / 2;
+    let closestIdx = 0;
+    let closestDist = Infinity;
+
+    for (let i = 0; i < rail.children.length; i++) {
+      const child = rail.children[i];
+      const childCenter = child.offsetLeft + child.clientWidth / 2;
+      const dist = Math.abs(railCenter - childCenter);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closestIdx = i;
+      }
+    }
+
+    const idx = Math.min(effectiveCards.length - 1, Math.max(0, closestIdx));
 
     if (idx !== activeCardIndex) {
       setActiveCardIndex(idx);
@@ -1358,7 +1391,7 @@ function Balance({
   }
 
   return (
-    <div className="balance-page balance-dashboard">
+    <div className={`balance-page balance-dashboard ${isFlipped ? "theme-apollo" : isTelebirr ? "theme-telebirr" : "theme-primary"}`}>
       <ApolloTransactionPrompt
         requestId={smsCheckRequest}
         enabled={isFlipped && apolloUnlocked && activePanel !== "interest"}
@@ -1374,8 +1407,16 @@ function Balance({
           onScroll={handleCardRailScroll}
           aria-label={t("Bank accounts")}
         >
-          {effectiveCards.map(card => (
-            <div className="balance-card-slide" key={card.id}>
+          {effectiveCards.map((card, idx) => (
+            <div
+              className={`balance-card-slide${idx === activeCardIndex ? " is-active" : ""}`}
+              key={card.id}
+              onClick={(e) => {
+                if (idx !== activeCardIndex) {
+                  e.currentTarget.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+                }
+              }}
+            >
               <img src={card.image} className="card" alt={t(card.alt)} />
             </div>
           ))}
@@ -1445,7 +1486,7 @@ function Balance({
               </div>
               <button
                 type="button"
-                className="account-number-copy-btn"
+                className={`account-number-copy-btn${copiedAccount ? " is-copied" : ""}`}
                 onClick={() => handleCopyAccountNumber("157741349")}
                 title={t("Copy account number")}
                 aria-label={t("Copy account number")}

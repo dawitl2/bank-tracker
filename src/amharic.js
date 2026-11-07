@@ -42,7 +42,7 @@ const amharic = {
   "Cards to display": "የሚታዩ ካርዶች", "Choose which cards to display on your balance screen.": "በቀሪ ሂሳብ ማያዎ ላይ የሚታዩትን ካርዶች ይምረጡ።",
   "Primary bank card": "ዋና የባንክ ካርድ", "Apollo SMS card": "የአፖሎ ባንክ ካርድ", "At least one card must stay enabled.": "ቢያንስ አንድ ካርድ መመረጥ አለበት።",
   "Edit person": "ሰውን አስተካክል", "Edit Person Details": "የሰውዬውን መረጃ አስተካክል", "Profile image": "የመገለጫ ፎቶ", "Avatar color": "የመለያ ቀለም",
-  "Change cover": "የፊት ገጽ ፎቶ ቀይር", "Cover image": "የፊት ገጽ ፎቶ", "Project photos": "የፕሮጀክት ፎቶዎች", "Add photos": "ፎቶዎችን ጨምር", "Upload cover": "የፊት ገጽ ፎቶ ጫን",
+  "Change cover": "የፊት ገጽ ፎቶ ቀይር", "Cover image": "የፊት ገጽ ፎቶ", "Cover": "የፊት ገጽ", "Project photos": "የፕሮጀክት ፎቶዎች", "Add photos": "ፎቶዎችን ጨምር", "Upload cover": "የፊት ገጽ ፎቶ ጫን",
   "Unlock to view your balance and latest activity.": "ቀሪ ሂሳብዎን እና የቅርብ ጊዜ ግብይቶችን ለማየት ይክፈቱ።", "Unlock Apollo": "አፖሎን ክፈት", "Unlock": "ክፈት",
   "Check latest": "የቅርብ ጊዜውን አረጋግጥ", "Check latest BOA SMS from Apollo": "የአፖሎን የቅርብ ጊዜ የባንክ መልእክት አረጋግጥ",
   "Comparing your latest BOA SMS with saved transactions.": "የቅርብ ጊዜ የባንክ መልእክትዎን ከተመዘገቡ ግብይቶች ጋር በማወዳደር ላይ።",

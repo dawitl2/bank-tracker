@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { 
   FaBuilding, 
   FaHome, 
@@ -186,9 +186,15 @@ export default function DesktopConstruction() {
     }
   };
 
-  const handleDeleteGalleryPhoto = (indexToDelete) => {
+  const handleDeleteGalleryPhoto = (indexToDelete, isCover) => {
     if (!selectedHouse) return;
-    const updated = galleryPhotos.filter((_, idx) => idx !== indexToDelete);
+    if (isCover) {
+      try { localStorage.removeItem(`construction_cover_${selectedHouse.id}`); } catch {}
+      setHouses(prev => prev.map(h => h.id === selectedHouse.id ? { ...h, cover_image: null } : h));
+      return;
+    }
+    const targetUrl = displayPhotos[indexToDelete];
+    const updated = galleryPhotos.filter(p => p !== targetUrl);
     saveHouseGallery(selectedHouse.id, updated);
   };
   const [houses, setHouses] = useState([]);
@@ -203,13 +209,16 @@ export default function DesktopConstruction() {
     }
   }, [selectedHouse]);
 
-  useEffect(() => {
-    if (selectedHouse) {
-      setGalleryPhotos(getHouseGallery(selectedHouse.id, selectedHouse.image_url));
-    } else {
-      setGalleryPhotos([]);
+  const selectedHouseCover = selectedHouse ? getHouseCover(selectedHouse) : null;
+  const displayPhotos = useMemo(() => {
+    if (!selectedHouse) return [];
+    const validCover = selectedHouseCover && selectedHouseCover !== "/house-cover-default.svg" ? selectedHouseCover : null;
+    const internalList = galleryPhotos.filter(p => p && p !== validCover);
+    if (validCover) {
+      return [...internalList, validCover];
     }
-  }, [selectedHouse]);
+    return internalList.length > 0 ? internalList : (selectedHouseCover ? [selectedHouseCover] : []);
+  }, [selectedHouse, selectedHouseCover, galleryPhotos]);
 
   
   // Custom dialog flags
@@ -537,7 +546,7 @@ export default function DesktopConstruction() {
               <div style={{ width: "100%", gridColumn: "1 / -1", marginBottom: "16px" }}>
                 <div className="construction-gallery-section" style={{ margin: 0 }}>
                   <div className="construction-gallery-heading">
-                    <span>Project photos ({galleryPhotos.length})</span>
+                    <span>Project photos ({displayPhotos.length})</span>
                     <small>Scroll to see more photos</small>
                   </div>
                   <div className="construction-gallery-carousel">

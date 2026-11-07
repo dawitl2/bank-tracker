@@ -1,6 +1,7 @@
 import { useLanguage } from "./Language";
 import { useProfile } from "./ProfileSession";
-import { ProfilePhoto } from "./AccountSettings";
+import { ProfilePhoto, savePersonCustomization } from "./AccountSettings";
+import { EditPersonDialog } from "./AppSettings";
 import { useMemo, useState, useEffect, useLayoutEffect } from "react";
 import {
   AreaChart,
@@ -100,7 +101,7 @@ export default function Users({
   // Modals management
   const [showAddPaymentModal, setShowAddPaymentModal] = useState(false);
   const [showAddPersonModal, setShowAddPersonModal] = useState(false);
-  const [showEditPersonModal, setShowEditPersonModal] = useState(false);
+  const [editingPersonTarget, setEditingPersonTarget] = useState(null);
 
   // Form states
   const [editPaymentTarget, setEditPaymentTarget] = useState(null);
@@ -145,7 +146,7 @@ export default function Users({
     setSubTab("transactions");
     setShowAddPaymentModal(false);
     setShowAddPersonModal(false);
-    setShowEditPersonModal(false);
+    setEditingPersonTarget(null);
     setEditPaymentTarget(null);
     setActionMenu(null);
     setNewPayment({
@@ -291,10 +292,10 @@ export default function Users({
 
   const handleEditClick = () => {
     if (actionMenu.type === "person") {
-      const p = actionMenu.person;
-      if (p.id === "dawit" && profile?.username === "dawit") { setActionMenu(null); navigate("/settings/accounts"); return; }
-      setNewPerson({ name: p.name, role: p.role || "" });
-      setShowEditPersonModal(true);
+
+
+
+      setEditingPersonTarget(actionMenu.person);
       setActionMenu(null);
     } else {
       const tx = actionMenu.tx;
@@ -434,15 +435,16 @@ export default function Users({
   };
 
   // Edit a person's profile details
-  const handleEditPersonSubmit = async () => {
-    if (!newPerson.name || !newPerson.role) {
-      alert(t("Please fill in Name and Role!"));
-      return;
-    }
-
+  const handleSavePersonCustom = async (updated) => {
+    if (!updated?.id) return;
     setDbSaving(true);
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/people?id=eq.${selectedUser.id}`, {
+      savePersonCustomization(updated.id, {
+        avatar: updated.avatar,
+        color: updated.color
+      });
+
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/people?id=eq.${updated.id}`, {
         method: "PATCH",
         headers: {
           apikey: SUPABASE_KEY,
@@ -451,17 +453,31 @@ export default function Users({
           Prefer: "return=representation"
         },
         body: JSON.stringify({
-          name: newPerson.name,
-          role: newPerson.role
+          name: updated.name,
+          role: updated.role,
+          avatar: updated.avatar,
+          color: updated.color
         })
       });
 
-      if (res.ok) {
-        await fetchPeople();
-        setShowEditPersonModal(false);
-      } else {
-        alert(t("Failed to update profile details in Supabase."));
+      if (!res.ok) {
+        await fetch(`${SUPABASE_URL}/rest/v1/people?id=eq.${updated.id}`, {
+          method: "PATCH",
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+            "Content-Type": "application/json",
+            Prefer: "return=representation"
+          },
+          body: JSON.stringify({
+            name: updated.name,
+            role: updated.role
+          })
+        }).catch(() => {});
       }
+
+      await fetchPeople?.();
+      setEditingPersonTarget(null);
     } catch (err) {
       console.error("EDIT PERSON ERROR:", err);
       alert(t("An error occurred while updating profile."));
@@ -857,11 +873,7 @@ export default function Users({
           </div>
           <button
             className="back-btn"
-            onClick={() => {
-              if (selectedUser.id === "dawit" && profile?.username === "dawit") { navigate("/settings/accounts"); return; }
-              setNewPerson({ name: selectedUser.name, role: selectedUser.role || "" });
-              setShowEditPersonModal(true);
-            }}
+            onClick={() => { setEditingPersonTarget(selectedUser); }}
             style={{ fontSize: "13px", height: "fit-content", padding: "8px 16px" }}
           >{t("Edit Profile")}</button>
         </div>
@@ -1153,56 +1165,13 @@ export default function Users({
       )}
 
       {/* Modal for editing person details */}
-      {showEditPersonModal && (
-        <div className="modal-overlay" style={{ zIndex: 2000 }}>
-          <div className="modal" style={{ maxWidth: "420px" }}>
-            <h2>{t("Edit Profile Details")}</h2>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "20px" }}>
-              <label className="draft-field">
-                <span>{t("Name")}</span>
-                <input
-                  type="text"
-                  placeholder={t("Enter name...")}
-                  value={newPerson.name}
-                  onChange={(e) => setNewPerson({ ...newPerson, name: e.target.value })}
-                  disabled={dbSaving}
-                  required
-                />
-              </label>
-
-              <label className="draft-field">
-                <span>{t("Role")}</span>
-                <input
-                  type="text"
-                  placeholder={t("Enter role...")}
-                  value={newPerson.role}
-                  onChange={(e) => setNewPerson({ ...newPerson, role: e.target.value })}
-                  disabled={dbSaving}
-                  required
-                />
-              </label>
-            </div>
-
-            <div className="modal-buttons" style={{ marginTop: "28px" }}>
-              <button
-                className="save-draft-btn"
-                onClick={handleEditPersonSubmit}
-                disabled={dbSaving}
-              >
-                {t(dbSaving ? "Saving..." : "Save Changes")}
-              </button>
-              <button
-                className="close-btn"
-                onClick={() => {
-                  setShowEditPersonModal(false);
-                  setNewPerson({ name: "", role: "" });
-                }}
-                disabled={dbSaving}
-              >{t("Cancel")}</button>
-            </div>
-          </div>
-        </div>
+      {editingPersonTarget && (
+        <EditPersonDialog
+          person={editingPersonTarget}
+          busy={dbSaving}
+          onCancel={() => setEditingPersonTarget(null)}
+          onSave={handleSavePersonCustom}
+        />
       )}
 
       {/* Floating Action Menu (Edit / Delete / Close) */}
