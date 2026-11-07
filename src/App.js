@@ -1538,17 +1538,23 @@ function App() {
         </div>
       ) : (
         <>
-          <img
-            src={
-              view === "balance" && balanceActiveCardId === "apollo"
-                ? "/apollo-nav-logo.png"
-                : view === "balance" && balanceActiveCardId === "telebirr"
-                ? "/telebirr-nav-logo.png"
-                : "/logo.png"
-            }
-            className={`logo${view === "balance" && balanceActiveCardId !== "primary" ? ` logo-${balanceActiveCardId}` : ""}`}
-            alt={t("bank logo")}
-          />
+          <div className="logo-nav-slot" aria-label={t("bank logo")}>
+            <img
+              src="/logo.png"
+              className={`logo logo-primary${view !== "balance" || balanceActiveCardId === "primary" ? " is-active" : ""}`}
+              alt={t("Bank of Abyssinia")}
+            />
+            <img
+              src="/apollo-nav-logo.png"
+              className={`logo logo-apollo${view === "balance" && balanceActiveCardId === "apollo" ? " is-active" : ""}`}
+              alt={t("Apollo")}
+            />
+            <img
+              src="/telebirr-nav-logo.png"
+              className={`logo logo-telebirr${view === "balance" && balanceActiveCardId === "telebirr" ? " is-active" : ""}`}
+              alt={t("Telebirr")}
+            />
+          </div>
 
           <div className="content">
 

@@ -1162,7 +1162,8 @@ h1 {
     overflow: hidden;
   }
 
-  .app > .logo {
+  .app > .logo,
+  .app > .logo-nav-slot {
     grid-column: 1;
     width: 184px;
     margin: 34px auto 26px;
@@ -1855,7 +1856,8 @@ a {
     background: transparent;
   }
 
-  .logo {
+  .logo,
+  .logo-nav-slot {
     width: min(230px, 68vw);
     margin: 10px auto 20px;
   }
@@ -2284,7 +2286,8 @@ a {
     background-color: white;
   }
 
-  .logo {
+  .logo,
+  .logo-nav-slot {
     width: min(260px, 72vw);
     margin: 16px auto 28px;
   }
@@ -4793,8 +4796,8 @@ a {
   }
 
   .balance-card-rail {
-    --card-slide-width: calc(100% - 16px);
-    --card-rail-pad: 8px;
+    --card-slide-width: calc(100% - 32px);
+    --card-rail-pad: 16px;
     display: flex;
     gap: 14px;
     width: calc(100% + 24px);
@@ -5169,12 +5172,33 @@ a {
     color: #059669;
   }
 
-  .logo.logo-apollo {
-    max-width: 140px;
+  .logo-nav-slot {
+    position: relative;
+    display: block;
+    width: min(260px, 72vw);
+    aspect-ratio: 606 / 179;
+    height: auto;
+    margin: 16px auto 28px;
   }
 
-  .logo.logo-telebirr {
-    max-width: 130px;
+  .logo-nav-slot .logo {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    object-fit: contain;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease-in-out;
+  }
+
+  .logo-nav-slot .logo.is-active {
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .account-activity-row time {
