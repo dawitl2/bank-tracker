@@ -7,6 +7,7 @@ import {
   FaArrowRight
 } from "react-icons/fa";
 import "./DesktopStyles.css";
+import { FiCopy, FiCheck } from "react-icons/fi";
 import ApolloTransactionPrompt from "../ApolloTransactionPrompt";
 import ApolloBalanceComparison from "../ApolloBalanceComparison";
 import { formatTransactionAmount } from "../transactionAmount";
@@ -91,7 +92,8 @@ export default function DesktopDashboard({
   navigate,
   currentPath,
   personOptions = [],
-  onSmsTransactionAdded
+  onSmsTransactionAdded,
+  visibleCards = { primary: true, apollo: true, telebirr: true }
 }) {
   const getVisibilityDayKey = () => new Date().toISOString().slice(0, 10);
   
@@ -101,6 +103,22 @@ export default function DesktopDashboard({
   const [showApolloBalance, setShowApolloBalance] = useState(false);
 
   const { profile } = useProfile();
+  const [showTelebirrBalance, setShowTelebirrBalance] = useState(true);
+  const [copiedAccount, setCopiedAccount] = useState(false);
+  const handleCopyAccountNumber = (num) => {
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(num);
+    } else {
+      const ta = document.createElement("textarea");
+      ta.value = num;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    setCopiedAccount(true);
+    window.setTimeout(() => setCopiedAccount(false), 2000);
+  };
   const profileApollo = profileAccess(profile, "apollo_access");
   const [guestApolloUnlocked, setApolloUnlocked] = useState(
     () => localStorage.getItem("apollo_visibility_day") === getVisibilityDayKey()
@@ -250,6 +268,7 @@ export default function DesktopDashboard({
 
       {/* Cards Grid */}
       <div className="desktop-bank-card-container">
+        {visibleCards.primary !== false && (<>
         {/* Regular Receipts-based Card */}
         <div className="desktop-card" style={{ padding: "28px" }}>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
@@ -276,6 +295,19 @@ export default function DesktopDashboard({
                 </button>
               </div>
 
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "var(--desktop-surface, #f8f9fa)", padding: "6px 14px", borderRadius: "8px", border: "1px solid var(--desktop-border, #e5e7eb)", margin: "0 auto 16px" }}>
+                <span style={{ fontSize: "12px", color: "var(--desktop-dark-muted)", fontWeight: 600 }}>Account:</span>
+                <strong style={{ fontSize: "14px", letterSpacing: "0.5px", fontFamily: "monospace" }}>157741349</strong>
+                <button
+                  type="button"
+                  onClick={() => handleCopyAccountNumber("157741349")}
+                  style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: copiedAccount ? "#10b981" : "inherit", padding: "2px" }}
+                  title="Copy account number"
+                >
+                  {copiedAccount ? <FiCheck size={14} /> : <FiCopy size={14} />}
+                </button>
+              </div>
+
               {/* Only withdrawals underneath */}
               <div className="desktop-balance-details-row" style={{ display: "block", background: "transparent", border: "none", padding: 0, marginTop: "16px" }}>
                 <div className="desktop-detail-block withdraw" style={{ padding: "16px", border: "1px solid var(--desktop-border)", borderRadius: "10px", background: "var(--desktop-surface)" }}>
@@ -288,6 +320,9 @@ export default function DesktopDashboard({
           </div>
         </div>
 
+        </>)}
+
+        {visibleCards.apollo !== false && (<>
         {/* Apollo SMS-based Card */}
         <div className="desktop-card" style={{ padding: "28px" }}>
           {apolloUnlocked && <div className="apollo-check-card-head"><button type="button" className="apollo-check-latest" aria-label="Check latest BOA SMS from Apollo" onClick={() => setSmsCheckRequest(value => value + 1)}>Check latest</button></div>}
@@ -339,6 +374,44 @@ export default function DesktopDashboard({
             </div>
           </div>
         </div>
+</>)}
+
+        {/* Telebirr Card */}
+        {visibleCards.telebirr !== false && (
+          <div className="desktop-card" style={{ padding: "28px" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
+              <img 
+                src="/card3.png" 
+                alt="Telebirr Card" 
+                className="desktop-card-image-display" 
+                style={{ margin: "0 auto 20px" }}
+              />
+              <div style={{ textAlign: "center", width: "100%" }}>
+                <div className="desktop-card-balance-lbl" style={{ marginBottom: "2px" }}>Telebirr Balance</div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", marginBottom: "16px" }}>
+                  <strong style={{ fontSize: "28px", fontWeight: 900, fontFamily: "monospace" }}>
+                    ETB {showTelebirrBalance ? "300.00" : hiddenMask}
+                  </strong>
+                  <button
+                    type="button"
+                    onClick={() => setShowTelebirrBalance(!showTelebirrBalance)}
+                    style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--desktop-dark-muted)", display: "flex", alignItems: "center" }}
+                  >
+                    {showTelebirrBalance ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                  </button>
+                </div>
+
+                <div className="desktop-balance-details-row" style={{ display: "block", background: "transparent", border: "none", padding: 0, marginTop: "16px" }}>
+                  <div className="desktop-detail-block" style={{ padding: "16px", border: "1px solid var(--desktop-border)", borderRadius: "10px", background: "var(--desktop-surface)" }}>
+                    <label style={{ display: "block", fontSize: "11px", textTransform: "uppercase", color: "var(--desktop-dark-muted)", marginBottom: "4px" }}>Account Type</label>
+                    <strong style={{ fontSize: "16px", color: "#0284c7", fontWeight: 700 }}>Electronic Money</strong>
+                    <span style={{ display: "block", fontSize: "11px", color: "var(--desktop-dark-muted)", marginTop: "4px" }}>Status: Active</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Split Lists Grid */}

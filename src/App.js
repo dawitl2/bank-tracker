@@ -350,20 +350,27 @@ function App() {
   };
 
   const mutatePerson = async (method, person) => {
-    const path = method === "DELETE" ? `?id=eq.${encodeURIComponent(person.id)}` : "";
+    const path = (method === "DELETE" || method === "PATCH") ? `?id=eq.${encodeURIComponent(person.id)}` : "";
     const res = await fetch(`${SUPABASE_URL}/rest/v1/people${path}`, {
       method,
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`,
         "Content-Type": "application/json", Prefer: "return=representation" },
-      ...(method === "POST" ? { body: JSON.stringify(person) } : {})
+      ...((method === "POST" || method === "PATCH") ? {
+        body: JSON.stringify({
+          name: person.name,
+          role: person.role || "Member",
+          class: person.class || "avatar-other",
+          ...(method === "POST" && person.id ? { id: person.id } : {})
+        })
+      } : {})
     });
     const data = await readApiResponse(res);
-    if (!res.ok || !Array.isArray(data) || data.length !== 1 || data[0].id !== person.id) {
+    if (!res.ok || !Array.isArray(data) || (method !== "PATCH" && (data.length !== 1 || data[0].id !== person.id))) {
       throw new Error(res.status === 409 ? "This person already exists. Refresh the list and try again."
-        : `Could not ${method === "POST" ? "add" : "remove"} this person. Refresh the list and try again.`);
+        : `Could not ${method === "POST" ? "add" : method === "PATCH" ? "update" : "remove"} this person. Refresh the list and try again.`);
     }
-    setPeople(current => method === "POST" ? [...current.filter(entry => entry.id !== person.id), data[0]]
-      : current.filter(entry => entry.id !== person.id));
+    const updatedPerson = data[0] || person; setPeople(current => method === "POST" ? [...current.filter(entry => entry.id !== person.id), updatedPerson] : method === "PATCH" ? current.map(entry => entry.id === person.id ? { ...entry, ...updatedPerson } : entry) : current.filter(entry => entry.id !== person.id)); //
+
     if (method === "DELETE" && personFilter.toUpperCase() === person.name.toUpperCase()) setPersonFilter("ALL");
     await fetchPeople();
   };
@@ -1327,6 +1334,7 @@ function App() {
   const renderBalance = () => (
     <Balance
       balance={currentBalance}
+      visibleCards={preferences.visibleCards}
       boaSmsState={boaSmsState}
       boaSmsSummary={boaSmsSummary}
       boaSmsLoading={boaSmsLoading}
@@ -1383,6 +1391,7 @@ function App() {
       handleParkingDraftSubmit={handleParkingDraftSubmit}
       parkingSaveSuccess={parkingSaveSuccess}
       personOptions={personOptions}
+      people={people}
       handleDraftChange={handleDraftChange}
       handleSaveDraft={handleSaveDraft}
       stopQrScanner={stopQrScanner}
@@ -1395,6 +1404,7 @@ function App() {
     return (
       <>
         <DesktopLayout
+          visibleCards={preferences.visibleCards}
           transactions={transactions}
           boaSmsState={boaSmsState}
           boaSmsSummary={boaSmsSummary}
@@ -1563,7 +1573,7 @@ function App() {
 
             {view === "settings" && (currentPath === "/settings/accounts" ? <AccountSettings onBack={() => navigate("/settings")} /> : <AppSettings preferences={preferences} onPreferenceChange={updatePreference}
               storageError={storageError} people={people} peopleReady={peopleReady} peopleError={peopleError}
-              onAddPerson={person => mutatePerson("POST", person)} onRemovePerson={person => mutatePerson("DELETE", person)}
+              onAddPerson={person => mutatePerson("POST", person)} onUpdatePerson={person => mutatePerson("PATCH", person)} onRemovePerson={person => mutatePerson("DELETE", person)}
               onRefresh={refreshAppData} version={VERSION} onOpenAccounts={() => navigate("/settings/accounts")} />)}
 
             {calculatorEnabled && (view === "transactions" || view === "balance") && <button

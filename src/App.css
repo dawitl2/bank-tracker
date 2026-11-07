@@ -6056,3 +6056,274 @@ a {
 
 
 
+
+
+/* ============================================================
+   NEW FEATURES STYLING
+   ============================================================ */
+
+/* 1. Approve & Save Button Green */
+.approve-save-btn,
+.receipt-modal-actions .save-draft-btn {
+  background: #10b981 !important;
+  color: #ffffff !important;
+  border: none !important;
+  font-weight: 600 !important;
+  transition: background 0.18s ease, transform 0.1s ease !important;
+}
+
+.approve-save-btn:hover,
+.receipt-modal-actions .save-draft-btn:hover {
+  background: #059669 !important;
+}
+
+.approve-save-btn:active,
+.receipt-modal-actions .save-draft-btn:active {
+  transform: scale(0.98);
+}
+
+/* 2. Primary Account Number Banner with Copy Button */
+.primary-account-number-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.09);
+  border-radius: 12px;
+  padding: 10px 16px;
+  margin: 12px 0 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.primary-account-number-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.account-number-caption {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.account-number-text {
+  font-size: 17px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: 0.5px;
+  font-family: monospace;
+}
+
+.account-number-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f3f4f6;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.account-number-copy-btn:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.account-number-copy-btn .copy-check-icon {
+  color: #10b981;
+}
+
+/* 3. Construction House Card Redesign with Cover Image */
+.construction-house-card {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  overflow: hidden;
+  padding: 0 !important;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.construction-house-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  border-color: rgba(244, 163, 0, 0.5);
+}
+
+.construction-cover-thumb-wrap {
+  position: relative;
+  width: 100%;
+  height: 115px;
+  background: #1e293b;
+  overflow: hidden;
+}
+
+.construction-cover-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+  display: block;
+}
+
+.construction-house-card:hover .construction-cover-thumb-img {
+  transform: scale(1.04);
+}
+
+.construction-cover-change-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  border-radius: 20px;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  opacity: 0.9;
+  transition: opacity 0.18s ease, background 0.18s ease;
+  z-index: 2;
+}
+
+.construction-cover-change-btn:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.construction-card-body {
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 4. Construction Detail Multi-Image Carousel (with Peek Tail Hint) */
+.construction-gallery-section {
+  margin-bottom: 24px;
+}
+
+.construction-gallery-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.construction-gallery-heading span {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #4b5563;
+}
+
+.construction-gallery-heading small {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.construction-gallery-carousel {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 2px 12px;
+  scrollbar-width: thin;
+}
+
+.construction-gallery-slide {
+  flex: 0 0 84%;
+  scroll-snap-align: start;
+  position: relative;
+  height: 220px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #1e293b;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+@media (min-width: 600px) {
+  .construction-gallery-slide {
+    flex: 0 0 65%;
+    height: 260px;
+  }
+}
+
+.construction-gallery-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: zoom-in;
+  display: block;
+}
+
+.construction-gallery-delete-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(220, 38, 38, 0.85);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.1s ease;
+  z-index: 3;
+}
+
+.construction-gallery-delete-btn:hover {
+  background: rgba(220, 38, 38, 1);
+  transform: scale(1.05);
+}
+
+.construction-gallery-add-slide {
+  flex: 0 0 48%;
+  min-width: 130px;
+  scroll-snap-align: start;
+  height: 220px;
+  border: 2px dashed rgba(244, 163, 0, 0.5);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #f4a300;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  background: rgba(244, 163, 0, 0.04);
+  transition: all 0.18s ease;
+}
+
+@media (min-width: 600px) {
+  .construction-gallery-add-slide {
+    height: 260px;
+  }
+}
+
+.construction-gallery-add-slide:hover {
+  border-color: #f4a300;
+  background: rgba(244, 163, 0, 0.08);
+}

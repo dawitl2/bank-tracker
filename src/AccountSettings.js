@@ -5,12 +5,69 @@ import { useLanguage, LocalizedTextInput } from "./Language";
 import { useProfile } from "./ProfileSession";
 import "./AccountSettings.css";
 
-export function ProfilePhoto({ personId = "dawit", className = "", name = "" }) {
+const PEOPLE_CUSTOM_KEY = "bank-tracker:people-customizations:v1";
+
+export function getPersonCustomizations() {
+  try {
+    return JSON.parse(localStorage.getItem(PEOPLE_CUSTOM_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+export function savePersonCustomization(id, data) {
+  try {
+    const current = getPersonCustomizations();
+    const next = { ...current, [id]: { ...(current[id] || {}), ...data } };
+    localStorage.setItem(PEOPLE_CUSTOM_KEY, JSON.stringify(next));
+    window.dispatchEvent(new CustomEvent("bank-tracker:people-custom-updated", { detail: next }));
+  } catch (e) {
+    console.error("Could not cache person customization", e);
+  }
+}
+
+export function ProfilePhoto({ personId = "dawit", className = "", name = "", avatar = "", color = "" }) {
   const { profile } = useProfile();
   const { t } = useLanguage();
-  if (personId !== "dawit") return <span className={className}>{t(name).slice(0,1)}</span>;
-  return <img className={`profile-photo ${className}`} src={profile?.avatar || "/profiles/dawit.jpg"}
-    alt={t("Profile photo")} onError={event => { if (event.currentTarget.getAttribute("src") !== "/profiles/dawit.jpg") event.currentTarget.src = "/profiles/dawit.jpg"; }} />;
+  const [, setCustomVersion] = useState(0);
+
+  useEffect(() => {
+    const handleUpdate = () => setCustomVersion(v => v + 1);
+    window.addEventListener("bank-tracker:people-custom-updated", handleUpdate);
+    return () => window.removeEventListener("bank-tracker:people-custom-updated", handleUpdate);
+  }, []);
+
+  const customs = getPersonCustomizations();
+  const userCustom = customs[personId] || {};
+
+  const effectiveAvatar = avatar || userCustom.avatar || (personId === "dawit" ? (profile?.avatar || "/profiles/dawit.jpg") : null);
+  const effectiveColor = color || userCustom.color;
+
+  if (effectiveAvatar) {
+    return (
+      <img
+        className={`profile-photo ${className}`}
+        src={effectiveAvatar}
+        alt={t("Profile photo")}
+        onError={event => {
+          if (personId === "dawit" && event.currentTarget.getAttribute("src") !== "/profiles/dawit.jpg") {
+            event.currentTarget.src = "/profiles/dawit.jpg";
+          } else {
+            event.currentTarget.style.display = "none";
+          }
+        }}
+      />
+    );
+  }
+
+  const initial = (name || personId || "?").slice(0, 1).toUpperCase();
+  const style = effectiveColor ? { background: effectiveColor, color: "#fff" } : undefined;
+
+  return (
+    <span className={`profile-photo avatar-placeholder ${className}`} style={style}>
+      {t(initial)}
+    </span>
+  );
 }
 
 export function AccountDialog({ title, description, busy, onClose, children }) {
@@ -44,7 +101,7 @@ export function AccountSummary({ onOpen }) {
   </button>;
 }
 
-async function readPhoto(file) {
+export async function readPhoto(file) {
   if (!file || !["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 8 * 1024 * 1024) throw new Error("Choose a JPG, PNG or WebP photo under 8 MB.");
   const url = URL.createObjectURL(file);
   try {

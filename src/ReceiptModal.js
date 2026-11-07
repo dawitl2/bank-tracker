@@ -5,6 +5,7 @@ import { FiChevronRight, FiLink, FiGrid, FiImage, FiTruck } from "react-icons/fi
 import ParkingReceiptFlow from "./ParkingReceiptFlow";
 import TransactionDateField from "./TransactionDateField";
 import { formatTransactionAmount } from "./transactionAmount";
+import PersonSelectDropdown from "./PersonSelectDropdown";
 
 const GENERATED_TRANSACTION_FIELDS = ["id", "created_at", "source_sms_hash"];
 
@@ -36,6 +37,7 @@ export default function ReceiptModal({
   handleParkingDraftSubmit,
   parkingSaveSuccess,
   personOptions,
+  people = [],
   handleDraftChange,
   handleSaveDraft,
   stopQrScanner,
@@ -201,9 +203,13 @@ export default function ReceiptModal({
                     ) : field === "date" && receiptDraft.id ? (
                       <TransactionDateField value={value} disabled={draftSaving} onChange={next => handleDraftChange(field, next)} />
                     ) : field === "person" ? (
-                      <select value={value ?? "null"} onChange={(event) => handleDraftChange(field, event.target.value)}>
-                        {personOptions.map((option) => <option key={option.value} value={option.value}>{t(option.label)}</option>)}
-                      </select>
+                      <PersonSelectDropdown
+                        value={value ?? "null"}
+                        personOptions={personOptions}
+                        people={people}
+                        onChange={(nextVal) => handleDraftChange(field, nextVal)}
+                        disabled={draftSaving}
+                      />
                     ) : typeof value === "boolean" ? (
                       <select value={String(value)} onChange={(event) => handleDraftChange(field, event.target.value)}>
                         <option value="true">{t(field === "is_withdraw" ? "Withdrawal" : "Yes")}</option><option value="false">{t(field === "is_withdraw" ? "Deposit" : "No")}</option>
@@ -232,7 +238,7 @@ export default function ReceiptModal({
               <button className="close-btn" onClick={goBack} disabled={scrapeLoading || draftSaving}>{t("Back")}</button>
             )}
             {receiptDraft && (
-              <button className="save-draft-btn" onClick={handleSaveDraft} disabled={draftSaving}>
+              <button className={`save-draft-btn ${!receiptDraft.id ? "approve-save-btn" : ""}`} onClick={handleSaveDraft} disabled={draftSaving}>
                 {t(draftSaving ? "Saving..." : receiptDraft.id ? "Save Changes" : "Approve & Save")}
               </button>
             )}

@@ -34,6 +34,8 @@ import {
 } from "react-icons/fa";
 import Construction3D from "./Construction3D";
 import Users from "./Users";
+import { FiCopy, FiCheck, FiCamera, FiTrash2, FiPlus as FiPlusIcon } from "react-icons/fi";
+import { readPhoto } from "./AccountSettings";
 
 const SUPABASE_URL = "https://ywplzexakisliebyjtyf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_nmA6IJsDGUVki5i0smS1Tg_MLXy5_wX";
@@ -266,6 +268,81 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
   const [visualizingHouse, setVisualizingHouse] = useState(null);
   const cameraInputRef = useRef(null);
   const galleryInputRef = useRef(null);
+  const [galleryPhotos, setGalleryPhotos] = useState([]);
+  const [, setGalleryVersion] = useState(0);
+
+  const getHouseCover = useCallback((house) => {
+    try {
+      const saved = localStorage.getItem(`construction_cover_${house.id}`);
+      if (saved) return saved;
+    } catch {}
+    return house.cover_image || house.image_url || "/house-cover-default.svg";
+  }, []);
+
+  const getHouseGallery = useCallback((houseId, defaultImg) => {
+    try {
+      const raw = localStorage.getItem(`construction_gallery_${houseId}`);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return defaultImg ? [defaultImg] : [];
+  }, []);
+
+  const saveHouseGallery = (houseId, images) => {
+    try {
+      localStorage.setItem(`construction_gallery_${houseId}`, JSON.stringify(images));
+    } catch {}
+    setGalleryPhotos(images);
+  };
+
+  useEffect(() => {
+    if (selectedHouse) {
+      setGalleryPhotos(getHouseGallery(selectedHouse.id, selectedHouse.image_url));
+    } else {
+      setGalleryPhotos([]);
+    }
+  }, [selectedHouse, getHouseGallery]);
+
+  const handleUploadCover = async (houseId, file) => {
+    if (!file) return;
+    try {
+      const photoData = await readPhoto(file);
+      try {
+        localStorage.setItem(`construction_cover_${houseId}`, photoData);
+      } catch {}
+      setHouses(prev => prev.map(h => h.id === houseId ? { ...h, cover_image: photoData } : h));
+      setGalleryVersion(v => v + 1);
+      sbFetch(`/construction_houses?id=eq.${houseId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ cover_image: photoData })
+      }).catch(() => {});
+    } catch (err) {
+      alert(t("Could not process cover photo."));
+    }
+  };
+
+  const handleAddGalleryPhotos = async (files) => {
+    if (!files || !files.length || !selectedHouse) return;
+    setPhotoUploading(true);
+    try {
+      const newPhotos = [];
+      for (let i = 0; i < files.length; i++) {
+        const photoData = await readPhoto(files[i]);
+        newPhotos.push(photoData);
+      }
+      const updated = [...galleryPhotos, ...newPhotos];
+      saveHouseGallery(selectedHouse.id, updated);
+    } catch (err) {
+      setError("Could not process project photos.");
+    } finally {
+      setPhotoUploading(false);
+    }
+  };
+
+  const handleDeleteGalleryPhoto = (indexToDelete) => {
+    if (!selectedHouse) return;
+    const updated = galleryPhotos.filter((_, idx) => idx !== indexToDelete);
+    saveHouseGallery(selectedHouse.id, updated);
+  };
 
   const loadHouses = useCallback(async () => {
     setLoading(true);
@@ -407,6 +484,7 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
     }
   };
 
+  // eslint-disable-next-line no-unused-vars
   const uploadHousePhoto = async (houseId, file) => {
     if (!file) return;
 
@@ -501,22 +579,52 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
           {houses.map(house => {
             const checked = checkedByHouse[house.id] || { building_block: true };
             const prog = getProgress(checked);
+            const coverSrc = getHouseCover(house);
             return (
-              <button
+              <div
                 key={house.id}
-                type="button"
                 className="construction-house-card"
                 onClick={() => navigate(`/balance/construction/${encodeURIComponent(house.id)}`)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={e => { if (e.key === "Enter") navigate(`/balance/construction/${encodeURIComponent(house.id)}`); }}
               >
-                <div className="construction-house-icon"><FaHome /></div>
-                <div className="construction-house-name-row">
-                  <span className="construction-house-name">{t(house.name)}</span>
+                <div className="construction-cover-thumb-wrap">
+                  <img src={coverSrc} alt={t(house.name)} className="construction-cover-thumb-img" />
+                  <label
+                    className="construction-cover-change-btn"
+                    title={t("Change cover")}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <FiCamera aria-hidden="true" />
+                    <span>{t("Change cover")}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: "none" }}
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        e.target.value = "";
+                        if (file) handleUploadCover(house.id, file);
+                      }}
+                    />
+                  </label>
                 </div>
-                <div className="construction-prog-bg">
-                  <div className="construction-prog-fill" style={{ width: `${prog.pct}%` }} />
+                <div className="construction-card-body">
+                  <div className="construction-house-name-row">
+                    <span className="construction-house-name">{t(house.name)}</span>
+                  </div>
+                  <div className="construction-prog-bg">
+                    <div className="construction-prog-fill" style={{ width: `${prog.pct}%` }} />
+                  </div>
+                  <div className="construction-prog-label">{t(prog.checked)}{t("/")}{t(prog.total)}{t(" · ")}{t(prog.pct)}{t("%")}</div>
+                  {house.money_spent ? (
+                    <div style={{ fontSize: "11px", color: "var(--color-text-secondary, #666)", marginTop: "2px" }}>
+                      {t("Money spent")}: <strong>ETB {formatWithCommas(String(house.money_spent))}</strong>
+                    </div>
+                  ) : null}
                 </div>
-                <div className="construction-prog-label">{t(prog.checked)}{t("/")}{t(prog.total)}{t(" · ")}{t(prog.pct)}{t("%")}</div>
-              </button>
+              </div>
             );
           })}
           <button
@@ -578,52 +686,48 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
 
             <div className="construction-detail-body">
               <aside className="construction-project-overview">
-                  <div className="construction-photo-wrap">
-                    {selectedHouse.image_url ? (
-                      <img
-                        src={selectedHouse.image_url}
-                        alt={t(selectedHouse.name)}
-                        className="construction-photo-img"
-                        onClick={() => setLightboxUrl(selectedHouse.image_url)}
-                        style={{ cursor: "zoom-in" }}
-                      />
-                    ) : (
-                      <div className="construction-photo-placeholder">{t("No photo yet")}</div>
-                    )}
-                    {photoUploading && (
-                      <div className="construction-photo-uploading">{t("Uploading...")}</div>
-                    )}
-                    <button
-                      className="construction-photo-replace-btn"
-                      onClick={() => setPhotoPromptOpen(true)}
-                      disabled={photoUploading}
-                      type="button"
-                    >
-                      {t(selectedHouse.image_url ? "Replace photo" : "Add photo")}
-                    </button>
-                    <input
-                      ref={cameraInputRef}
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      style={{ display: "none" }}
-                      onChange={e => {
-                        const file = e.target.files?.[0];
-                        e.target.value = "";
-                        if (file) uploadHousePhoto(selectedHouse.id, file);
-                      }}
-                    />
-                    <input
-                      ref={galleryInputRef}
-                      type="file"
-                      accept="image/*"
-                      style={{ display: "none" }}
-                      onChange={e => {
-                        const file = e.target.files?.[0];
-                        e.target.value = "";
-                        if (file) uploadHousePhoto(selectedHouse.id, file);
-                      }}
-                    />
+                  <div className="construction-gallery-section">
+                    <div className="construction-gallery-heading">
+                      <span>{t("Project photos")} ({galleryPhotos.length})</span>
+                      <small>{t("Swipe to see more")}</small>
+                    </div>
+                    <div className="construction-gallery-carousel">
+                      {galleryPhotos.map((photoUrl, idx) => (
+                        <div key={idx} className="construction-gallery-slide">
+                          <img
+                            src={photoUrl}
+                            alt={`${selectedHouse.name} ${idx + 1}`}
+                            className="construction-gallery-img"
+                            onClick={() => setLightboxUrl(photoUrl)}
+                          />
+                          <button
+                            type="button"
+                            className="construction-gallery-delete-btn"
+                            onClick={() => handleDeleteGalleryPhoto(idx)}
+                            title={t("Delete")}
+                            aria-label={t("Delete")}
+                          >
+                            <FiTrash2 size={16} />
+                          </button>
+                        </div>
+                      ))}
+                      <label className="construction-gallery-add-slide">
+                        <FiPlusIcon size={24} />
+                        <span>{t("Add photos")}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          style={{ display: "none" }}
+                          disabled={photoUploading}
+                          onChange={e => {
+                            const files = e.target.files;
+                            e.target.value = "";
+                            if (files && files.length) handleAddGalleryPhotos(files);
+                          }}
+                        />
+                      </label>
+                    </div>
                   </div>
 
                   <div className="construction-overall-prog">
@@ -674,8 +778,7 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
                         const isLocked = !!item.locked;
                         const ItemIcon = item.icon || FaTools;
                         return (
-                          <button
-                            key={item.id}
+                          <button key={item.id}
                             type="button"
                             className={`construction-item-row${isLocked ? " locked" : ""}`}
                             onClick={() => !isLocked && toggleItem(selectedHouse.id, item.id)}
@@ -820,7 +923,8 @@ function Balance({
   openParkingModal,
   ledgerTransactions = [],
   personOptions = [],
-  onSmsTransactionAdded
+  onSmsTransactionAdded,
+  visibleCards = { primary: true, apollo: true, telebirr: true }
 }) {
   const { t } = useLanguage();
   const [activePanel, setActivePanel] = useState("summary");
@@ -839,6 +943,39 @@ function Balance({
       }
     }
   }, [currentPath]);
+  const allCards = useMemo(() => [
+    { id: "primary", image: "/card.png", title: "Primary account", alt: "Main bank card" },
+    { id: "apollo", image: "/card2.png", title: "Apollo account", alt: "Apollo bank card" },
+    { id: "telebirr", image: "/card3.png", title: "Telebirr account", alt: "Telebirr card" }
+  ], []);
+
+  const effectiveCards = useMemo(() => {
+    const list = allCards.filter(c => visibleCards?.[c.id] !== false);
+    return list.length > 0 ? list : [allCards[0]];
+  }, [allCards, visibleCards]);
+
+  const [activeCardIndex, setActiveCardIndex] = useState(0);
+  const currentCard = effectiveCards[activeCardIndex] || effectiveCards[0];
+  const isApollo = currentCard.id === "apollo";
+  const isTelebirr = currentCard.id === "telebirr";
+  const isPrimary = currentCard.id === "primary";
+
+  const [copiedAccount, setCopiedAccount] = useState(false);
+  const handleCopyAccountNumber = (num) => {
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(num);
+    } else {
+      const ta = document.createElement("textarea");
+      ta.value = num;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    setCopiedAccount(true);
+    window.setTimeout(() => setCopiedAccount(false), 2000);
+  };
+
   const getVisibilityDayKey = () => new Date().toISOString().slice(0, 10);
   const [showBalance, setShowBalance] = useState(false);
   const { profile } = useProfile();
@@ -1135,7 +1272,9 @@ function Balance({
   const hiddenSkeleton = <span className="money-skeleton" aria-label={t("Hidden value")}></span>;
   const isSmsNumberLoading = isFlipped && (boaSmsLoading || !boaSmsState);
   const apolloLocked = isFlipped && !apolloUnlocked;
-  const displayedBalance = isFlipped
+  const displayedBalance = isTelebirr
+    ? "300.00"
+    : isFlipped
     ? formatSmsMoney(boaSmsState?.current_balance)
     : money(balance);
   const balanceMeta = {
@@ -1156,13 +1295,21 @@ function Balance({
     const firstCard = rail?.firstElementChild;
     if (!rail || !firstCard) return;
 
-    const nextIsApollo = rail.scrollLeft > firstCard.clientWidth * 0.55;
-    if (nextIsApollo === isFlipped) return;
+    const cardWidth = firstCard.clientWidth || rail.clientWidth;
+    const idx = Math.min(
+      effectiveCards.length - 1,
+      Math.max(0, Math.round(rail.scrollLeft / cardWidth))
+    );
 
-    setIsFlipped(nextIsApollo);
-    window.clearTimeout(apolloPromptTimerRef.current);
-    if (nextIsApollo && !apolloUnlocked) {
-      apolloPromptTimerRef.current = window.setTimeout(() => setApolloPromptOpen(true), 320);
+    if (idx !== activeCardIndex) {
+      setActiveCardIndex(idx);
+      const nextCard = effectiveCards[idx];
+      const nextIsApollo = nextCard?.id === "apollo";
+      setIsFlipped(nextIsApollo);
+      window.clearTimeout(apolloPromptTimerRef.current);
+      if (nextIsApollo && !apolloUnlocked) {
+        apolloPromptTimerRef.current = window.setTimeout(() => setApolloPromptOpen(true), 320);
+      }
     }
   };
 
@@ -1227,12 +1374,11 @@ function Balance({
           onScroll={handleCardRailScroll}
           aria-label={t("Bank accounts")}
         >
-          <div className="balance-card-slide">
-            <img src="/card.png" className="card" alt={t("Main bank card")} />
-          </div>
-          <div className="balance-card-slide">
-            <img src="/card2.png" className="card" alt={t("Apollo bank card")} />
-          </div>
+          {effectiveCards.map(card => (
+            <div className="balance-card-slide" key={card.id}>
+              <img src={card.image} className="card" alt={t(card.alt)} />
+            </div>
+          ))}
         </div>
 
         <div className="balance-grid balance-account-grid">
@@ -1241,7 +1387,7 @@ function Balance({
               <div className="account-identity">
                 <span className="account-identity-mark" aria-hidden="true" />
                 <div>
-                  <span>{t(isFlipped ? "Apollo account" : "Primary account")}</span>
+                  <span>{t(isTelebirr ? "Telebirr account" : isApollo ? "Apollo account" : "Primary account")}</span>
                   <strong>{t("Balance")}</strong>
                 </div>
               </div>
@@ -1264,7 +1410,13 @@ function Balance({
                   {showBalance ? <FaEye /> : <FaEyeSlash />}
                 </button>
               </div>
-              {isFlipped ? <ApolloBalanceComparison apolloBalance={boaSmsState?.current_balance} regularBalance={balance} loading={isSmsNumberLoading} locked={apolloLocked} hidden={!showBalance} /> : (
+              {isFlipped ? <ApolloBalanceComparison apolloBalance={boaSmsState?.current_balance} regularBalance={balance} loading={isSmsNumberLoading} locked={apolloLocked} hidden={!showBalance} /> : isTelebirr ? (
+                <div className="account-activity-row">
+                  <span>{t("Account status")}</span>
+                  <strong>{t("Active")}</strong>
+                  <time>{t("Electronic money")}</time>
+                </div>
+              ) : (
                 <div className="account-activity-row">
                   <span>{t(balanceMeta.label)}</span>
                   <strong>{balanceMeta.amount}</strong>
@@ -1285,6 +1437,24 @@ function Balance({
               </button>
             )}
           </section>
+          {isPrimary && (
+            <div className="primary-account-number-banner">
+              <div className="primary-account-number-content">
+                <span className="account-number-caption">{t("Account Number")}</span>
+                <strong className="account-number-text">157741349</strong>
+              </div>
+              <button
+                type="button"
+                className="account-number-copy-btn"
+                onClick={() => handleCopyAccountNumber("157741349")}
+                title={t("Copy account number")}
+                aria-label={t("Copy account number")}
+              >
+                {copiedAccount ? <FiCheck className="copy-check-icon" /> : <FiCopy />}
+                <span>{t(copiedAccount ? "Copied!" : "Copy")}</span>
+              </button>
+            </div>
+          )}
         </div>
       </section>
 

@@ -20,6 +20,8 @@ import {
   FaLock 
 } from "react-icons/fa";
 import "./DesktopStyles.css";
+import { readPhoto } from "../AccountSettings";
+import { FiCamera, FiTrash2, FiPlus as FiPlusIcon } from "react-icons/fi";
 
 const SUPABASE_URL = "https://ywplzexakisliebyjtyf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_nmA6IJsDGUVki5i0smS1Tg_MLXy5_wX";
@@ -120,10 +122,95 @@ const formatWithCommas = (raw) => {
 };
 
 export default function DesktopConstruction() {
+  const [galleryPhotos, setGalleryPhotos] = useState([]);
+  const [lightboxUrl, setLightboxUrl] = useState(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [, setCoverVersion] = useState(0);
+
+  const getHouseCover = (house) => {
+    try {
+      const saved = localStorage.getItem(`construction_cover_${house.id}`);
+      if (saved) return saved;
+    } catch {}
+    return house.cover_image || house.image_url || "/house-cover-default.svg";
+  };
+
+  const getHouseGallery = (houseId, defaultImg) => {
+    try {
+      const raw = localStorage.getItem(`construction_gallery_${houseId}`);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return defaultImg ? [defaultImg] : [];
+  };
+
+  const saveHouseGallery = (houseId, images) => {
+    try {
+      localStorage.setItem(`construction_gallery_${houseId}`, JSON.stringify(images));
+    } catch {}
+    setGalleryPhotos(images);
+  };
+
+  const handleUploadCover = async (houseId, file) => {
+    if (!file) return;
+    try {
+      const photoData = await readPhoto(file);
+      try {
+        localStorage.setItem(`construction_cover_${houseId}`, photoData);
+      } catch {}
+      setHouses(prev => prev.map(h => h.id === houseId ? { ...h, cover_image: photoData } : h));
+      setCoverVersion(v => v + 1);
+      sbFetch(`/construction_houses?id=eq.${houseId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ cover_image: photoData })
+      }).catch(() => {});
+    } catch (err) {
+      alert("Could not process cover photo.");
+    }
+  };
+
+  const handleAddGalleryPhotos = async (files) => {
+    if (!files || !files.length || !selectedHouse) return;
+    setPhotoUploading(true);
+    try {
+      const newPhotos = [];
+      for (let i = 0; i < files.length; i++) {
+        const photoData = await readPhoto(files[i]);
+        newPhotos.push(photoData);
+      }
+      const updated = [...galleryPhotos, ...newPhotos];
+      saveHouseGallery(selectedHouse.id, updated);
+    } catch (err) {
+      alert("Could not process project photos.");
+    } finally {
+      setPhotoUploading(false);
+    }
+  };
+
+  const handleDeleteGalleryPhoto = (indexToDelete) => {
+    if (!selectedHouse) return;
+    const updated = galleryPhotos.filter((_, idx) => idx !== indexToDelete);
+    saveHouseGallery(selectedHouse.id, updated);
+  };
   const [houses, setHouses] = useState([]);
   const [checkedByHouse, setCheckedByHouse] = useState({});
   const [loading, setLoading] = useState(true);
   const [selectedHouse, setSelectedHouse] = useState(null);
+  useEffect(() => {
+    if (selectedHouse) {
+      setGalleryPhotos(getHouseGallery(selectedHouse.id, selectedHouse.image_url));
+    } else {
+      setGalleryPhotos([]);
+    }
+  }, [selectedHouse]);
+
+  useEffect(() => {
+    if (selectedHouse) {
+      setGalleryPhotos(getHouseGallery(selectedHouse.id, selectedHouse.image_url));
+    } else {
+      setGalleryPhotos([]);
+    }
+  }, [selectedHouse]);
+
   
   // Custom dialog flags
   const [showHouseModal, setShowHouseModal] = useState(false);
@@ -327,7 +414,30 @@ export default function DesktopConstruction() {
                     onClick={() => setSelectedHouse(house)}
                   >
                     <div className="desktop-large-construction-card-header">
-                      <div className="desktop-large-construction-card-icon"><FaHome /></div>
+                      <div style={{ position: "relative", width: "100%", height: "130px", borderRadius: "8px", overflow: "hidden", marginBottom: "12px", background: "#1e293b" }}>
+                        <img 
+                          src={getHouseCover(house)} 
+                          alt={house.name} 
+                          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} 
+                        />
+                        <label 
+                          onClick={e => e.stopPropagation()} 
+                          title="Change cover image"
+                          style={{ position: "absolute", top: "8px", right: "8px", background: "rgba(0,0,0,0.65)", color: "#fff", padding: "4px 8px", borderRadius: "14px", fontSize: "11px", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                        >
+                          <FiCamera size={12} /> Change cover
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            style={{ display: "none" }} 
+                            onChange={e => {
+                              const file = e.target.files?.[0];
+                              e.target.value = "";
+                              if (file) handleUploadCover(house.id, file);
+                            }} 
+                          />
+                        </label>
+                      </div>
                       <span className="desktop-large-construction-card-prog-lbl">{prog.pct}% Complete</span>
                     </div>
                     
@@ -423,6 +533,52 @@ export default function DesktopConstruction() {
             </div>
 
             <div className="construction-detail-body">
+              {/* Top: Multi-image Gallery Carousel with peek tail hint */}
+              <div style={{ width: "100%", gridColumn: "1 / -1", marginBottom: "16px" }}>
+                <div className="construction-gallery-section" style={{ margin: 0 }}>
+                  <div className="construction-gallery-heading">
+                    <span>Project photos ({galleryPhotos.length})</span>
+                    <small>Scroll to see more photos</small>
+                  </div>
+                  <div className="construction-gallery-carousel">
+                    {galleryPhotos.map((photoUrl, idx) => (
+                      <div key={idx} className="construction-gallery-slide">
+                        <img
+                          src={photoUrl}
+                          alt={`${selectedHouse.name} ${idx + 1}`}
+                          className="construction-gallery-img"
+                          onClick={() => setLightboxUrl(photoUrl)}
+                        />
+                        <button
+                          type="button"
+                          className="construction-gallery-delete-btn"
+                          onClick={() => handleDeleteGalleryPhoto(idx)}
+                          title="Delete photo"
+                          aria-label="Delete photo"
+                        >
+                          <FiTrash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                    <label className="construction-gallery-add-slide">
+                      <FiPlusIcon size={24} />
+                      <span>Add photos</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        style={{ display: "none" }}
+                        disabled={photoUploading}
+                        onChange={e => {
+                          const files = e.target.files;
+                          e.target.value = "";
+                          if (files && files.length) handleAddGalleryPhotos(files);
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
               {/* Left Column: Metrics & Budget */}
               <aside className="construction-project-overview">
                 <div className="construction-overall-prog">
@@ -526,6 +682,15 @@ export default function DesktopConstruction() {
               <button onClick={handleHouseSubmit} disabled={dbSaving}>{dbSaving ? "Saving..." : "Save Project"}</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {lightboxUrl && (
+        <div 
+          onClick={() => setLightboxUrl(null)}
+          style={{ position: "fixed", inset: 0, zIndex: 3000, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "zoom-out" }}
+        >
+          <img src={lightboxUrl} alt="Enlarged preview" style={{ maxWidth: "90vw", maxHeight: "90vh", borderRadius: "8px", objectFit: "contain" }} />
         </div>
       )}
     </div>

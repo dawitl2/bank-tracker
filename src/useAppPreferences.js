@@ -1,10 +1,31 @@
 import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "bank-tracker:pwa-preferences:v1";
-const defaults = { calculator: true, compactRows: false, reduceMotion: false, language: "en" };
+const defaults = {
+  calculator: true,
+  compactRows: false,
+  reduceMotion: false,
+  language: "en",
+  visibleCards: { primary: true, apollo: true, telebirr: true }
+};
 const PREFERENCE_EVENT = "bank-tracker:app-preferences";
-const sanitize = saved => Object.fromEntries(Object.entries(defaults).map(([key, value]) =>
-  [key, key === "language" ? saved?.language === "am" ? "am" : "en" : typeof saved?.[key] === "boolean" ? saved[key] : value]));
+const sanitizeVisibleCards = (cards) => {
+  const primary = cards?.primary !== false;
+  const apollo = cards?.apollo !== false;
+  const telebirr = cards?.telebirr !== false;
+  if (!primary && !apollo && !telebirr) {
+    return { primary: true, apollo: false, telebirr: false };
+  }
+  return { primary, apollo, telebirr };
+};
+const sanitize = saved => Object.fromEntries(Object.entries(defaults).map(([key, value]) => [
+  key,
+  key === "language"
+    ? saved?.language === "am" ? "am" : "en"
+    : key === "visibleCards"
+    ? sanitizeVisibleCards(saved?.visibleCards)
+    : typeof saved?.[key] === "boolean" ? saved[key] : value
+]));
 const readPreferences = () => {
   try { return sanitize(JSON.parse(localStorage.getItem(STORAGE_KEY))); }
   catch { return defaults; }

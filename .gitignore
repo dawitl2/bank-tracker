@@ -27,3 +27,6 @@ android-boa-sms-companion/.gradle/
 android-boa-sms-companion/local.properties
 android-boa-sms-companion/app/build/
 .gradle-local/
+output/
+tmp/
+
