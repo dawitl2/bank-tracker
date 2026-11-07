@@ -948,7 +948,8 @@ function Balance({
   ledgerTransactions = [],
   personOptions = [],
   onSmsTransactionAdded,
-  visibleCards = { primary: true, apollo: true, telebirr: true }
+  visibleCards = { primary: true, apollo: true, telebirr: true },
+  onActiveCardChange
 }) {
   const { t } = useLanguage();
   const [activePanel, setActivePanel] = useState("summary");
@@ -982,7 +983,18 @@ function Balance({
   const currentCard = effectiveCards[activeCardIndex] || effectiveCards[0];
   const isApollo = currentCard.id === "apollo";
   const isTelebirr = currentCard.id === "telebirr";
-  const isPrimary = currentCard.id === "primary";
+  useEffect(() => {
+    onActiveCardChange?.(currentCard?.id || "primary");
+  }, [currentCard?.id, onActiveCardChange]);
+
+  useEffect(() => {
+    if (isApollo && (activePanel === "people" || activePanel === "construction")) {
+      navigate("/balance/summary", { replace: true });
+    } else if (isTelebirr && activePanel !== "summary" && activePanel !== "overview") {
+      navigate("/balance", { replace: true });
+    }
+  }, [isApollo, isTelebirr, activePanel, navigate]);
+
 
   const [copiedAccount, setCopiedAccount] = useState(false);
   const handleCopyAccountNumber = (num) => {
@@ -1156,11 +1168,22 @@ function Balance({
       }
     };
   }, [balance, transactions]);
-  const panelOptions = [
-    { key: "summary", label: "Summary" },
-    { key: "people", label: "People" },
-    { key: "interest", label: "Interest" }
-  ];
+  const effectivePanelOptions = useMemo(() => {
+    if (isTelebirr) {
+      return [];
+    }
+    if (isApollo) {
+      return [
+        { key: "summary", label: "Summary" },
+        { key: "interest", label: "Interest" }
+      ];
+    }
+    return [
+      { key: "summary", label: "Summary" },
+      { key: "people", label: "People" },
+      { key: "interest", label: "Interest" }
+    ];
+  }, [isApollo, isTelebirr]);
   const smsRecentRows = useMemo(() => {
     const rows = boaSmsSummary.map((event, index) => ({
       key: `${event.sms_received_at || "sms"}-${index}`,
@@ -1459,10 +1482,28 @@ function Balance({
                   <time>{t("Electronic money")}</time>
                 </div>
               ) : (
-                <div className="account-activity-row">
-                  <span>{t(balanceMeta.label)}</span>
-                  <strong>{balanceMeta.amount}</strong>
-                  <time>{balanceMeta.date}</time>
+                <div className="account-activity-dual-row">
+                  <div className="account-activity-cell">
+                    <span>{t(balanceMeta.label)}</span>
+                    <strong>{balanceMeta.amount}</strong>
+                    <time>{balanceMeta.date}</time>
+                  </div>
+                  <div className="account-activity-cell account-number-cell">
+                    <span>{t("Account Number")}</span>
+                    <div className="account-number-inline-wrap">
+                      <strong className="account-number-val">157741349</strong>
+                      <button
+                        type="button"
+                        className={`account-copy-inline-btn${copiedAccount ? " is-copied" : ""}`}
+                        onClick={() => handleCopyAccountNumber("157741349")}
+                        title={t("Copy account number")}
+                        aria-label={t("Copy account number")}
+                      >
+                        {copiedAccount ? <FiCheck className="copy-check-icon" /> : <FiCopy />}
+                      </button>
+                    </div>
+                    <time>{copiedAccount ? t("Copied to clipboard!") : t("Primary BOA")}</time>
+                  </div>
                 </div>
               )}
             </div>
@@ -1479,41 +1520,26 @@ function Balance({
               </button>
             )}
           </section>
-          {isPrimary && (
-            <div className="primary-account-number-banner">
-              <div className="primary-account-number-content">
-                <span className="account-number-caption">{t("Account Number")}</span>
-                <strong className="account-number-text">157741349</strong>
-              </div>
-              <button
-                type="button"
-                className={`account-number-copy-btn${copiedAccount ? " is-copied" : ""}`}
-                onClick={() => handleCopyAccountNumber("157741349")}
-                title={t("Copy account number")}
-                aria-label={t("Copy account number")}
-              >
-                {copiedAccount ? <FiCheck className="copy-check-icon" /> : <FiCopy />}
-                <span>{t(copiedAccount ? "Copied!" : "Copy")}</span>
-              </button>
-            </div>
-          )}
         </div>
       </section>
 
-      <section className="analytics-switcher" aria-label={t("Balance analytics")}>
-        {panelOptions.map((option) => (
-          <button
-            key={option.key}
-            className={activePanel === option.key ? "active" : ""}
-            onClick={() => navigate(`/balance/${option.key}`)}
-            type="button"
-          >
-            {t(option.label)}
-          </button>
-        ))}
-      </section>
+      {effectivePanelOptions.length > 0 && (
+        <section className="analytics-switcher" aria-label={t("Balance analytics")}>
+          {effectivePanelOptions.map((option) => (
+            <button
+              key={option.key}
+              className={activePanel === option.key ? "active" : ""}
+              onClick={() => navigate(`/balance/${option.key}`)}
+              type="button"
+            >
+              {t(option.label)}
+            </button>
+          ))}
+        </section>
+      )}
 
-      <section className="balance-panel-stage">
+      {effectivePanelOptions.length > 0 && (
+        <section className="balance-panel-stage">
 
         {activePanel === "summary" && (
           <article className="analytics-card focus-card summary-card">
@@ -1684,6 +1710,7 @@ function Balance({
         {activePanel === "construction" && <ConstructionPanel currentPath={currentPath} navigate={navigate} />}
 
       </section>
+      )}
 
       {visibilityPromptOpen && (
         <div className="password-overlay secure-password-overlay" role="dialog" aria-modal="true" aria-labelledby="interest-unlock-title">

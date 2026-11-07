@@ -753,7 +753,7 @@ h1 {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 14px;
+  gap: 10px;
   margin-bottom: 12px;
 }
 
@@ -4793,8 +4793,8 @@ a {
   }
 
   .balance-card-rail {
-    --card-slide-width: calc(100% - 48px);
-    --card-rail-pad: 24px;
+    --card-slide-width: calc(100% - 16px);
+    --card-rail-pad: 8px;
     display: flex;
     gap: 14px;
     width: calc(100% + 24px);
@@ -5072,6 +5072,109 @@ a {
     font-size: 12px;
     line-height: 1.2;
     white-space: nowrap;
+  }
+
+  
+  .account-activity-dual-row {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+    gap: 10px;
+    padding: 9px 1px 0;
+    border-top: 1px solid rgba(32, 35, 31, 0.065);
+  }
+
+  .account-activity-cell,
+  .account-number-cell {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .account-activity-cell {
+    border-right: 1px solid rgba(32, 35, 31, 0.08);
+    padding-right: 8px;
+  }
+
+  .account-activity-cell > span,
+  .account-number-cell > span {
+    color: #858a82;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.055em;
+    line-height: 1.25;
+    text-transform: uppercase;
+  }
+
+  .account-activity-cell strong {
+    color: #3d423a;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin: 2px 0 1px;
+  }
+
+  .account-activity-cell time {
+    color: #969b93;
+    font-size: 9px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .account-number-action-row,
+  .account-number-inline-wrap {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 2px;
+    flex-wrap: wrap;
+  }
+
+  .account-number-action-row strong,
+  .account-number-val {
+    color: #20231f;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    font-family: inherit;
+  }
+
+  .account-copy-inline-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: rgba(244, 163, 0, 0.12);
+    border: 1px solid rgba(244, 163, 0, 0.28);
+    border-radius: 5px;
+    padding: 1px 5px;
+    font-size: 10px;
+    font-weight: 750;
+    color: #8a5a00;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    line-height: 1.2;
+  }
+
+  .account-copy-inline-btn:hover {
+    background: rgba(244, 163, 0, 0.22);
+  }
+
+  .account-copy-inline-btn.is-copied {
+    background: rgba(16, 185, 129, 0.12);
+    border-color: rgba(16, 185, 129, 0.35);
+    color: #059669;
+  }
+
+  .logo.logo-apollo {
+    max-width: 140px;
+  }
+
+  .logo.logo-telebirr {
+    max-width: 130px;
   }
 
   .account-activity-row time {

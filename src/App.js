@@ -36,6 +36,7 @@ function App() {
   const [view, setView] = useState(() => mobileViewForPath(window.location.pathname));
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 900);
   const { preferences, updatePreference, storageError } = useAppPreferences();
+  const [balanceActiveCardId, setBalanceActiveCardId] = useState("primary");
   const calculatorEnabled = isDesktop || preferences.calculator;
 
   useEffect(() => {
@@ -1333,6 +1334,7 @@ function App() {
 
   const renderBalance = () => (
     <Balance
+      onActiveCardChange={setBalanceActiveCardId}
       balance={currentBalance}
       visibleCards={preferences.visibleCards}
       boaSmsState={boaSmsState}
@@ -1537,8 +1539,14 @@ function App() {
       ) : (
         <>
           <img
-            src="/logo.png"
-            className="logo"
+            src={
+              view === "balance" && balanceActiveCardId === "apollo"
+                ? "/apollo-nav-logo.png"
+                : view === "balance" && balanceActiveCardId === "telebirr"
+                ? "/telebirr-nav-logo.png"
+                : "/logo.png"
+            }
+            className={`logo${view === "balance" && balanceActiveCardId !== "primary" ? ` logo-${balanceActiveCardId}` : ""}`}
             alt={t("bank logo")}
           />
 
