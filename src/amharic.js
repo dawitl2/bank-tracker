@@ -59,6 +59,7 @@ const amharic = {
   "Locked": "ተቆልፏል", "Locked Out": "ለጊዜው ታግዷል", "Device Locked Out": "መሣሪያው ለጊዜው ታግዷል", "Locked out. Remaining time:": "ለጊዜው ታግዷል። የቀረው ጊዜ፦",
   "Houses": "ቤቶች", "Add house": "ቤት ጨምር", "Back to Houses": "ወደ ቤቶች ተመለስ", "Construction project": "የግንባታ ፕሮጀክት", "Project checklist": "የፕሮጀክት ማረጋገጫ ዝርዝር",
   "Edit name": "ስም አስተካክል", "Edit house": "ቤት አስተካክል", "House name...": "የቤቱ ስም…", "Delete house": "ቤት ሰርዝ", "Delete House?": "ቤቱ ይሰረዝ?",
+  "Update project name, manage photos, or remove house": "የፕሮጀክት ስም፣ ፎቶዎችን ያቀናብሩ ወይም ቤቱን ይሰርዙ", "Project Name": "የፕሮጀክት ስም", "Photo": "ፎቶ", "Completed": "ተጠናቋል", "Required base": "መሠረታዊ ቅድመ ሁኔታ", "Delete entire project": "ሙሉውን ፕሮጀክት ሰርዝ",
   "No photo yet": "እስካሁን ፎቶ የለም", "Add photo": "ፎቶ ጨምር", "Add Photo": "ፎቶ ጨምር", "Replace photo": "ፎቶ ቀይር", "Full size": "ሙሉ መጠን",
   "Take a new picture or choose one from your gallery.": "አዲስ ፎቶ ያንሱ ወይም ከምስሎችዎ ይምረጡ።", "Overall progress": "አጠቃላይ ሂደት", "Money spent": "የወጣ ገንዘብ", "tasks completed": "ሥራዎች ተጠናቀዋል", "of": "ከ", "remaining": "ቀሪ",
   "Foundation": "መሠረት", "Building block / structure": "የሕንፃ አጥንት", "Shell": "ውጫዊ ክፍል", "Roofing": "ጣሪያ", "Exterior doors": "የውጭ በሮች", "Windows": "መስኮቶች",

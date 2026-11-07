@@ -17,7 +17,9 @@ import {
   FaPlus, 
   FaEdit, 
   FaTrash, 
-  FaLock 
+  FaLock,
+  FaCheck,
+  FaTimes
 } from "react-icons/fa";
 import "./DesktopStyles.css";
 import { readPhoto } from "../AccountSettings";
@@ -191,6 +193,7 @@ export default function DesktopConstruction() {
     if (isCover) {
       try { localStorage.removeItem(`construction_cover_${selectedHouse.id}`); } catch {}
       setHouses(prev => prev.map(h => h.id === selectedHouse.id ? { ...h, cover_image: null } : h));
+      setSelectedHouse(prev => prev ? { ...prev, cover_image: null } : prev);
       return;
     }
     const targetUrl = displayPhotos[indexToDelete];
@@ -517,7 +520,7 @@ export default function DesktopConstruction() {
                   <strong>{selectedHouse.name}</strong>
                 </span>
               </div>
-              <div className="construction-detail-actions" style={{ display: "flex", gap: "8px" }}>
+              <div className="construction-detail-actions">
                 <button
                   className="construction-detail-edit-btn"
                   type="button"
@@ -526,17 +529,11 @@ export default function DesktopConstruction() {
                     setHouseForm({ id: selectedHouse.id, name: selectedHouse.name });
                     setShowHouseModal(true);
                   }}
-                  title="Rename project"
+                  title="Edit project"
+                  aria-label="Edit project"
                 >
                   <FaEdit />
-                </button>
-                <button
-                  className="construction-detail-delete-btn"
-                  type="button"
-                  onClick={() => handleDeleteHouse(selectedHouse)}
-                  title="Delete project"
-                >
-                  <FaTrash />
+                  <span>Edit</span>
                 </button>
               </div>
             </div>
@@ -550,27 +547,29 @@ export default function DesktopConstruction() {
                     <small>Scroll to see more photos</small>
                   </div>
                   <div className="construction-gallery-carousel">
-                    {galleryPhotos.map((photoUrl, idx) => (
-                      <div key={idx} className="construction-gallery-slide">
-                        <img
-                          src={photoUrl}
-                          alt={`${selectedHouse.name} ${idx + 1}`}
-                          className="construction-gallery-img"
-                          onClick={() => setLightboxUrl(photoUrl)}
-                        />
-                        <button
-                          type="button"
-                          className="construction-gallery-delete-btn"
-                          onClick={() => handleDeleteGalleryPhoto(idx)}
-                          title="Delete photo"
-                          aria-label="Delete photo"
-                        >
-                          <FiTrash2 size={16} />
-                        </button>
-                      </div>
-                    ))}
+                    {displayPhotos.map((photoUrl, idx) => {
+                      const isCover = photoUrl === selectedHouseCover && idx === displayPhotos.length - 1;
+                      return (
+                        <div key={idx} className="construction-gallery-slide">
+                          <img
+                            src={photoUrl}
+                            alt={`${selectedHouse.name} ${idx + 1}`}
+                            className="construction-gallery-img"
+                            onClick={() => setLightboxUrl(photoUrl)}
+                          />
+                          <div className="construction-gallery-slide-overlay">
+                            <span className="construction-gallery-slide-index">
+                              {idx + 1} / {displayPhotos.length}
+                            </span>
+                            {isCover && (
+                              <span className="construction-cover-tag">Cover</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                     <label className="construction-gallery-add-slide">
-                      <FiPlusIcon size={24} />
+                      <FiPlusIcon size={26} />
                       <span>Add photos</span>
                       <input
                         type="file"
@@ -627,44 +626,70 @@ export default function DesktopConstruction() {
               {/* Right Column: Legible mobile checklist representation */}
               <main className="construction-checklist-content">
                 <div className="construction-checklist-heading">
-                  <span>Project checklist</span>
-                  <strong>{TOTAL_ITEMS - getHouseProgress(selectedHouse.id).checked} remaining</strong>
+                  <div>
+                    <span className="construction-checklist-title">Project checklist</span>
+                    <p className="construction-checklist-subtitle">
+                      {getHouseProgress(selectedHouse.id).checked} of {TOTAL_ITEMS} tasks completed
+                    </p>
+                  </div>
+                  <strong className="construction-checklist-remaining-badge">
+                    {TOTAL_ITEMS - getHouseProgress(selectedHouse.id).checked} remaining
+                  </strong>
                 </div>
 
-                {CONSTRUCTION_SECTIONS.map((section) => {
-                  const checked = checkedByHouse[selectedHouse.id] || { building_block: true };
-                  
-                  return (
-                    <div key={section.label} className="construction-section">
-                      <div className="construction-section-label">{section.label}</div>
-                      {section.items.map((item) => {
-                        const isChecked = !!checked[item.id];
-                        const isLocked = !!item.locked;
-                        const ItemIcon = item.icon || FaTools;
-                        
-                        return (
-                          <button
-                            key={item.id}
-                            type="button"
-                            className={`construction-item-row${isLocked ? " locked" : ""}`}
-                            onClick={() => !isLocked && toggleItem(selectedHouse.id, item.id)}
-                            disabled={isLocked}
-                            style={{ width: "100%", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center" }}
-                          >
-                            <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                              <span className="construction-item-icon"><ItemIcon /></span>
-                              <span className="construction-item-label">{item.label}</span>
-                            </span>
-                            <div className={`construction-checkbox${isChecked ? " checked" : ""}`}>
-                              {isChecked && <FaPlus style={{ transform: "rotate(45deg)", fontSize: "10px" }} />}
-                              {!isChecked && isLocked && <FaLock style={{ fontSize: "10px" }} />}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
+                <div className="construction-sections-container">
+                  {CONSTRUCTION_SECTIONS.map((section) => {
+                    const checked = checkedByHouse[selectedHouse.id] || { building_block: true };
+                    const sectionTotal = section.items.length;
+                    const sectionChecked = section.items.filter(item => !!checked[item.id]).length;
+                    const isSectionComplete = sectionChecked === sectionTotal;
+                    
+                    return (
+                      <div key={section.label} className="construction-section-card">
+                        <div className="construction-section-header">
+                          <span className="construction-section-name">{section.label}</span>
+                          <span className={`construction-section-badge ${isSectionComplete ? "complete" : ""}`}>
+                            {isSectionComplete ? (
+                              <><FaCheck size={10} /> Completed</>
+                            ) : (
+                              `${sectionChecked}/${sectionTotal}`
+                            )}
+                          </span>
+                        </div>
+                        <div className="construction-section-items">
+                          {section.items.map((item) => {
+                            const isChecked = !!checked[item.id];
+                            const isLocked = !!item.locked;
+                            const ItemIcon = item.icon || FaTools;
+                            
+                            return (
+                              <button
+                                key={item.id}
+                                type="button"
+                                className={`construction-item-row${isChecked ? " checked" : ""}${isLocked ? " locked" : ""}`}
+                                onClick={() => !isLocked && toggleItem(selectedHouse.id, item.id)}
+                                disabled={isLocked}
+                              >
+                                <div className="construction-item-left">
+                                  <span className={`construction-item-icon${isChecked ? " checked" : ""}`}>
+                                    <ItemIcon />
+                                  </span>
+                                  <div className="construction-item-text">
+                                    <span className="construction-item-label">{item.label}</span>
+                                    {isLocked && <span className="construction-item-locked-badge">Required base</span>}
+                                  </div>
+                                </div>
+                                <div className={`construction-checkbox${isChecked ? " checked" : ""}${isLocked ? " locked" : ""}`}>
+                                  {isChecked ? <FaCheck /> : isLocked ? <FaLock /> : null}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </main>
             </div>
           </section>
@@ -672,10 +697,151 @@ export default function DesktopConstruction() {
       </div>
 
       {/* Add / Edit House Modal */}
-      {showHouseModal && (
+      {showHouseModal && isEditingHouse && selectedHouse && (
+        <div className="construction-overlay" onClick={() => setShowHouseModal(false)}>
+          <div className="construction-edit-modal-box" onClick={e => e.stopPropagation()}>
+            <div className="construction-edit-modal-header">
+              <div className="construction-edit-modal-title-group">
+                <h3>Edit Construction Project</h3>
+                <p>Update project name, manage photos, or remove house</p>
+              </div>
+              <button
+                type="button"
+                className="construction-edit-modal-close"
+                onClick={() => setShowHouseModal(false)}
+                aria-label="Close"
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            <div className="construction-edit-modal-body">
+              <div className="construction-edit-field">
+                <label className="construction-edit-field-label">Project Name</label>
+                <input
+                  className="construction-edit-input"
+                  placeholder="e.g. Villa A, House 2..."
+                  value={houseForm.name}
+                  onChange={e => setHouseForm({ ...houseForm, name: e.target.value })}
+                  onKeyDown={e => {
+                    if (e.key === "Enter") handleHouseSubmit();
+                    if (e.key === "Escape") setShowHouseModal(false);
+                  }}
+                  autoFocus
+                />
+              </div>
+
+              <div className="construction-edit-photos-section">
+                <div className="construction-edit-photos-header">
+                  <div>
+                    <span className="construction-edit-photos-title">Project Photos</span>
+                    <span className="construction-edit-photos-count">({displayPhotos.length})</span>
+                  </div>
+                  <label className="construction-edit-upload-btn">
+                    <FiPlusIcon size={14} />
+                    <span>Add Photo</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      style={{ display: "none" }}
+                      disabled={photoUploading}
+                      onChange={e => {
+                        const files = e.target.files;
+                        e.target.value = "";
+                        if (files && files.length) handleAddGalleryPhotos(files);
+                      }}
+                    />
+                  </label>
+                </div>
+
+                {displayPhotos.length === 0 ? (
+                  <div className="construction-edit-no-photos">
+                    <FiCamera size={24} />
+                    <span>No photos added yet</span>
+                  </div>
+                ) : (
+                  <div className="construction-edit-photos-list">
+                    {displayPhotos.map((photoUrl, idx) => {
+                      const isCover = photoUrl === selectedHouseCover && idx === displayPhotos.length - 1;
+                      return (
+                        <div key={idx} className="construction-edit-photo-item">
+                          <img
+                            src={photoUrl}
+                            alt={`${selectedHouse.name} ${idx + 1}`}
+                            className="construction-edit-photo-thumb"
+                            onClick={() => setLightboxUrl(photoUrl)}
+                          />
+                          <div className="construction-edit-photo-details">
+                            <span className="construction-edit-photo-idx">
+                              Photo {idx + 1}
+                            </span>
+                            {isCover && (
+                              <span className="construction-cover-tag-sm">Cover</span>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            className="construction-edit-photo-delete-btn"
+                            onClick={() => handleDeleteGalleryPhoto(idx, isCover)}
+                            title="Delete photo"
+                            aria-label="Delete photo"
+                          >
+                            <FiTrash2 size={15} />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="construction-edit-danger-zone">
+                <div className="construction-edit-danger-text">
+                  <strong>Delete entire project</strong>
+                  <small>This will remove this house and its checklist from the database.</small>
+                </div>
+                <button
+                  type="button"
+                  className="construction-edit-delete-house-btn"
+                  onClick={() => {
+                    setShowHouseModal(false);
+                    handleDeleteHouse(selectedHouse);
+                  }}
+                >
+                  <FaTrash />
+                  <span>Delete Project</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="construction-edit-modal-footer">
+              <button
+                type="button"
+                className="construction-mini-cancel"
+                onClick={() => setShowHouseModal(false)}
+                disabled={dbSaving}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="construction-mini-confirm"
+                onClick={handleHouseSubmit}
+                disabled={dbSaving}
+              >
+                {dbSaving ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showHouseModal && !isEditingHouse && (
         <div className="password-overlay secure-password-overlay" style={{ display: "flex", zIndex: 1000 }}>
           <div className="desktop-password-box">
-            <h2>{isEditingHouse ? "Rename Project" : "Add Construction Project"}</h2>
+            <h2>Add Construction Project</h2>
             <div style={{ marginBottom: "20px" }}>
               <label style={{ fontSize: "12px", color: "var(--desktop-dark-muted)", display: "block", marginBottom: "4px" }}>Project Name</label>
               <input 
@@ -684,11 +850,12 @@ export default function DesktopConstruction() {
                 value={houseForm.name}
                 onChange={(e) => setHouseForm({ ...houseForm, name: e.target.value })}
                 style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid var(--desktop-border)" }}
+                autoFocus
               />
             </div>
             <div style={{ display: "flex", gap: "10px" }}>
               <button onClick={() => setShowHouseModal(false)} style={{ background: "rgba(0,0,0,0.05)", color: "var(--desktop-dark)" }}>Cancel</button>
-              <button onClick={handleHouseSubmit} disabled={dbSaving}>{dbSaving ? "Saving..." : "Save Project"}</button>
+              <button onClick={handleHouseSubmit} disabled={dbSaving}>{dbSaving ? "Saving..." : "Add Project"}</button>
             </div>
           </div>
         </div>

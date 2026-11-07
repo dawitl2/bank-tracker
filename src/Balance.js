@@ -354,6 +354,7 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
     if (isCover) {
       try { localStorage.removeItem(`construction_cover_${selectedHouse.id}`); } catch {}
       setHouses(prev => prev.map(h => h.id === selectedHouse.id ? { ...h, cover_image: null } : h));
+      setSelectedHouse(prev => prev ? { ...prev, cover_image: null } : prev);
       setGalleryVersion(v => v + 1);
       return;
     }
@@ -469,6 +470,9 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
         body: JSON.stringify({ name })
       });
       setHouses(prev => prev.map(h => h.id === modal.house.id ? { ...h, name } : h));
+      if (selectedHouse?.id === modal.house.id) {
+        setSelectedHouse(prev => ({ ...prev, name }));
+      }
       setModal(null);
       setNameInput("");
     } catch (e) {
@@ -685,19 +689,11 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
                     setNameInput(selectedHouse.name);
                     setModal({ type: "edit", house: selectedHouse });
                   }}
-                  title={t("Edit name")}
-                  aria-label={t("Edit name")}
+                  title={t("Edit house")}
+                  aria-label={t("Edit house")}
                 >
                   <FaPen />
-                </button>
-                <button
-                  className="construction-detail-delete-btn"
-                  type="button"
-                  onClick={() => handleDeleteHouse(selectedHouse)}
-                  title={t("Delete house")}
-                  aria-label={t("Delete house")}
-                >
-                  <FaTrashAlt />
+                  <span>{t("Edit")}</span>
                 </button>
               </div>
             </div>
@@ -720,23 +716,19 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
                               className="construction-gallery-img"
                               onClick={() => setLightboxUrl(photoUrl)}
                             />
-                            {isCover && (
-                              <span className="construction-cover-tag">{t("Cover")}</span>
-                            )}
-                            <button
-                              type="button"
-                              className="construction-gallery-delete-btn"
-                              onClick={() => handleDeleteGalleryPhoto(idx, isCover)}
-                              title={t("Delete")}
-                              aria-label={t("Delete")}
-                            >
-                              <FiTrash2 size={16} />
-                            </button>
+                            <div className="construction-gallery-slide-overlay">
+                              <span className="construction-gallery-slide-index">
+                                {idx + 1} / {displayPhotos.length}
+                              </span>
+                              {isCover && (
+                                <span className="construction-cover-tag">{t("Cover")}</span>
+                              )}
+                            </div>
                           </div>
                         );
                       })}
                       <label className="construction-gallery-add-slide">
-                        <FiPlusIcon size={24} />
+                        <FiPlusIcon size={26} />
                         <span>{t("Add photos")}</span>
                         <input
                           type="file"
@@ -756,13 +748,15 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
 
                   <div className="construction-overall-prog">
                     <div className="construction-overall-heading">
-                      <span>{t("Overall progress")}</span>
-                      <strong>{t(prog.pct)}{t("%")}</strong>
+                      <div>
+                        <span className="construction-overall-title">{t("Overall progress")}</span>
+                        <div className="construction-overall-label">{t(prog.checked)}{t(" of ")}{t(prog.total)}{t(" tasks completed")}</div>
+                      </div>
+                      <strong className="construction-overall-pct">{t(prog.pct)}{t("%")}</strong>
                     </div>
                     <div className="construction-overall-bg">
                       <div className="construction-overall-fill" style={{ width: `${prog.pct}%` }} />
                     </div>
-                    <div className="construction-overall-label">{t(prog.checked)}{t(" of ")}{t(prog.total)}{t(" tasks completed")}</div>
                   </div>
 
                   <div className="construction-money-spent">
@@ -791,33 +785,67 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
 
               <main className="construction-checklist-content">
                 <div className="construction-checklist-heading">
-                  <span>{t("Project checklist")}</span>
-                  <strong>{t(prog.total - prog.checked)}{t(" remaining")}</strong>
+                  <div>
+                    <span className="construction-checklist-title">{t("Project checklist")}</span>
+                    <p className="construction-checklist-subtitle">
+                      {t(prog.checked)}{t(" of ")}{t(prog.total)}{t(" tasks completed")}
+                    </p>
+                  </div>
+                  <strong className="construction-checklist-remaining-badge">
+                    {t(prog.total - prog.checked)}{t(" remaining")}
+                  </strong>
                 </div>
-                  {CONSTRUCTION_SECTIONS.map(section => (
-                    <div key={section.label} className="construction-section">
-                      <div className="construction-section-label">{t(section.label)}</div>
-                      {section.items.map(item => {
-                        const isChecked = !!checked[item.id];
-                        const isLocked = !!item.locked;
-                        const ItemIcon = item.icon || FaTools;
-                        return (
-                          <button key={item.id}
-                            type="button"
-                            className={`construction-item-row${isLocked ? " locked" : ""}`}
-                            onClick={() => !isLocked && toggleItem(selectedHouse.id, item.id)}
-                            disabled={isLocked}
-                          >
-                            <span className="construction-item-icon"><ItemIcon /></span>
-                            <span className="construction-item-label">{t(item.label)}</span>
-                            <div className={`construction-checkbox${isChecked ? " checked" : ""}`}>
-                              {isChecked ? <FaCheck /> : isLocked ? <FaLock /> : null}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ))}
+
+                <div className="construction-sections-container">
+                  {CONSTRUCTION_SECTIONS.map(section => {
+                    const sectionTotal = section.items.length;
+                    const sectionChecked = section.items.filter(item => !!checked[item.id]).length;
+                    const isSectionComplete = sectionChecked === sectionTotal;
+
+                    return (
+                      <div key={section.label} className="construction-section-card">
+                        <div className="construction-section-header">
+                          <span className="construction-section-name">{t(section.label)}</span>
+                          <span className={`construction-section-badge ${isSectionComplete ? "complete" : ""}`}>
+                            {isSectionComplete ? (
+                              <><FaCheck size={10} /> {t("Completed")}</>
+                            ) : (
+                              `${sectionChecked}/${sectionTotal}`
+                            )}
+                          </span>
+                        </div>
+                        <div className="construction-section-items">
+                          {section.items.map(item => {
+                            const isChecked = !!checked[item.id];
+                            const isLocked = !!item.locked;
+                            const ItemIcon = item.icon || FaTools;
+                            return (
+                              <button key={item.id}
+                                type="button"
+                                className={`construction-item-row${isChecked ? " checked" : ""}${isLocked ? " locked" : ""}`}
+                                onClick={() => !isLocked && toggleItem(selectedHouse.id, item.id)}
+                                disabled={isLocked}
+                              >
+                                <div className="construction-item-left">
+                                  <span className={`construction-item-icon${isChecked ? " checked" : ""}`}>
+                                    <ItemIcon />
+                                  </span>
+                                  <div className="construction-item-text">
+                                    <span className="construction-item-label">{t(item.label)}</span>
+                                    {isLocked && <span className="construction-item-locked-badge">{t("Required base")}</span>}
+                                  </div>
+                                </div>
+                                <div className={`construction-checkbox${isChecked ? " checked" : ""}${isLocked ? " locked" : ""}`}>
+                                  {isChecked ? <FaCheck /> : isLocked ? <FaLock /> : null}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </main>
             </div>
             </>;
@@ -825,11 +853,154 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
         </section>
       )}
 
-      {modal && (
+      {modal && modal.type === "edit" && (
+        <div className="construction-overlay" onClick={() => setModal(null)}>
+          <div className="construction-edit-modal-box" onClick={e => e.stopPropagation()}>
+            <div className="construction-edit-modal-header">
+              <div className="construction-edit-modal-title-group">
+                <h3>{t("Edit house")}</h3>
+                <p>{t("Update project name, manage photos, or remove house")}</p>
+              </div>
+              <button
+                type="button"
+                className="construction-edit-modal-close"
+                onClick={() => setModal(null)}
+                aria-label={t("Close")}
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            <div className="construction-edit-modal-body">
+              <div className="construction-edit-field">
+                <label className="construction-edit-field-label">{t("Project Name")}</label>
+                <input
+                  className="construction-edit-input"
+                  placeholder={t("House name...")}
+                  value={nameInput}
+                  maxLength={40}
+                  onChange={e => setNameInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter") renameHouse();
+                    if (e.key === "Escape") setModal(null);
+                  }}
+                  autoFocus
+                />
+              </div>
+
+              <div className="construction-edit-photos-section">
+                <div className="construction-edit-photos-header">
+                  <div>
+                    <span className="construction-edit-photos-title">{t("Project photos")}</span>
+                    <span className="construction-edit-photos-count">({displayPhotos.length})</span>
+                  </div>
+                  <label className="construction-edit-upload-btn">
+                    <FiPlusIcon size={14} />
+                    <span>{t("Add photo")}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      style={{ display: "none" }}
+                      disabled={photoUploading}
+                      onChange={e => {
+                        const files = e.target.files;
+                        e.target.value = "";
+                        if (files && files.length) handleAddGalleryPhotos(files);
+                      }}
+                    />
+                  </label>
+                </div>
+
+                {displayPhotos.length === 0 ? (
+                  <div className="construction-edit-no-photos">
+                    <FiCamera size={24} />
+                    <span>{t("No photos yet")}</span>
+                  </div>
+                ) : (
+                  <div className="construction-edit-photos-list">
+                    {displayPhotos.map((photoUrl, idx) => {
+                      const isCover = photoUrl === selectedHouseCover && idx === displayPhotos.length - 1;
+                      return (
+                        <div key={idx} className="construction-edit-photo-item">
+                          <img
+                            src={photoUrl}
+                            alt={`${selectedHouse.name} ${idx + 1}`}
+                            className="construction-edit-photo-thumb"
+                            onClick={() => setLightboxUrl(photoUrl)}
+                          />
+                          <div className="construction-edit-photo-details">
+                            <span className="construction-edit-photo-idx">
+                              {t("Photo")} {idx + 1}
+                            </span>
+                            {isCover && (
+                              <span className="construction-cover-tag-sm">{t("Cover")}</span>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            className="construction-edit-photo-delete-btn"
+                            onClick={() => handleDeleteGalleryPhoto(idx, isCover)}
+                            title={t("Delete")}
+                            aria-label={t("Delete")}
+                          >
+                            <FiTrash2 size={15} />
+                            <span>{t("Delete")}</span>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="construction-edit-danger-zone">
+                <div className="construction-edit-danger-text">
+                  <strong>{t("Delete entire project")}</strong>
+                  <small>{t("This will remove this house and its checklist from the database.")}</small>
+                </div>
+                <button
+                  type="button"
+                  className="construction-edit-delete-house-btn"
+                  onClick={() => {
+                    const target = modal.house || selectedHouse;
+                    setModal(null);
+                    handleDeleteHouse(target);
+                  }}
+                >
+                  <FaTrashAlt />
+                  <span>{t("Delete house")}</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="construction-edit-modal-footer">
+              <button
+                type="button"
+                className="construction-mini-cancel"
+                onClick={() => setModal(null)}
+                disabled={saving}
+              >
+                {t("Cancel")}
+              </button>
+              <button
+                type="button"
+                className="construction-mini-confirm"
+                onClick={renameHouse}
+                disabled={saving}
+              >
+                {t(saving ? "..." : "Save")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modal && modal.type === "add" && (
         <div className="construction-overlay" onClick={() => setModal(null)}>
           <div className="construction-mini-modal" onClick={e => e.stopPropagation()}>
             <div className="construction-mini-title">
-              {t(modal.type === "add" ? "Add house" : "Edit house")}
+              {t("Add house")}
             </div>
             <input
               className="construction-mini-input"
@@ -838,7 +1009,7 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
               maxLength={40}
               onChange={e => setNameInput(e.target.value)}
               onKeyDown={e => {
-                if (e.key === "Enter") modal.type === "add" ? addHouse() : renameHouse();
+                if (e.key === "Enter") addHouse();
                 if (e.key === "Escape") setModal(null);
               }}
               autoFocus
@@ -847,10 +1018,10 @@ export function ConstructionPanel({ currentPath = "", navigate = () => {} }) {
               <button className="construction-mini-cancel" onClick={() => setModal(null)} disabled={saving}>{t("Cancel")}</button>
               <button
                 className="construction-mini-confirm"
-                onClick={modal.type === "add" ? addHouse : renameHouse}
+                onClick={addHouse}
                 disabled={saving}
               >
-                {t(saving ? "..." : modal.type === "add" ? "Add" : "Save")}
+                {t(saving ? "..." : "Add")}
               </button>
             </div>
           </div>
