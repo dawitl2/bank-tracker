@@ -1382,7 +1382,7 @@ function Balance({
         </div>
 
         <div className="balance-grid balance-account-grid">
-          <section className={`balance-account-overview${isFlipped ? " is-apollo" : ""}${apolloLocked ? " is-locked" : ""}`}>
+          <section className={`balance-account-overview${isFlipped ? " is-apollo" : ""}${isTelebirr ? " is-telebirr" : ""}${apolloLocked ? " is-locked" : ""}`}>
             <div className="account-overview-head">
               <div className="account-identity">
                 <span className="account-identity-mark" aria-hidden="true" />

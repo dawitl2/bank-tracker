@@ -4867,6 +4867,17 @@ a {
     content: "";
   }
 
+    .balance-account-overview.is-telebirr {
+    border-color: rgba(2, 132, 199, 0.12);
+    background:
+      radial-gradient(circle at 97% 0%, rgba(2, 132, 199, 0.09), transparent 34%),
+      linear-gradient(145deg, #fff 0%, #f4f9fd 100%);
+  }
+
+  .balance-account-overview.is-telebirr::before {
+    background: linear-gradient(90deg, #38bdf8, #0284c7);
+  }
+
   .balance-account-overview.is-apollo {
     border-color: rgba(104, 12, 45, 0.1);
     background:
@@ -4909,6 +4920,13 @@ a {
       rgba(244, 163, 0, 0.09);
   }
 
+    .is-telebirr .account-identity-mark {
+    border-color: rgba(2, 132, 199, 0.14);
+    background:
+      radial-gradient(circle at 50% 50%, #0284c7 0 24%, transparent 26%),
+      rgba(2, 132, 199, 0.07);
+  }
+
   .is-apollo .account-identity-mark {
     border-color: rgba(104, 12, 45, 0.12);
     background:
@@ -4948,6 +4966,11 @@ a {
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
   }
 
+    .is-telebirr .account-balance-block {
+    border-color: rgba(2, 132, 199, 0.08);
+    background: rgba(240, 247, 255, 0.82);
+  }
+
   .is-apollo .account-balance-block {
     border-color: rgba(104, 12, 45, 0.065);
     background: rgba(250, 244, 246, 0.78);
@@ -4969,6 +4992,11 @@ a {
     font-size: 8px;
     font-weight: 850;
     letter-spacing: 0.08em;
+  }
+
+    .is-telebirr .account-currency {
+    background: rgba(2, 132, 199, 0.08);
+    color: #0369a1;
   }
 
   .is-apollo .account-currency {
@@ -5002,6 +5030,15 @@ a {
     font-size: 14px;
     box-shadow: 0 5px 14px rgba(32, 35, 31, 0.045);
     transform: translateY(-3px);
+  }
+
+    .is-telebirr .account-balance-value-row .balance-visibility-btn {
+    border-color: rgba(2, 132, 199, 0.1);
+    color: #0284c7;
+  }
+
+  .is-telebirr .account-activity-row strong {
+    color: #0284c7;
   }
 
   .is-apollo .account-balance-value-row .balance-visibility-btn {

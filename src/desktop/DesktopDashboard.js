@@ -378,7 +378,7 @@ export default function DesktopDashboard({
 
         {/* Telebirr Card */}
         {visibleCards.telebirr !== false && (
-          <div className="desktop-card" style={{ padding: "28px" }}>
+          <div className="desktop-card desktop-card-telebirr" style={{ padding: "28px" }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
               <img 
                 src="/card3.png" 

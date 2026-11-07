@@ -189,6 +189,10 @@ body.desktop-body {
   box-shadow: var(--desktop-shadow-deep);
 }
 
+.desktop-card.desktop-card-telebirr {
+  border-top: 3px solid #0284c7;
+}
+
 .desktop-card-title {
   font-size: 14px;
   text-transform: uppercase;
